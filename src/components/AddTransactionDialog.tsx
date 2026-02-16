@@ -36,14 +36,14 @@ export default function AddTransactionDialog() {
     e.preventDefault();
     const amt = parseFloat(amount);
     const personal = personalAmount ? parseFloat(personalAmount) : amt;
-    if (isNaN(amt) || amt <= 0) return;
+    if (isNaN(amt) || amt <= 0 || !category || !description.trim()) return;
 
     addTx.mutate(
       {
         amount: amt,
         personal_amount: personal,
         date,
-        category: category || "Uncategorized",
+        category,
         payment_mode: paymentMode,
         credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
@@ -103,17 +103,16 @@ export default function AddTransactionDialog() {
           </div>
           <div className="space-y-1.5">
             <Label>Category</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={setCategory} required>
               <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Uncategorized">Uncategorized</SelectItem>
                 {categories?.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Description (optional)</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" />
+            <Label>Description</Label>
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" required />
           </div>
           <div className="space-y-1.5">
             <Label>Notes (optional)</Label>
