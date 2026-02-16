@@ -22,6 +22,7 @@ export default function AddTransactionDialog() {
   const [personalAmount, setPersonalAmount] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [category, setCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
   const [paymentMode, setPaymentMode] = useState("credit_card");
   const [creditCardId, setCreditCardId] = useState<string>("");
   const [description, setDescription] = useState("");
@@ -48,13 +49,14 @@ export default function AddTransactionDialog() {
         credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
         notes: notes || null,
+        sub_category: subCategory || null,
       },
       {
         onSuccess: () => {
           toast({ title: "Transaction added" });
           setOpen(false);
           setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId(""); setNotes("");
-          setCategory("");
+          setCategory(""); setSubCategory("");
         },
         onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
       }
@@ -107,6 +109,17 @@ export default function AddTransactionDialog() {
               <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
               <SelectContent>
                 {categories?.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Sub-category (optional)</Label>
+            <Select value={subCategory} onValueChange={setSubCategory}>
+              <SelectTrigger><SelectValue placeholder="Select sub-category" /></SelectTrigger>
+              <SelectContent>
+                {categories
+                  ?.filter((c) => c.name === category && c.sub_category_name)
+                  .map((c) => <SelectItem key={c.id} value={c.sub_category_name!}>{c.sub_category_name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
