@@ -25,6 +25,7 @@ export default function AddTransactionDialog() {
   const [paymentMode, setPaymentMode] = useState("credit_card");
   const [creditCardId, setCreditCardId] = useState<string>("");
   const [description, setDescription] = useState("");
+  const [notes, setNotes] = useState("");
 
   const addTx = useAddTransaction();
   const { data: cards } = useCreditCards();
@@ -46,12 +47,13 @@ export default function AddTransactionDialog() {
         payment_mode: paymentMode,
         credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
+        notes: notes || null,
       },
       {
         onSuccess: () => {
           toast({ title: "Transaction added" });
           setOpen(false);
-          setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId("");
+          setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId(""); setNotes("");
           setCategory("");
         },
         onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -112,6 +114,10 @@ export default function AddTransactionDialog() {
           <div className="space-y-1.5">
             <Label>Description (optional)</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Notes (optional)</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
           </div>
           <Button type="submit" className="w-full" disabled={addTx.isPending}>
             {addTx.isPending ? "Adding..." : "Add Transaction"}

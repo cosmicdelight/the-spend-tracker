@@ -80,6 +80,7 @@ export type Database = {
           date: string
           description: string | null
           id: string
+          notes: string | null
           payment_mode: string
           personal_amount: number
           user_id: string
@@ -92,6 +93,7 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          notes?: string | null
           payment_mode?: string
           personal_amount?: number
           user_id: string
@@ -104,6 +106,7 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          notes?: string | null
           payment_mode?: string
           personal_amount?: number
           user_id?: string

@@ -11,6 +11,7 @@ export interface Transaction {
   category: string;
   payment_mode: string;
   description: string | null;
+  notes: string | null;
   created_at: string;
 }
 
