@@ -1,5 +1,7 @@
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
 
@@ -21,43 +23,72 @@ interface Props {
   transactions: Transaction[];
 }
 
-interface ChartEntry {
+interface GroupedEntry {
   name: string;
   value: number;
-  id: string;
-  subCategory?: string | null;
+  subs: { name: string; value: number }[];
 }
 
 export default function BudgetOverview({ categories, transactions }: Props) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  const monthlyTxs = transactions.filter((t) => {
-    const d = new Date(t.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  });
+  const monthlyTxs = useMemo(
+    () =>
+      transactions.filter((t) => {
+        const d = new Date(t.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      }),
+    [transactions, currentMonth, currentYear],
+  );
 
-  const data: ChartEntry[] = categories
-    .map((cat) => {
-      const spent = monthlyTxs
-        .filter((t) => t.category === cat.name)
-        .reduce((s, t) => s + Number(t.personal_amount), 0);
-      return { name: cat.name, value: spent, id: cat.id, subCategory: cat.sub_category_name };
-    })
-    .filter((d) => d.value > 0)
-    .sort((a, b) => b.value - a.value);
+  // Group by parent category name, aggregate spend, collect sub-category breakdown
+  const grouped: GroupedEntry[] = useMemo(() => {
+    const map = new Map<string, { total: number; subs: Map<string, number> }>();
 
-  const totalSpent = data.reduce((s, d) => s + d.value, 0);
+    for (const cat of categories) {
+      if (!map.has(cat.name)) map.set(cat.name, { total: 0, subs: new Map() });
+    }
+
+    for (const tx of monthlyTxs) {
+      const entry = map.get(tx.category);
+      if (!entry) continue;
+      const amt = Number(tx.personal_amount);
+      entry.total += amt;
+      const subKey = tx.sub_category || "(no sub-category)";
+      entry.subs.set(subKey, (entry.subs.get(subKey) || 0) + amt);
+    }
+
+    return [...map.entries()]
+      .map(([name, { total, subs }]) => ({
+        name,
+        value: total,
+        subs: [...subs.entries()]
+          .map(([n, v]) => ({ name: n, value: v }))
+          .filter((s) => s.value > 0)
+          .sort((a, b) => b.value - a.value),
+      }))
+      .filter((g) => g.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [categories, monthlyTxs]);
+
+  const totalSpent = grouped.reduce((s, d) => s + d.value, 0);
+
+  const pieData = grouped.map((g) => ({ name: g.name, value: g.value }));
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload?.[0]) {
-      const entry = payload[0].payload as ChartEntry;
+      const entry = payload[0].payload as { name: string; value: number };
       const pct = totalSpent > 0 ? ((entry.value / totalSpent) * 100).toFixed(1) : "0";
       return (
         <div className="rounded-lg border bg-card px-3 py-2 text-sm shadow-md">
           <p className="font-medium">{entry.name}</p>
-          <p className="text-muted-foreground">${entry.value.toFixed(2)} ({pct}%)</p>
+          <p className="text-muted-foreground">
+            ${entry.value.toFixed(2)} ({pct}%)
+          </p>
         </div>
       );
     }
@@ -72,12 +103,12 @@ export default function BudgetOverview({ categories, transactions }: Props) {
       <CardContent>
         {categories.length === 0 && <p className="text-sm text-muted-foreground">No budget categories yet.</p>}
 
-        {data.length > 0 && (
+        {pieData.length > 0 && (
           <div className="mb-4 h-52">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={data}
+                  data={pieData}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
@@ -86,7 +117,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
                   dataKey="value"
                   strokeWidth={0}
                 >
-                  {data.map((_, i) => (
+                  {pieData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
@@ -96,27 +127,68 @@ export default function BudgetOverview({ categories, transactions }: Props) {
           </div>
         )}
 
-        {data.length === 0 && categories.length > 0 && (
+        {pieData.length === 0 && categories.length > 0 && (
           <p className="mb-4 text-center text-sm text-muted-foreground">No spending this month yet.</p>
         )}
 
         {/* Legend / category list */}
-        <div className="space-y-2">
-          {data.map((entry, i) => (
-            <div key={entry.id} className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <span
-                  className="inline-block h-3 w-3 rounded-full"
-                  style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                />
-                <span className="font-medium">{entry.name}</span>
-                {entry.subCategory && (
-                  <span className="text-xs text-muted-foreground">/ {entry.subCategory}</span>
+        <div className="space-y-1">
+          {grouped.map((entry, i) => {
+            const isExpanded = expanded === entry.name;
+            const hasSubs = entry.subs.length > 1 || (entry.subs.length === 1 && entry.subs[0].name !== "(no sub-category)");
+
+            return (
+              <div key={entry.name}>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-md px-1 py-1.5 text-sm transition-colors hover:bg-muted/50"
+                  onClick={() => hasSubs && setExpanded(isExpanded ? null : entry.name)}
+                >
+                  <div className="flex items-center gap-2">
+                    {hasSubs ? (
+                      isExpanded ? (
+                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      )
+                    ) : (
+                      <span className="w-3.5" />
+                    )}
+                    <span
+                      className="inline-block h-3 w-3 rounded-full"
+                      style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                    />
+                    <span className="font-medium">{entry.name}</span>
+                  </div>
+                  <span className="text-muted-foreground">${entry.value.toFixed(2)}</span>
+                </button>
+
+                {isExpanded && hasSubs && (
+                  <div className="mt-1 mb-2 ml-6 rounded-lg border bg-muted/30 p-3">
+                    <div className="h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={entry.subs} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                          <XAxis type="number" tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                          <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                          <Tooltip
+                            formatter={(value: number) => [`$${value.toFixed(2)}`, "Spent"]}
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "0.5rem",
+                              fontSize: "0.8rem",
+                            }}
+                          />
+                          <Bar dataKey="value" fill={COLORS[i % COLORS.length]} radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 )}
               </div>
-              <span className="text-muted-foreground">${entry.value.toFixed(2)}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
