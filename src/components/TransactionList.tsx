@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Transaction } from "@/hooks/useTransactions";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import { format, parseISO } from "date-fns";
 import EditTransactionDialog from "./EditTransactionDialog";
+import DeleteConfirmButton from "./DeleteConfirmButton";
 
 interface Props {
   transactions: Transaction[];
@@ -99,9 +100,7 @@ export default function TransactionList({ transactions, cards, onDelete }: Props
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingTx(tx)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onDelete(tx.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <DeleteConfirmButton label="this transaction" onConfirm={() => onDelete(tx.id)} />
                         </div>
                       </div>
                     );

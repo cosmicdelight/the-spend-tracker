@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CreditCard as CreditCardIcon, Trash2 } from "lucide-react";
+import { CreditCard as CreditCardIcon } from "lucide-react";
+import DeleteConfirmButton from "./DeleteConfirmButton";
 import { Button } from "@/components/ui/button";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import type { Transaction } from "@/hooks/useTransactions";
@@ -33,9 +34,7 @@ export default function CreditCardProgress({ card, transactions, onDelete }: Pro
           <CreditCardIcon className="h-4 w-4 text-primary" />
           <CardTitle className="text-base">{card.name}</CardTitle>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onDelete(card.id)}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        <DeleteConfirmButton label="this credit card" onConfirm={() => onDelete(card.id)} />
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between text-sm">

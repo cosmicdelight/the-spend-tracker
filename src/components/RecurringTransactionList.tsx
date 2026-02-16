@@ -1,7 +1,8 @@
 import { RecurringTransaction } from "@/hooks/useRecurringTransactions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Trash2 } from "lucide-react";
+import { Play } from "lucide-react";
+import DeleteConfirmButton from "./DeleteConfirmButton";
 
 interface Props {
   recurring: RecurringTransaction[];
@@ -42,9 +43,7 @@ export default function RecurringTransactionList({ recurring, onDelete, onCreate
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCreateNow(rec)} title="Create transaction now">
                 <Play className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(rec.id)}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              <DeleteConfirmButton label="this recurring transaction" onConfirm={() => onDelete(rec.id)} />
             </div>
           </div>
         ))}
