@@ -231,18 +231,24 @@ export default function BudgetOverview({ categories, transactions }: Props) {
         {categories.length === 0 && <p className="text-sm text-muted-foreground">No budget categories yet.</p>}
 
         {pieData.length > 0 && (
-          <div className="mb-4 h-52">
+          <div className="mb-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
+                  innerRadius={45}
+                  outerRadius={75}
                   paddingAngle={3}
                   dataKey="value"
                   strokeWidth={0}
+                  label={({ name, percent, x, y, textAnchor }) => (
+                    <text x={x} y={y} textAnchor={textAnchor} dominantBaseline="central" className="fill-foreground text-[10px] font-medium">
+                      {`${name} ${(percent * 100).toFixed(0)}%`}
+                    </text>
+                  )}
+                  labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }}
                 >
                   {pieData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -259,7 +265,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
         )}
 
         {/* Legend / category list */}
-        <div className="space-y-1">
+        <div className="divide-y">
           {grouped.map((entry, i) => {
             const isExpanded = expanded === entry.name;
             const hasSubs = categories.some((c) => c.name === entry.name && c.sub_category_name);
@@ -268,24 +274,22 @@ export default function BudgetOverview({ categories, transactions }: Props) {
               <div key={entry.name}>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-md px-1 py-1.5 text-sm transition-colors hover:bg-muted/50"
+                  className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/50"
                   onClick={() => setExpanded(isExpanded ? null : entry.name)}
                 >
-                  <div className="flex items-center gap-2">
-                    {isExpanded ? (
-                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                    <span
-                      className="inline-block h-3 w-3 rounded-full"
-                      style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                    />
-                    <span className="font-medium">{entry.name}</span>
-                  </div>
-                  <span className="text-muted-foreground">
-                    ${entry.value.toFixed(2)} ({totalSpent > 0 ? ((entry.value / totalSpent) * 100).toFixed(0) : 0}%)
+                  <span
+                    className="inline-flex min-w-[2.5rem] items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-bold text-white"
+                    style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                  >
+                    {totalSpent > 0 ? ((entry.value / totalSpent) * 100).toFixed(0) : 0}%
                   </span>
+                  <span className="flex-1 text-left font-medium">{entry.name}</span>
+                  <span className="font-medium">${entry.value.toFixed(2)}</span>
+                  {isExpanded ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
                 </button>
 
                 {isExpanded && (
