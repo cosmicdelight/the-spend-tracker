@@ -51,12 +51,15 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
     }
   }, [transaction]);
 
+  const hasSubs = categories?.some((c) => c.name === category && c.sub_category_name) ?? false;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!transaction) return;
     const amt = parseFloat(amount);
     const personal = personalAmount ? parseFloat(personalAmount) : amt;
     if (isNaN(amt) || amt <= 0 || !category || !description.trim()) return;
+    if (paymentMode === "credit_card" && !creditCardId) return;
 
     updateTx.mutate(
       {
@@ -109,15 +112,17 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label>Credit Card</Label>
-            <Select value={creditCardId} onValueChange={setCreditCardId} disabled={paymentMode !== "credit_card"}>
-              <SelectTrigger><SelectValue placeholder="Select card" /></SelectTrigger>
-              <SelectContent>
-                {cards?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {paymentMode === "credit_card" && (
+            <div className="space-y-1.5">
+              <Label>Credit Card</Label>
+              <Select value={creditCardId} onValueChange={setCreditCardId} required>
+                <SelectTrigger><SelectValue placeholder="Select card" /></SelectTrigger>
+                <SelectContent>
+                  {cards?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Category</Label>
             <Select value={category} onValueChange={(v) => { setCategory(v); setSubCategory(""); }} required>
@@ -129,17 +134,19 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label>Sub-category (optional)</Label>
-            <Select value={subCategory} onValueChange={setSubCategory}>
-              <SelectTrigger><SelectValue placeholder="Select sub-category" /></SelectTrigger>
-              <SelectContent>
-                {categories
-                  ?.filter((c) => c.name === category && c.sub_category_name)
-                  .map((c) => <SelectItem key={c.id} value={c.sub_category_name!}>{c.sub_category_name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {hasSubs && (
+            <div className="space-y-1.5">
+              <Label>Sub-category</Label>
+              <Select value={subCategory} onValueChange={setSubCategory}>
+                <SelectTrigger><SelectValue placeholder="Select sub-category" /></SelectTrigger>
+                <SelectContent>
+                  {categories
+                    ?.filter((c) => c.name === category && c.sub_category_name)
+                    .map((c) => <SelectItem key={c.id} value={c.sub_category_name!}>{c.sub_category_name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Description</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" required />
