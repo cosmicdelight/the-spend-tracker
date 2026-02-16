@@ -33,6 +33,7 @@ interface Props {
 
 export default function SpendingTrendsChart({ transactions }: Props) {
   const [months, setMonths] = useState(6);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Build per-month, per-category data for the last N months
   const { chartData, categoryNames } = useMemo(() => {
@@ -109,19 +110,45 @@ export default function SpendingTrendsChart({ transactions }: Props) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg">Spending Trends</CardTitle>
-        <div className="flex gap-1 rounded-lg border bg-muted p-0.5">
-          {[3, 6, 12].map((n) => (
+      <CardHeader className="flex flex-col gap-2 space-y-0 pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Spending Trends</CardTitle>
+          <div className="flex gap-1 rounded-lg border bg-muted p-0.5">
+            {[3, 6, 12].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setMonths(n)}
+                className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                  months === n ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                {n}m
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setSelectedCategory(null)}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+              selectedCategory === null ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            All
+          </button>
+          {categoryNames.map((cat, i) => (
             <button
-              key={n}
+              key={cat}
               type="button"
-              onClick={() => setMonths(n)}
-              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                months === n ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+              onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                selectedCategory === cat ? "text-background" : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
+              style={selectedCategory === cat ? { backgroundColor: LINE_COLORS[i % LINE_COLORS.length] } : undefined}
             >
-              {n}m
+              {cat}
             </button>
           ))}
         </div>
@@ -134,31 +161,40 @@ export default function SpendingTrendsChart({ transactions }: Props) {
               <XAxis dataKey="month" tick={{ fontSize: 11 }} className="text-muted-foreground" />
               <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" tickFormatter={(v) => `$${v}`} />
               <Tooltip content={<CustomTooltip />} />
-              <Legend
-                wrapperStyle={{ fontSize: 11 }}
-                iconType="circle"
-                iconSize={8}
-              />
-              <Line
-                type="monotone"
-                dataKey="Total"
-                stroke="hsl(var(--foreground))"
-                strokeWidth={2.5}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-              {categoryNames.map((cat, i) => (
-                <Line
-                  key={cat}
-                  type="monotone"
-                  dataKey={cat}
-                  stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                  strokeWidth={1.5}
-                  dot={{ r: 2 }}
-                  activeDot={{ r: 4 }}
-                  strokeDasharray={i > 3 ? "4 2" : undefined}
+              {!selectedCategory && (
+                <Legend
+                  wrapperStyle={{ fontSize: 11 }}
+                  iconType="circle"
+                  iconSize={8}
                 />
-              ))}
+              )}
+              {!selectedCategory && (
+                <Line
+                  type="monotone"
+                  dataKey="Total"
+                  stroke="hsl(var(--foreground))"
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              )}
+              {categoryNames
+                .filter((cat) => !selectedCategory || selectedCategory === cat)
+                .map((cat) => {
+                  const i = categoryNames.indexOf(cat);
+                  return (
+                    <Line
+                      key={cat}
+                      type="monotone"
+                      dataKey={cat}
+                      stroke={LINE_COLORS[i % LINE_COLORS.length]}
+                      strokeWidth={selectedCategory ? 2.5 : 1.5}
+                      dot={{ r: selectedCategory ? 3 : 2 }}
+                      activeDot={{ r: selectedCategory ? 5 : 4 }}
+                      strokeDasharray={!selectedCategory && i > 3 ? "4 2" : undefined}
+                    />
+                  );
+                })}
             </LineChart>
           </ResponsiveContainer>
         </div>
