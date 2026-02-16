@@ -165,6 +165,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
   const totalSpent = grouped.reduce((s, d) => s + d.value, 0);
 
   const pieData = grouped.map((g) => ({ name: g.name, value: g.value }));
+  const topLabelNames = new Set(pieData.slice(0, 7).map((d) => d.name));
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload?.[0]) {
@@ -283,12 +284,20 @@ export default function BudgetOverview({ categories, transactions }: Props) {
                   paddingAngle={3}
                   dataKey="value"
                   strokeWidth={0}
-                  label={({ name, percent, x, y, textAnchor }) => (
-                    <text x={x} y={y} textAnchor={textAnchor} dominantBaseline="central" className="fill-foreground text-[10px] font-medium">
-                      {`${name} ${(percent * 100).toFixed(0)}%`}
-                    </text>
-                  )}
-                  labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }}
+                  label={({ name, percent, x, y, textAnchor }) => {
+                    if (!topLabelNames.has(name)) return null;
+                    return (
+                      <text x={x} y={y} textAnchor={textAnchor} dominantBaseline="central" className="fill-foreground text-[10px] font-medium">
+                        {`${name} ${(percent * 100).toFixed(0)}%`}
+                      </text>
+                    );
+                  }}
+                  labelLine={({ points, stroke, name }: any) => {
+                    if (!topLabelNames.has(name)) return <line style={{ display: 'none' }} />;
+                    return (
+                      <path d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`} stroke="hsl(var(--muted-foreground))" strokeWidth={1} fill="none" />
+                    );
+                  }}
                 >
                   {pieData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
