@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
@@ -165,24 +165,40 @@ export default function BudgetOverview({ categories, transactions }: Props) {
 
                 {isExpanded && hasSubs && (
                   <div className="mt-1 mb-2 ml-6 rounded-lg border bg-muted/30 p-3">
-                    <div className="h-40">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={entry.subs} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
-                          <XAxis type="number" tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                          <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                          <Tooltip
-                            formatter={(value: number) => [`$${value.toFixed(2)}`, "Spent"]}
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "0.5rem",
-                              fontSize: "0.8rem",
-                            }}
-                          />
-                          <Bar dataKey="value" fill={COLORS[i % COLORS.length]} radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                    <div className="flex items-center gap-4">
+                      <div className="h-36 w-36 shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={entry.subs}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={30}
+                              outerRadius={55}
+                              paddingAngle={3}
+                              dataKey="value"
+                              strokeWidth={0}
+                            >
+                              {entry.subs.map((_, j) => (
+                                <Cell key={j} fill={COLORS[(i + j + 1) % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        {entry.subs.map((sub, j) => (
+                          <div key={sub.name} className="flex items-center gap-2">
+                            <span
+                              className="inline-block h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: COLORS[(i + j + 1) % COLORS.length] }}
+                            />
+                            <span className="text-muted-foreground">{sub.name}</span>
+                            <span className="font-medium">${sub.value.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
