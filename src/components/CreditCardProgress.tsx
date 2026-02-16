@@ -1,8 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CreditCard as CreditCardIcon } from "lucide-react";
-import DeleteConfirmButton from "./DeleteConfirmButton";
-import { Button } from "@/components/ui/button";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import type { Transaction } from "@/hooks/useTransactions";
 import { differenceInDays, addMonths, parseISO } from "date-fns";
@@ -10,10 +8,9 @@ import { differenceInDays, addMonths, parseISO } from "date-fns";
 interface Props {
   card: CreditCard;
   transactions: Transaction[];
-  onDelete: (id: string) => void;
 }
 
-export default function CreditCardProgress({ card, transactions, onDelete }: Props) {
+export default function CreditCardProgress({ card, transactions }: Props) {
   const cardTxs = transactions.filter((t) => t.credit_card_id === card.id);
   const totalCharged = cardTxs.reduce((s, t) => s + Number(t.amount), 0);
   const personalSpend = cardTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
@@ -29,12 +26,9 @@ export default function CreditCardProgress({ card, transactions, onDelete }: Pro
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div className="flex items-center gap-2">
-          <CreditCardIcon className="h-4 w-4 text-primary" />
-          <CardTitle className="text-base">{card.name}</CardTitle>
-        </div>
-        <DeleteConfirmButton label="this credit card" onConfirm={() => onDelete(card.id)} />
+      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+        <CreditCardIcon className="h-4 w-4 text-primary" />
+        <CardTitle className="text-base">{card.name}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between text-sm">

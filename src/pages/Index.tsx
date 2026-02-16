@@ -1,11 +1,10 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useCreditCards, useDeleteCreditCard } from "@/hooks/useCreditCards";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { useTransactions, useDeleteTransaction } from "@/hooks/useTransactions";
-import { useBudgetCategories, useDeleteBudgetCategory } from "@/hooks/useBudgetCategories";
+import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useRecurringTransactions, useDeleteRecurringTransaction, useCreateFromRecurring } from "@/hooks/useRecurringTransactions";
 import AddTransactionDialog from "@/components/AddTransactionDialog";
-import AddCreditCardDialog from "@/components/AddCreditCardDialog";
 
 import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
 import RecurringTransactionList from "@/components/RecurringTransactionList";
@@ -13,7 +12,7 @@ import CreditCardProgress from "@/components/CreditCardProgress";
 import BudgetOverview from "@/components/BudgetOverview";
 import TransactionList from "@/components/TransactionList";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet, Settings } from "lucide-react";
+import { LogOut, Wallet, Settings, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Index() {
@@ -21,9 +20,7 @@ export default function Index() {
   const { data: cards = [] } = useCreditCards();
   const { data: transactions = [] } = useTransactions();
   const { data: categories = [] } = useBudgetCategories();
-  const deleteCard = useDeleteCreditCard();
   const deleteTx = useDeleteTransaction();
-  const deleteCat = useDeleteBudgetCategory();
   const { data: recurring = [] } = useRecurringTransactions();
   const deleteRec = useDeleteRecurringTransaction();
   const createFromRec = useCreateFromRecurring();
@@ -73,9 +70,10 @@ export default function Index() {
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
           <AddTransactionDialog />
-          <AddCreditCardDialog />
-          
           <AddRecurringTransactionDialog />
+          <Link to="/cards">
+            <Button variant="outline" size="sm"><CreditCard className="mr-1 h-3 w-3" />Manage Cards</Button>
+          </Link>
           <Link to="/categories">
             <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
           </Link>
@@ -87,7 +85,7 @@ export default function Index() {
             <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Credit Card Progress</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {cards.map((card) => (
-                <CreditCardProgress key={card.id} card={card} transactions={transactions} onDelete={(id) => deleteCard.mutate(id)} />
+                <CreditCardProgress key={card.id} card={card} transactions={transactions} />
               ))}
             </div>
           </section>
