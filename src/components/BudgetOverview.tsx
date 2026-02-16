@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, ChevronLeftIcon, ChevronRightIcon } from "lu
 import { format } from "date-fns";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
+import SpendingTrendsChart from "@/components/SpendingTrendsChart";
 
 function CategoryTransactions({ category, transactions }: { category: string; transactions: Transaction[] }) {
   const txs = useMemo(
@@ -173,6 +174,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
   };
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader className="flex flex-col gap-2 space-y-0 pb-2">
         <div className="flex items-center justify-between">
@@ -219,6 +221,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
         </div>
       </CardHeader>
       <CardContent>
+        {/* ... keep existing code (total spend, pie chart, category list) */}
         {totalSpent > 0 && (
           <div className="mb-4 text-center">
             <p className="text-xs text-muted-foreground">Total Personal Spend</p>
@@ -326,7 +329,6 @@ export default function BudgetOverview({ categories, transactions }: Props) {
                         </div>
                       </div>
                     )}
-                    {/* Transaction list for this category */}
                     <CategoryTransactions category={entry.name} transactions={filteredTxs} />
                   </div>
                 )}
@@ -336,5 +338,8 @@ export default function BudgetOverview({ categories, transactions }: Props) {
         </div>
       </CardContent>
     </Card>
+
+    <SpendingTrendsChart transactions={transactions} />
+    </div>
   );
 }
