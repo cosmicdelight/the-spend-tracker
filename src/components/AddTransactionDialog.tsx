@@ -1,0 +1,125 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import { useAddTransaction } from "@/hooks/useTransactions";
+import { useCreditCards } from "@/hooks/useCreditCards";
+import { useBudgetCategories } from "@/hooks/useBudgetCategories";
+import { useToast } from "@/hooks/use-toast";
+
+const PAYMENT_MODES = [
+  { value: "credit_card", label: "Credit Card" },
+  { value: "cash", label: "Cash" },
+  { value: "paynow", label: "PayNow" },
+];
+
+export default function AddTransactionDialog() {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [personalAmount, setPersonalAmount] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [category, setCategory] = useState("");
+  const [paymentMode, setPaymentMode] = useState("credit_card");
+  const [creditCardId, setCreditCardId] = useState<string>("");
+  const [description, setDescription] = useState("");
+
+  const addTx = useAddTransaction();
+  const { data: cards } = useCreditCards();
+  const { data: categories } = useBudgetCategories();
+  const { toast } = useToast();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(amount);
+    const personal = personalAmount ? parseFloat(personalAmount) : amt;
+    if (isNaN(amt) || amt <= 0) return;
+
+    addTx.mutate(
+      {
+        amount: amt,
+        personal_amount: personal,
+        date,
+        category: category || "Uncategorized",
+        payment_mode: paymentMode,
+        credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
+        description: description || null,
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Transaction added" });
+          setOpen(false);
+          setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId("");
+          setCategory("");
+        },
+        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+      }
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button><Plus className="mr-2 h-4 w-4" />Add Transaction</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Total Amount</Label>
+              <Input type="number" step="0.01" min="0" placeholder="200.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Your Share</Label>
+              <Input type="number" step="0.01" min="0" placeholder="Same as total" value={personalAmount} onChange={(e) => setPersonalAmount(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Date</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Payment Mode</Label>
+            <Select value={paymentMode} onValueChange={setPaymentMode}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PAYMENT_MODES.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {paymentMode === "credit_card" && cards && cards.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Credit Card</Label>
+              <Select value={creditCardId} onValueChange={setCreditCardId}>
+                <SelectTrigger><SelectValue placeholder="Select card" /></SelectTrigger>
+                <SelectContent>
+                  {cards.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label>Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Uncategorized">Uncategorized</SelectItem>
+                {categories?.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Description (optional)</Label>
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" />
+          </div>
+          <Button type="submit" className="w-full" disabled={addTx.isPending}>
+            {addTx.isPending ? "Adding..." : "Add Transaction"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
