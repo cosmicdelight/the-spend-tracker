@@ -31,18 +31,22 @@ interface GroupedEntry {
 
 export default function BudgetOverview({ categories, transactions }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [view, setView] = useState<"month" | "year">("month");
 
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  const monthlyTxs = useMemo(
+  const filteredTxs = useMemo(
     () =>
       transactions.filter((t) => {
         const d = new Date(t.date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        if (view === "month") {
+          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        }
+        return d.getFullYear() === currentYear;
       }),
-    [transactions, currentMonth, currentYear],
+    [transactions, currentMonth, currentYear, view],
   );
 
   // Group by parent category name, aggregate spend, collect sub-category breakdown
@@ -53,7 +57,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
       if (!map.has(cat.name)) map.set(cat.name, { total: 0, subs: new Map() });
     }
 
-    for (const tx of monthlyTxs) {
+    for (const tx of filteredTxs) {
       const entry = map.get(tx.category);
       if (!entry) continue;
       const amt = Number(tx.personal_amount);
@@ -73,7 +77,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
       }))
       .filter((g) => g.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [categories, monthlyTxs]);
+  }, [categories, filteredTxs]);
 
   const totalSpent = grouped.reduce((s, d) => s + d.value, 0);
 
@@ -97,8 +101,24 @@ export default function BudgetOverview({ categories, transactions }: Props) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Monthly Budget</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-lg">{view === "month" ? "Monthly" : "Annual"} Budget</CardTitle>
+        <div className="flex gap-1 rounded-lg border bg-muted p-0.5">
+          <button
+            type="button"
+            onClick={() => setView("month")}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "month" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+          >
+            Month
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("year")}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "year" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+          >
+            Year
+          </button>
+        </div>
       </CardHeader>
       <CardContent>
         {categories.length === 0 && <p className="text-sm text-muted-foreground">No budget categories yet.</p>}
@@ -128,7 +148,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
         )}
 
         {pieData.length === 0 && categories.length > 0 && (
-          <p className="mb-4 text-center text-sm text-muted-foreground">No spending this month yet.</p>
+          <p className="mb-4 text-center text-sm text-muted-foreground">No spending {view === "month" ? "this month" : "this year"} yet.</p>
         )}
 
         {/* Legend / category list */}
