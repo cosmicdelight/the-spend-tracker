@@ -89,8 +89,11 @@ export default function BudgetOverview({ categories, transactions }: Props) {
     }
 
     for (const tx of filteredTxs) {
-      const entry = map.get(tx.category);
-      if (!entry) continue;
+      // Create entry for categories not in budget_categories
+      if (!map.has(tx.category)) {
+        map.set(tx.category, { total: 0, subs: new Map() });
+      }
+      const entry = map.get(tx.category)!;
       const amt = Number(tx.personal_amount);
       entry.total += amt;
       const subKey = tx.sub_category || "(no sub-category)";
