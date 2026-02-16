@@ -44,3 +44,14 @@ export function useDeleteBudgetCategory() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["budget_categories"] }),
   });
 }
+
+export function useUpdateBudgetCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name, sub_category_name }: { id: string; name: string; sub_category_name: string | null }) => {
+      const { error } = await supabase.from("budget_categories").update({ name, sub_category_name }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget_categories"] }),
+  });
+}
