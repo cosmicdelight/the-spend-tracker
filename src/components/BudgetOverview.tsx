@@ -121,6 +121,12 @@ export default function BudgetOverview({ categories, transactions }: Props) {
         </div>
       </CardHeader>
       <CardContent>
+        {totalSpent > 0 && (
+          <div className="mb-4 text-center">
+            <p className="text-xs text-muted-foreground">Total Personal Spend</p>
+            <p className="text-2xl font-heading font-bold">${totalSpent.toFixed(2)}</p>
+          </div>
+        )}
         {categories.length === 0 && <p className="text-sm text-muted-foreground">No budget categories yet.</p>}
 
         {pieData.length > 0 && (
