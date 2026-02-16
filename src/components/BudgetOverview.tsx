@@ -160,7 +160,9 @@ export default function BudgetOverview({ categories, transactions }: Props) {
                     />
                     <span className="font-medium">{entry.name}</span>
                   </div>
-                  <span className="text-muted-foreground">${entry.value.toFixed(2)}</span>
+                  <span className="text-muted-foreground">
+                    ${entry.value.toFixed(2)} ({totalSpent > 0 ? ((entry.value / totalSpent) * 100).toFixed(0) : 0}%)
+                  </span>
                 </button>
 
                 {isExpanded && hasSubs && (
