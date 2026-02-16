@@ -6,6 +6,7 @@ import { useTransactions, useDeleteTransaction } from "@/hooks/useTransactions";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useRecurringTransactions, useDeleteRecurringTransaction, useCreateFromRecurring } from "@/hooks/useRecurringTransactions";
 import AddTransactionDialog from "@/components/AddTransactionDialog";
+import ImportTransactionsDialog from "@/components/ImportTransactionsDialog";
 import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
 import RecurringTransactionList from "@/components/RecurringTransactionList";
 import CreditCardProgress from "@/components/CreditCardProgress";
@@ -73,6 +74,7 @@ export default function Index() {
             {/* Actions */}
             <div className="flex flex-wrap gap-2">
               <AddTransactionDialog />
+              <ImportTransactionsDialog />
               <AddRecurringTransactionDialog />
               <Link to="/cards">
                 <Button variant="outline" size="sm"><CreditCard className="mr-1 h-3 w-3" />Manage Cards</Button>
