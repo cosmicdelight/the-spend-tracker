@@ -6,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 
-const EXPECTED_HEADERS = ["date", "amount", "personal_amount", "category", "sub_category", "payment_mode", "description"];
+const REQUIRED_HEADERS = ["date", "amount", "personal_amount", "category", "payment_mode", "description"];
 
 interface ParsedRow {
   date: string;
@@ -17,6 +18,7 @@ interface ParsedRow {
   sub_category: string | null;
   payment_mode: string;
   description: string;
+  currency: string;
 }
 
 function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
@@ -24,9 +26,10 @@ function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
   if (lines.length < 2) return { rows: [], errors: ["File must have a header row and at least one data row."] };
 
   const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
-  const missing = EXPECTED_HEADERS.filter((h) => !headers.includes(h));
+  const missing = REQUIRED_HEADERS.filter((h) => !headers.includes(h));
   if (missing.length) return { rows: [], errors: [`Missing columns: ${missing.join(", ")}`] };
 
+  const hasCurrency = headers.includes("currency");
   const rows: ParsedRow[] = [];
   const errors: string[] = [];
 
@@ -39,6 +42,7 @@ function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
     const date = get("date");
     const category = get("category");
     const description = get("description");
+    const currency = hasCurrency ? (get("currency").toUpperCase() || "SGD") : "SGD";
 
     if (!date || isNaN(amount) || !category) {
       errors.push(`Row ${i + 1}: missing required field (date, amount, or category)`);
@@ -57,6 +61,7 @@ function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
       sub_category: get("sub_category") || null,
       payment_mode: get("payment_mode") || "cash",
       description,
+      currency,
     });
   }
 
@@ -72,6 +77,9 @@ export default function ImportTransactionsDialog() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { convertToSGD } = useCurrencyConversion();
+
+  const hasForeignCurrency = parsed.some((r) => r.currency !== "SGD");
 
   const reset = () => {
     setParsed([]);
@@ -94,18 +102,25 @@ export default function ImportTransactionsDialog() {
   const handleImport = async () => {
     if (!user || parsed.length === 0) return;
     setImporting(true);
-    const payload = parsed.map((r) => ({
-      user_id: user.id,
-      date: r.date,
-      amount: r.amount,
-      personal_amount: r.personal_amount,
-      category: r.category,
-      sub_category: r.sub_category,
-      payment_mode: r.payment_mode,
-      description: r.description,
-      notes: null,
-      credit_card_id: null,
-    }));
+    const payload = parsed.map((r) => {
+      const isForeign = r.currency !== "SGD";
+      const sgdAmount = isForeign ? convertToSGD(r.amount, r.currency) : r.amount;
+      const sgdPersonal = isForeign ? convertToSGD(r.personal_amount, r.currency) : r.personal_amount;
+      return {
+        user_id: user.id,
+        date: r.date,
+        amount: sgdAmount,
+        personal_amount: sgdPersonal,
+        category: r.category,
+        sub_category: r.sub_category,
+        payment_mode: r.payment_mode,
+        description: r.description,
+        notes: null,
+        credit_card_id: null,
+        original_currency: r.currency,
+        original_amount: r.amount,
+      };
+    });
 
     const { error } = await supabase.from("transactions").insert(payload);
     setImporting(false);
@@ -136,13 +151,15 @@ export default function ImportTransactionsDialog() {
           <div>
             <p className="mb-2 text-xs text-muted-foreground">
               Upload a CSV with columns: <span className="font-medium">date, amount, personal_amount, category, sub_category, payment_mode, description</span>.{" "}
+              Optional: <span className="font-medium">currency</span> (defaults to SGD; foreign currencies auto-convert).{" "}
               <button
                 type="button"
                 className="underline text-primary hover:text-primary/80"
                 onClick={() => {
-                  const header = "date,amount,personal_amount,category,sub_category,payment_mode,description";
-                  const sample = "2025-01-15,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends";
-                  const blob = new Blob([header + "\n" + sample + "\n"], { type: "text/csv" });
+                  const header = "date,amount,personal_amount,category,sub_category,payment_mode,description,currency";
+                  const sample1 = "2025-01-15,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends,SGD";
+                  const sample2 = "2025-01-16,30.00,30.00,Travel,Food,cash,Street food in Tokyo,JPY";
+                  const blob = new Blob([header + "\n" + sample1 + "\n" + sample2 + "\n"], { type: "text/csv" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
@@ -176,22 +193,33 @@ export default function ImportTransactionsDialog() {
                   <thead className="sticky top-0 bg-muted">
                     <tr>
                       <th className="px-2 py-1.5 text-left font-medium">Date</th>
+                      {hasForeignCurrency && <th className="px-2 py-1.5 text-left font-medium">Cur</th>}
                       <th className="px-2 py-1.5 text-right font-medium">Amount</th>
                       <th className="px-2 py-1.5 text-right font-medium">Personal</th>
+                      {hasForeignCurrency && <th className="px-2 py-1.5 text-right font-medium">SGD</th>}
                       <th className="px-2 py-1.5 text-left font-medium">Category</th>
                       <th className="px-2 py-1.5 text-left font-medium">Description</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {parsed.map((r, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="px-2 py-1">{r.date}</td>
-                        <td className="px-2 py-1 text-right">${r.amount.toFixed(2)}</td>
-                        <td className="px-2 py-1 text-right">${r.personal_amount.toFixed(2)}</td>
-                        <td className="px-2 py-1">{r.category}</td>
-                        <td className="px-2 py-1 truncate max-w-[8rem]">{r.description}</td>
-                      </tr>
-                    ))}
+                    {parsed.map((r, i) => {
+                      const isForeign = r.currency !== "SGD";
+                      return (
+                        <tr key={i} className="border-t">
+                          <td className="px-2 py-1">{r.date}</td>
+                          {hasForeignCurrency && <td className="px-2 py-1">{r.currency}</td>}
+                          <td className="px-2 py-1 text-right">{r.amount.toFixed(2)}</td>
+                          <td className="px-2 py-1 text-right">{r.personal_amount.toFixed(2)}</td>
+                          {hasForeignCurrency && (
+                            <td className="px-2 py-1 text-right text-muted-foreground">
+                              {isForeign ? `≈${convertToSGD(r.amount, r.currency).toFixed(2)}` : "-"}
+                            </td>
+                          )}
+                          <td className="px-2 py-1">{r.category}</td>
+                          <td className="px-2 py-1 truncate max-w-[8rem]">{r.description}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
