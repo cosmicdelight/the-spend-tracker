@@ -75,7 +75,6 @@ export default function Index() {
           <AddCreditCardDialog />
           <AddBudgetCategoryDialog />
           <AddRecurringTransactionDialog />
-          <AddBudgetCategoryDialog />
         </div>
 
         {/* Credit Cards */}
