@@ -135,7 +135,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
         <div className="space-y-1">
           {grouped.map((entry, i) => {
             const isExpanded = expanded === entry.name;
-            const hasSubs = entry.subs.length > 1 || (entry.subs.length === 1 && entry.subs[0].name !== "(no sub-category)");
+            const hasSubs = categories.some((c) => c.name === entry.name && c.sub_category_name);
 
             return (
               <div key={entry.name}>
