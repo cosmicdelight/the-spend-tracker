@@ -75,7 +75,7 @@ export default function AddTransactionDialog() {
       <DialogTrigger asChild>
         <Button><Plus className="mr-2 h-4 w-4" />Add Transaction</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
