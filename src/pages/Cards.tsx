@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useCreditCards, useDeleteCreditCard } from "@/hooks/useCreditCards";
+import { useCreditCards, useDeleteCreditCard, type CreditCard } from "@/hooks/useCreditCards";
 import { useTransactions } from "@/hooks/useTransactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard as CreditCardIcon } from "lucide-react";
+import { ArrowLeft, CreditCard as CreditCardIcon, Pencil } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { differenceInDays, addMonths, parseISO } from "date-fns";
 import AddCreditCardDialog from "@/components/AddCreditCardDialog";
+import EditCreditCardDialog from "@/components/EditCreditCardDialog";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 
 export default function Cards() {
@@ -15,6 +17,7 @@ export default function Cards() {
   const { data: cards = [] } = useCreditCards();
   const { data: transactions = [] } = useTransactions();
   const deleteCard = useDeleteCreditCard();
+  const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -52,7 +55,12 @@ export default function Cards() {
                     <CreditCardIcon className="h-4 w-4 text-primary" />
                     <CardTitle className="text-base">{card.name}</CardTitle>
                   </div>
-                  <DeleteConfirmButton label="this credit card" onConfirm={() => deleteCard.mutate(card.id)} />
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingCard(card)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <DeleteConfirmButton label="this credit card" onConfirm={() => deleteCard.mutate(card.id)} />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -74,6 +82,8 @@ export default function Cards() {
           <p className="text-center text-sm text-muted-foreground py-8">No credit cards yet. Add one above!</p>
         )}
       </main>
+
+      <EditCreditCardDialog card={editingCard} open={!!editingCard} onOpenChange={(o) => !o && setEditingCard(null)} />
     </div>
   );
 }
