@@ -45,6 +45,13 @@ function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
       errors.push(`Row ${i + 1}: missing required field (date, amount, or category)`);
       continue;
     }
+
+    // Validate date format YYYY-MM-DD
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date))) {
+      errors.push(`Row ${i + 1}: invalid date "${date}" — expected format YYYY-MM-DD (e.g. 2026-01-15)`);
+      continue;
+    }
+
     if (isNaN(personalAmount)) {
       errors.push(`Row ${i + 1}: invalid personal_amount`);
       continue;
