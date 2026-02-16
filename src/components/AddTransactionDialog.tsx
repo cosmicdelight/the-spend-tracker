@@ -9,14 +9,8 @@ import { useAddTransaction } from "@/hooks/useTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
-
-const PAYMENT_MODES = [
-  { value: "credit_card", label: "Credit Card" },
-  { value: "cash", label: "Cash" },
-  { value: "paynow", label: "PayNow" },
-  { value: "giro", label: "GIRO" },
-];
 
 export default function AddTransactionDialog() {
   const [open, setOpen] = useState(false);
@@ -34,6 +28,7 @@ export default function AddTransactionDialog() {
   const addTx = useAddTransaction();
   const { data: cards } = useCreditCards();
   const { data: categories } = useBudgetCategories();
+  const { data: paymentModes = [] } = usePaymentModes();
   const { convertToSGD, currencies, loading: ratesLoading } = useCurrencyConversion();
   const { toast } = useToast();
 
@@ -117,7 +112,7 @@ export default function AddTransactionDialog() {
             <Select value={paymentMode} onValueChange={setPaymentMode}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {PAYMENT_MODES.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                {paymentModes.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

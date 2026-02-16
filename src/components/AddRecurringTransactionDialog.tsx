@@ -9,14 +9,8 @@ import { Repeat } from "lucide-react";
 import { useAddRecurringTransaction } from "@/hooks/useRecurringTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
+import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
-
-const PAYMENT_MODES = [
-  { value: "credit_card", label: "Credit Card" },
-  { value: "cash", label: "Cash" },
-  { value: "paynow", label: "PayNow" },
-  { value: "giro", label: "GIRO" },
-];
 
 const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -39,6 +33,7 @@ export default function AddRecurringTransactionDialog() {
   const addRec = useAddRecurringTransaction();
   const { data: cards } = useCreditCards();
   const { data: categories } = useBudgetCategories();
+  const { data: paymentModes = [] } = usePaymentModes();
   const { toast } = useToast();
 
   const hasSubs = categories?.some((c) => c.name === category && c.sub_category_name) ?? false;
@@ -154,7 +149,7 @@ export default function AddRecurringTransactionDialog() {
             <Select value={paymentMode} onValueChange={setPaymentMode}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {PAYMENT_MODES.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                {paymentModes.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

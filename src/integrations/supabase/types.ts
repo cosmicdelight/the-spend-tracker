@@ -71,6 +71,33 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_modes: {
+        Row: {
+          created_at: string
+          id: string
+          is_system: boolean
+          label: string
+          user_id: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          label: string
+          user_id: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          label?: string
+          user_id?: string
+          value?: string
+        }
+        Relationships: []
+      }
       recurring_transactions: {
         Row: {
           amount: number
