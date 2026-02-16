@@ -1,9 +1,48 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { ChevronDown, ChevronRight, ChevronLeft, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { format } from "date-fns";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
+
+function CategoryTransactions({ category, transactions }: { category: string; transactions: Transaction[] }) {
+  const txs = useMemo(
+    () => transactions
+      .filter((t) => t.category === category)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    [transactions, category],
+  );
+
+  if (txs.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border bg-muted/30 p-3">
+      <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        Transactions ({txs.length})
+      </p>
+      <div className="max-h-60 space-y-1 overflow-y-auto">
+        {txs.map((tx) => (
+          <div key={tx.id} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50">
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{tx.description || tx.sub_category || "—"}</p>
+              <p className="text-xs text-muted-foreground">
+                {format(new Date(tx.date), "MMM d, yyyy")}
+                {tx.sub_category && tx.description ? ` · ${tx.sub_category}` : ""}
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="font-medium">${Number(tx.personal_amount).toFixed(2)}</p>
+              {Number(tx.amount) !== Number(tx.personal_amount) && (
+                <p className="text-xs text-muted-foreground">${Number(tx.amount).toFixed(2)} total</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -227,17 +266,13 @@ export default function BudgetOverview({ categories, transactions }: Props) {
                 <button
                   type="button"
                   className="flex w-full items-center justify-between rounded-md px-1 py-1.5 text-sm transition-colors hover:bg-muted/50"
-                  onClick={() => hasSubs && setExpanded(isExpanded ? null : entry.name)}
+                  onClick={() => setExpanded(isExpanded ? null : entry.name)}
                 >
                   <div className="flex items-center gap-2">
-                    {hasSubs ? (
-                      isExpanded ? (
-                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                      )
+                    {isExpanded ? (
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                     ) : (
-                      <span className="w-3.5" />
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                     )}
                     <span
                       className="inline-block h-3 w-3 rounded-full"
@@ -250,43 +285,49 @@ export default function BudgetOverview({ categories, transactions }: Props) {
                   </span>
                 </button>
 
-                {isExpanded && hasSubs && (
-                  <div className="mt-1 mb-2 ml-6 rounded-lg border bg-muted/30 p-3">
-                    <div className="flex items-center gap-4">
-                      <div className="h-36 w-36 shrink-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={entry.subs}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={30}
-                              outerRadius={55}
-                              paddingAngle={3}
-                              dataKey="value"
-                              strokeWidth={0}
-                            >
-                              {entry.subs.map((_, j) => (
-                                <Cell key={j} fill={COLORS[(i + j + 1) % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        {entry.subs.map((sub, j) => (
-                          <div key={sub.name} className="flex items-center gap-2">
-                            <span
-                              className="inline-block h-2.5 w-2.5 rounded-full"
-                              style={{ backgroundColor: COLORS[(i + j + 1) % COLORS.length] }}
-                            />
-                            <span className="text-muted-foreground">{sub.name}</span>
-                            <span className="font-medium">${sub.value.toFixed(2)}</span>
+                {isExpanded && (
+                  <div className="mt-1 mb-2 ml-6 space-y-3">
+                    {hasSubs && (
+                      <div className="rounded-lg border bg-muted/30 p-3">
+                        <div className="flex items-center gap-4">
+                          <div className="h-36 w-36 shrink-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={entry.subs}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={30}
+                                  outerRadius={55}
+                                  paddingAngle={3}
+                                  dataKey="value"
+                                  strokeWidth={0}
+                                >
+                                  {entry.subs.map((_, j) => (
+                                    <Cell key={j} fill={COLORS[(i + j + 1) % COLORS.length]} />
+                                  ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                              </PieChart>
+                            </ResponsiveContainer>
                           </div>
-                        ))}
+                          <div className="space-y-1 text-sm">
+                            {entry.subs.map((sub, j) => (
+                              <div key={sub.name} className="flex items-center gap-2">
+                                <span
+                                  className="inline-block h-2.5 w-2.5 rounded-full"
+                                  style={{ backgroundColor: COLORS[(i + j + 1) % COLORS.length] }}
+                                />
+                                <span className="text-muted-foreground">{sub.name}</span>
+                                <span className="font-medium">${sub.value.toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    {/* Transaction list for this category */}
+                    <CategoryTransactions category={entry.name} transactions={filteredTxs} />
                   </div>
                 )}
               </div>
