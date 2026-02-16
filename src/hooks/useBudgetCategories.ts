@@ -6,6 +6,7 @@ export interface BudgetCategory {
   id: string;
   name: string;
   monthly_limit: number;
+  sub_category_name: string | null;
   created_at: string;
 }
 
@@ -26,7 +27,7 @@ export function useAddBudgetCategory() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (cat: { name: string; monthly_limit: number }) => {
+    mutationFn: async (cat: { name: string; sub_category_name?: string | null }) => {
       const { error } = await supabase.from("budget_categories").insert({ ...cat, user_id: user!.id });
       if (error) throw error;
     },

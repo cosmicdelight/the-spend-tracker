@@ -20,6 +20,7 @@ export type Database = {
           id: string
           monthly_limit: number
           name: string
+          sub_category_name: string | null
           user_id: string
         }
         Insert: {
@@ -27,6 +28,7 @@ export type Database = {
           id?: string
           monthly_limit?: number
           name: string
+          sub_category_name?: string | null
           user_id: string
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           id?: string
           monthly_limit?: number
           name?: string
+          sub_category_name?: string | null
           user_id?: string
         }
         Relationships: []
