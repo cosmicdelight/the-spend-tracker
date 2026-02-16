@@ -12,6 +12,7 @@ import RecurringTransactionList from "@/components/RecurringTransactionList";
 import CreditCardProgress from "@/components/CreditCardProgress";
 import BudgetOverview from "@/components/BudgetOverview";
 import TransactionList from "@/components/TransactionList";
+import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import { Button } from "@/components/ui/button";
 import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -48,7 +49,10 @@ export default function Index() {
             <Wallet className="h-5 w-5 text-primary" />
             <h1 className="text-lg font-heading font-bold">SpendTracker</h1>
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="mr-1.5 h-4 w-4" />Sign Out</Button>
+          <div className="flex items-center gap-1">
+            <ChangePasswordDialog />
+            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="mr-1.5 h-4 w-4" />Sign Out</Button>
+          </div>
         </div>
       </header>
 
