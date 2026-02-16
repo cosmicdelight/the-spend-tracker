@@ -6,8 +6,11 @@ import { format } from "date-fns";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
 import SpendingTrendsChart from "@/components/SpendingTrendsChart";
+import EditTransactionDialog from "@/components/EditTransactionDialog";
 
 function CategoryTransactions({ category, transactions }: { category: string; transactions: Transaction[] }) {
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
+
   const txs = useMemo(
     () => transactions
       .filter((t) => t.category === category)
@@ -24,7 +27,12 @@ function CategoryTransactions({ category, transactions }: { category: string; tr
       </p>
       <div className="max-h-60 space-y-1 overflow-y-auto">
         {txs.map((tx) => (
-          <div key={tx.id} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50">
+          <button
+            key={tx.id}
+            type="button"
+            onClick={() => setEditTx(tx)}
+            className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors hover:bg-muted/50 cursor-pointer"
+          >
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{tx.description || tx.sub_category || "—"}</p>
               <p className="text-xs text-muted-foreground">
@@ -38,9 +46,10 @@ function CategoryTransactions({ category, transactions }: { category: string; tr
                 <p className="text-xs text-muted-foreground">${Number(tx.amount).toFixed(2)} total</p>
               )}
             </div>
-          </div>
+          </button>
         ))}
       </div>
+      <EditTransactionDialog transaction={editTx} open={!!editTx} onOpenChange={(open) => { if (!open) setEditTx(null); }} />
     </div>
   );
 }
