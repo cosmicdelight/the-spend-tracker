@@ -132,7 +132,7 @@ export default function Index() {
             }>
 
             <PieChart className="h-5 w-5" />
-            Budget
+            Statistics
           </button>
         </div>
       </nav>
