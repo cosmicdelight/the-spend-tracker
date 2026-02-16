@@ -13,7 +13,8 @@ import CreditCardProgress from "@/components/CreditCardProgress";
 import BudgetOverview from "@/components/BudgetOverview";
 import TransactionList from "@/components/TransactionList";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet } from "lucide-react";
+import { LogOut, Wallet, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -75,6 +76,9 @@ export default function Index() {
           <AddCreditCardDialog />
           <AddBudgetCategoryDialog />
           <AddRecurringTransactionDialog />
+          <Link to="/categories">
+            <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
+          </Link>
         </div>
 
         {/* Credit Cards */}
