@@ -187,6 +187,7 @@ export default function AddRecurringTransactionDialog() {
                 <SelectContent>
                   {categories
                     ?.filter((c) => c.name === category && c.sub_category_name)
+                    .sort((a, b) => a.sub_category_name!.localeCompare(b.sub_category_name!))
                     .map((c) => <SelectItem key={c.id} value={c.sub_category_name!}>{c.sub_category_name}</SelectItem>)}
                 </SelectContent>
               </Select>
