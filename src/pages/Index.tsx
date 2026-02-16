@@ -6,7 +6,7 @@ import { useBudgetCategories, useDeleteBudgetCategory } from "@/hooks/useBudgetC
 import { useRecurringTransactions, useDeleteRecurringTransaction, useCreateFromRecurring } from "@/hooks/useRecurringTransactions";
 import AddTransactionDialog from "@/components/AddTransactionDialog";
 import AddCreditCardDialog from "@/components/AddCreditCardDialog";
-import AddBudgetCategoryDialog from "@/components/AddBudgetCategoryDialog";
+
 import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
 import RecurringTransactionList from "@/components/RecurringTransactionList";
 import CreditCardProgress from "@/components/CreditCardProgress";
@@ -74,7 +74,7 @@ export default function Index() {
         <div className="flex flex-wrap gap-2">
           <AddTransactionDialog />
           <AddCreditCardDialog />
-          <AddBudgetCategoryDialog />
+          
           <AddRecurringTransactionDialog />
           <Link to="/categories">
             <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
