@@ -13,6 +13,8 @@ export interface Transaction {
   description: string | null;
   notes: string | null;
   sub_category: string | null;
+  original_currency: string;
+  original_amount: number;
   created_at: string;
 }
 

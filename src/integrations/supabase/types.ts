@@ -155,6 +155,8 @@ export type Database = {
           description: string | null
           id: string
           notes: string | null
+          original_amount: number
+          original_currency: string
           payment_mode: string
           personal_amount: number
           sub_category: string | null
@@ -169,6 +171,8 @@ export type Database = {
           description?: string | null
           id?: string
           notes?: string | null
+          original_amount?: number
+          original_currency?: string
           payment_mode?: string
           personal_amount?: number
           sub_category?: string | null
@@ -183,6 +187,8 @@ export type Database = {
           description?: string | null
           id?: string
           notes?: string | null
+          original_amount?: number
+          original_currency?: string
           payment_mode?: string
           personal_amount?: number
           sub_category?: string | null

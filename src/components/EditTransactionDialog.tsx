@@ -42,8 +42,18 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
 
   useEffect(() => {
     if (transaction) {
-      setAmount(String(transaction.amount));
-      setPersonalAmount(String(transaction.personal_amount));
+      const cur = transaction.original_currency || "SGD";
+      setCurrency(cur);
+      if (cur !== "SGD" && transaction.original_amount > 0) {
+        setAmount(String(transaction.original_amount));
+        // Derive personal share ratio from SGD amounts
+        const ratio = transaction.amount > 0 ? transaction.personal_amount / transaction.amount : 1;
+        const origPersonal = transaction.original_amount * ratio;
+        setPersonalAmount(ratio < 1 ? String(Math.round(origPersonal * 100) / 100) : "");
+      } else {
+        setAmount(String(transaction.amount));
+        setPersonalAmount(String(transaction.personal_amount));
+      }
       setDate(transaction.date);
       setCategory(transaction.category);
       setSubCategory(transaction.sub_category || "");
@@ -51,7 +61,6 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
       setCreditCardId(transaction.credit_card_id || "");
       setDescription(transaction.description || "");
       setNotes(transaction.notes || "");
-      setCurrency("SGD"); // Editing always starts in SGD (stored values)
     }
   }, [transaction]);
 
@@ -78,8 +87,10 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
         payment_mode: paymentMode,
         credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
-        notes: currency !== "SGD" ? `${currency} ${amtNum.toFixed(2)}${notes ? ` | ${notes}` : ""}` : notes || null,
+        notes: notes || null,
         sub_category: subCategory || null,
+        original_currency: currency,
+        original_amount: amtNum,
       },
       {
         onSuccess: () => {
