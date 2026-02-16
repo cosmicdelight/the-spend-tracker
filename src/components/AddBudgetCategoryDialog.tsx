@@ -10,16 +10,16 @@ import { useToast } from "@/hooks/use-toast";
 export default function AddBudgetCategoryDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [limit, setLimit] = useState("");
+  const [subCategoryName, setSubCategoryName] = useState("");
   const add = useAddBudgetCategory();
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     add.mutate(
-      { name, monthly_limit: parseFloat(limit) },
+      { name, sub_category_name: subCategoryName || null },
       {
-        onSuccess: () => { toast({ title: "Category added" }); setOpen(false); setName(""); setLimit(""); },
+        onSuccess: () => { toast({ title: "Category added" }); setOpen(false); setName(""); setSubCategoryName(""); },
         onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
       }
     );
@@ -34,7 +34,7 @@ export default function AddBudgetCategoryDialog() {
         <DialogHeader><DialogTitle>Add Budget Category</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5"><Label>Category Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Food" required /></div>
-          <div className="space-y-1.5"><Label>Monthly Limit ($)</Label><Input type="number" step="0.01" min="0" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="500" required /></div>
+          <div className="space-y-1.5"><Label>Sub-Category Name (optional)</Label><Input value={subCategoryName} onChange={(e) => setSubCategoryName(e.target.value)} placeholder="Fast Food" /></div>
           <Button type="submit" className="w-full" disabled={add.isPending}>{add.isPending ? "Adding..." : "Add Category"}</Button>
         </form>
       </DialogContent>

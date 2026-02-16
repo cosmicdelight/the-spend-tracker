@@ -1,0 +1,1 @@
+ALTER TABLE public.budget_categories ADD COLUMN sub_category_name text;
