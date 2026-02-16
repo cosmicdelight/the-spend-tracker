@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
-const EXPECTED_HEADERS = ["date", "amount", "personal_amount", "category", "sub_category", "payment_mode", "description"];
+const EXPECTED_HEADERS = ["date", "amount", "personal_amount", "category", "sub_category", "payment_mode", "description", "notes"];
 
 interface ParsedRow {
   date: string;
@@ -17,6 +17,7 @@ interface ParsedRow {
   sub_category: string | null;
   payment_mode: string;
   description: string;
+  notes: string | null;
 }
 
 function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
@@ -57,6 +58,7 @@ function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
       sub_category: get("sub_category") || null,
       payment_mode: get("payment_mode") || "cash",
       description,
+      notes: get("notes") || null,
     });
   }
 
@@ -103,7 +105,7 @@ export default function ImportTransactionsDialog() {
       sub_category: r.sub_category,
       payment_mode: r.payment_mode,
       description: r.description,
-      notes: null,
+      notes: r.notes,
       credit_card_id: null,
     }));
 
@@ -135,13 +137,13 @@ export default function ImportTransactionsDialog() {
         <div className="space-y-4">
           <div>
             <p className="mb-2 text-xs text-muted-foreground">
-              Upload a CSV with columns: <span className="font-medium">date, amount, personal_amount, category, sub_category, payment_mode, description</span>.{" "}
+              Upload a CSV with columns: <span className="font-medium">date, amount, personal_amount, category, sub_category, payment_mode, description, notes</span>.{" "}
               <button
                 type="button"
                 className="underline text-primary hover:text-primary/80"
                 onClick={() => {
-                  const header = "date,amount,personal_amount,category,sub_category,payment_mode,description";
-                  const sample = "2025-01-15,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends";
+                  const header = "date,amount,personal_amount,category,sub_category,payment_mode,description,notes";
+                  const sample = "2025-01-15,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends,Split with John";
                   const blob = new Blob([header + "\n" + sample + "\n"], { type: "text/csv" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
