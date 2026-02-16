@@ -71,6 +71,80 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_transactions: {
+        Row: {
+          amount: number
+          auto_generate: boolean
+          category: string
+          created_at: string
+          credit_card_id: string | null
+          day_of_month: number | null
+          day_of_week: number | null
+          description: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          last_generated_at: string | null
+          next_due_date: string
+          notes: string | null
+          payment_mode: string
+          personal_amount: number
+          sub_category: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          auto_generate?: boolean
+          category: string
+          created_at?: string
+          credit_card_id?: string | null
+          day_of_month?: number | null
+          day_of_week?: number | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          next_due_date?: string
+          notes?: string | null
+          payment_mode?: string
+          personal_amount?: number
+          sub_category?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          auto_generate?: boolean
+          category?: string
+          created_at?: string
+          credit_card_id?: string | null
+          day_of_month?: number | null
+          day_of_week?: number | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          next_due_date?: string
+          notes?: string | null
+          payment_mode?: string
+          personal_amount?: number
+          sub_category?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_transactions_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number

@@ -3,9 +3,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCreditCards, useDeleteCreditCard } from "@/hooks/useCreditCards";
 import { useTransactions, useDeleteTransaction } from "@/hooks/useTransactions";
 import { useBudgetCategories, useDeleteBudgetCategory } from "@/hooks/useBudgetCategories";
+import { useRecurringTransactions, useDeleteRecurringTransaction, useCreateFromRecurring } from "@/hooks/useRecurringTransactions";
 import AddTransactionDialog from "@/components/AddTransactionDialog";
 import AddCreditCardDialog from "@/components/AddCreditCardDialog";
 import AddBudgetCategoryDialog from "@/components/AddBudgetCategoryDialog";
+import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
+import RecurringTransactionList from "@/components/RecurringTransactionList";
 import CreditCardProgress from "@/components/CreditCardProgress";
 import BudgetOverview from "@/components/BudgetOverview";
 import TransactionList from "@/components/TransactionList";
@@ -20,6 +23,9 @@ export default function Index() {
   const deleteCard = useDeleteCreditCard();
   const deleteTx = useDeleteTransaction();
   const deleteCat = useDeleteBudgetCategory();
+  const { data: recurring = [] } = useRecurringTransactions();
+  const deleteRec = useDeleteRecurringTransaction();
+  const createFromRec = useCreateFromRecurring();
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -68,6 +74,8 @@ export default function Index() {
           <AddTransactionDialog />
           <AddCreditCardDialog />
           <AddBudgetCategoryDialog />
+          <AddRecurringTransactionDialog />
+          <AddBudgetCategoryDialog />
         </div>
 
         {/* Credit Cards */}
@@ -81,6 +89,13 @@ export default function Index() {
             </div>
           </section>
         )}
+
+        {/* Recurring Transactions */}
+        <RecurringTransactionList
+          recurring={recurring}
+          onDelete={(id) => deleteRec.mutate(id)}
+          onCreateNow={(rec) => createFromRec.mutate(rec)}
+        />
 
         {/* Budget + Transactions */}
         <div className="grid gap-6 lg:grid-cols-2">
