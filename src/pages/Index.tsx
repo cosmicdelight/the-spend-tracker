@@ -13,6 +13,7 @@ import CreditCardProgress from "@/components/CreditCardProgress";
 import BudgetOverview from "@/components/BudgetOverview";
 import TransactionList from "@/components/TransactionList";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import ManagePaymentModesDialog from "@/components/ManagePaymentModesDialog";
 import { Button } from "@/components/ui/button";
 import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -86,6 +87,7 @@ export default function Index() {
               <Link to="/categories">
                 <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
               </Link>
+              <ManagePaymentModesDialog />
             </div>
 
             {/* Credit Cards */}
