@@ -66,7 +66,7 @@ export default function Index() {
               </div>
               <div className="col-span-2 sm:col-span-1 rounded-xl border bg-card p-4">
                 <p className="text-xs text-muted-foreground text-center">Others Owe You</p>
-                <p className="mt-1 text-xl font-heading font-bold">${(totalCharged - totalPersonal).toFixed(2)}</p>
+                <p className="mt-1 text-xl font-heading font-bold text-center">${(totalCharged - totalPersonal).toFixed(2)}</p>
               </div>
             </div>
 
