@@ -1,6 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
@@ -21,7 +19,6 @@ const COLORS = [
 interface Props {
   categories: BudgetCategory[];
   transactions: Transaction[];
-  onDeleteCategory: (id: string) => void;
 }
 
 interface ChartEntry {
@@ -31,7 +28,7 @@ interface ChartEntry {
   subCategory?: string | null;
 }
 
-export default function BudgetOverview({ categories, transactions, onDeleteCategory }: Props) {
+export default function BudgetOverview({ categories, transactions }: Props) {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -48,7 +45,8 @@ export default function BudgetOverview({ categories, transactions, onDeleteCateg
         .reduce((s, t) => s + Number(t.personal_amount), 0);
       return { name: cat.name, value: spent, id: cat.id, subCategory: cat.sub_category_name };
     })
-    .filter((d) => d.value > 0);
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   const totalSpent = data.reduce((s, d) => s + d.value, 0);
 
@@ -104,32 +102,21 @@ export default function BudgetOverview({ categories, transactions, onDeleteCateg
 
         {/* Legend / category list */}
         <div className="space-y-2">
-          {categories.map((cat, i) => {
-            const spent = monthlyTxs
-              .filter((t) => t.category === cat.name)
-              .reduce((s, t) => s + Number(t.personal_amount), 0);
-
-            return (
-              <div key={cat.id} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block h-3 w-3 rounded-full"
-                    style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                  />
-                  <span className="font-medium">{cat.name}</span>
-                  {cat.sub_category_name && (
-                    <span className="text-xs text-muted-foreground">/ {cat.sub_category_name}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">${spent.toFixed(2)}</span>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => onDeleteCategory(cat.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
+          {data.map((entry, i) => (
+            <div key={entry.id} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block h-3 w-3 rounded-full"
+                  style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                />
+                <span className="font-medium">{entry.name}</span>
+                {entry.subCategory && (
+                  <span className="text-xs text-muted-foreground">/ {entry.subCategory}</span>
+                )}
               </div>
-            );
-          })}
+              <span className="text-muted-foreground">${entry.value.toFixed(2)}</span>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
