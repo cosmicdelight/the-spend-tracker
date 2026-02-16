@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { usePaymentModes } from "@/hooks/usePaymentModes";
 
 const EXPECTED_HEADERS = ["date", "amount", "personal_amount", "category", "sub_category", "payment_mode", "description", "notes"];
 
@@ -81,6 +82,22 @@ export default function ImportTransactionsDialog() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { data: paymentModes = [] } = usePaymentModes();
+
+  // Build a lookup to normalize payment_mode values from CSV
+  const normalizePaymentMode = useCallback((raw: string): string => {
+    const lower = raw.toLowerCase().trim();
+    // Try exact value match
+    const exactMatch = paymentModes.find((m) => m.value === lower);
+    if (exactMatch) return exactMatch.value;
+    // Try label match (case-insensitive)
+    const labelMatch = paymentModes.find((m) => m.label.toLowerCase() === lower);
+    if (labelMatch) return labelMatch.value;
+    // Common aliases
+    if (lower === "card" || lower === "cc") return "credit_card";
+    // Fallback to raw value
+    return raw;
+  }, [paymentModes]);
 
   const reset = () => {
     setParsed([]);
@@ -110,7 +127,7 @@ export default function ImportTransactionsDialog() {
       personal_amount: r.personal_amount,
       category: r.category,
       sub_category: r.sub_category,
-      payment_mode: r.payment_mode,
+      payment_mode: normalizePaymentMode(r.payment_mode),
       description: r.description,
       notes: r.notes,
       credit_card_id: null,
