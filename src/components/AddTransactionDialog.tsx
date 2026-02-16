@@ -108,7 +108,9 @@ export default function AddTransactionDialog() {
             <Select value={category} onValueChange={setCategory} required>
               <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
               <SelectContent>
-                {categories?.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                {[...new Set(categories?.map((c) => c.name))].map((name) => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
