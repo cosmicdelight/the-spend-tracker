@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeft, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
 
@@ -29,24 +29,55 @@ interface GroupedEntry {
   subs: { name: string; value: number }[];
 }
 
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 export default function BudgetOverview({ categories, transactions }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [view, setView] = useState<"month" | "year">("month");
 
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  const goBack = () => {
+    if (view === "month") {
+      if (selectedMonth === 0) { setSelectedMonth(11); setSelectedYear((y) => y - 1); }
+      else setSelectedMonth((m) => m - 1);
+    } else {
+      setSelectedYear((y) => y - 1);
+    }
+  };
+
+  const goForward = () => {
+    if (view === "month") {
+      const isCurrentPeriod = selectedMonth === now.getMonth() && selectedYear === now.getFullYear();
+      if (isCurrentPeriod) return;
+      if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear((y) => y + 1); }
+      else setSelectedMonth((m) => m + 1);
+    } else {
+      if (selectedYear >= now.getFullYear()) return;
+      setSelectedYear((y) => y + 1);
+    }
+  };
+
+  const isAtCurrent = view === "month"
+    ? selectedMonth === now.getMonth() && selectedYear === now.getFullYear()
+    : selectedYear === now.getFullYear();
+
+  const periodLabel = view === "month"
+    ? `${MONTH_NAMES[selectedMonth]} ${selectedYear}`
+    : `${selectedYear}`;
 
   const filteredTxs = useMemo(
     () =>
       transactions.filter((t) => {
         const d = new Date(t.date);
         if (view === "month") {
-          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+          return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
         }
-        return d.getFullYear() === currentYear;
+        return d.getFullYear() === selectedYear;
       }),
-    [transactions, currentMonth, currentYear, view],
+    [transactions, selectedMonth, selectedYear, view],
   );
 
   // Group by parent category name, aggregate spend, collect sub-category breakdown
@@ -101,22 +132,38 @@ export default function BudgetOverview({ categories, transactions }: Props) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg">{view === "month" ? "Monthly" : "Annual"} Budget</CardTitle>
-        <div className="flex gap-1 rounded-lg border bg-muted p-0.5">
-          <button
-            type="button"
-            onClick={() => setView("month")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "month" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
-          >
-            Month
+      <CardHeader className="flex flex-col gap-2 space-y-0 pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{view === "month" ? "Monthly" : "Annual"} Budget</CardTitle>
+          <div className="flex gap-1 rounded-lg border bg-muted p-0.5">
+            <button
+              type="button"
+              onClick={() => setView("month")}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "month" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+            >
+              Month
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("year")}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "year" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+            >
+              Year
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-3">
+          <button type="button" onClick={goBack} className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            <ChevronLeftIcon className="h-4 w-4" />
           </button>
+          <span className="min-w-[5rem] text-center text-sm font-medium">{periodLabel}</span>
           <button
             type="button"
-            onClick={() => setView("year")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "year" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+            onClick={goForward}
+            disabled={isAtCurrent}
+            className={`rounded-md p-1 transition-colors ${isAtCurrent ? "text-muted-foreground/30 cursor-not-allowed" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
           >
-            Year
+            <ChevronRightIcon className="h-4 w-4" />
           </button>
         </div>
       </CardHeader>
