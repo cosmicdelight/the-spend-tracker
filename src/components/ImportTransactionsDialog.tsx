@@ -137,13 +137,13 @@ export default function ImportTransactionsDialog() {
         <div className="space-y-4">
           <div>
             <p className="mb-2 text-xs text-muted-foreground">
-              Upload a CSV with columns: <span className="font-medium">date, amount, personal_amount, category, sub_category, payment_mode, description, notes</span>.{" "}
+              Upload a CSV with columns: <span className="font-medium">date (YYYY-MM-DD), amount, personal_amount, category, sub_category, payment_mode, description, notes</span>.{" "}
               <button
                 type="button"
                 className="underline text-primary hover:text-primary/80"
                 onClick={() => {
                   const header = "date,amount,personal_amount,category,sub_category,payment_mode,description,notes";
-                  const sample = "2025-01-15,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends,Split with John";
+                  const sample = "2026-01-15,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends,Split with John\n2026-02-03,12.50,12.50,Transport,,cash,Grab ride,";
                   const blob = new Blob([header + "\n" + sample + "\n"], { type: "text/csv" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
