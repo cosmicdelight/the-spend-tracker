@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUpdateTransaction, type Transaction } from "@/hooks/useTransactions";
+import { useUpdateTransaction, useDeleteTransaction, type Transaction } from "@/hooks/useTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
@@ -30,6 +31,8 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
   const [currency, setCurrency] = useState("SGD");
 
   const updateTx = useUpdateTransaction();
+  const deleteTx = useDeleteTransaction();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { data: cards } = useCreditCards();
   const { data: categories } = useBudgetCategories();
   const { data: paymentModes = [] } = usePaymentModes();
@@ -38,6 +41,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
 
   useEffect(() => {
     if (transaction) {
+      setConfirmDelete(false);
       const cur = transaction.original_currency || "SGD";
       setCurrency(cur);
       if (cur !== "SGD" && transaction.original_amount > 0) {
@@ -185,9 +189,35 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
             <Label>Notes (optional)</Label>
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
           </div>
-          <Button type="submit" className="w-full" disabled={updateTx.isPending}>
-            {updateTx.isPending ? "Saving..." : "Save Changes"}
-          </Button>
+          <div className="flex gap-2">
+            {!confirmDelete ? (
+              <Button type="button" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
+                <Trash2 className="h-4 w-4 mr-1" /> Delete
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deleteTx.isPending}
+                onClick={() => {
+                  if (!transaction) return;
+                  deleteTx.mutate(transaction.id, {
+                    onSuccess: () => {
+                      toast({ title: "Transaction deleted" });
+                      setConfirmDelete(false);
+                      onOpenChange(false);
+                    },
+                    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                  });
+                }}
+              >
+                {deleteTx.isPending ? "Deleting..." : "Confirm Delete"}
+              </Button>
+            )}
+            <Button type="submit" className="flex-1" disabled={updateTx.isPending}>
+              {updateTx.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
