@@ -52,12 +52,12 @@ export default function Index() {
       </header>
 
       <main className="mx-auto max-w-4xl w-full flex-1 space-y-6 px-4 py-6 pb-20">
-        {tab === "dashboard" && (
-          <>
+        {tab === "dashboard" &&
+        <>
             {/* Summary row */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <div className="rounded-xl border bg-card p-4">
-                <p className="text-xs text-muted-foreground">Total Charged</p>
+                <p className="text-xs text-muted-foreground text-center">Total Charged</p>
                 <p className="mt-1 text-xl font-heading font-bold">${totalCharged.toFixed(2)}</p>
               </div>
               <div className="rounded-xl border bg-card p-4">
@@ -83,32 +83,32 @@ export default function Index() {
             </div>
 
             {/* Credit Cards */}
-            {cards.length > 0 && (
-              <section>
+            {cards.length > 0 &&
+          <section>
                 <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Credit Card Progress</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {cards.map((card) => (
-                    <CreditCardProgress key={card.id} card={card} transactions={transactions} />
-                  ))}
+                  {cards.map((card) =>
+              <CreditCardProgress key={card.id} card={card} transactions={transactions} />
+              )}
                 </div>
               </section>
-            )}
+          }
 
             {/* Recurring Transactions */}
             <RecurringTransactionList
-              recurring={recurring}
-              onDelete={(id) => deleteRec.mutate(id)}
-              onCreateNow={(rec) => createFromRec.mutate(rec)}
-            />
+            recurring={recurring}
+            onDelete={(id) => deleteRec.mutate(id)}
+            onCreateNow={(rec) => createFromRec.mutate(rec)} />
+
 
             {/* Transactions */}
             <TransactionList transactions={transactions} cards={cards} onDelete={(id) => deleteTx.mutate(id)} />
           </>
-        )}
+        }
 
-        {tab === "budget" && (
-          <BudgetOverview categories={categories} transactions={transactions} />
-        )}
+        {tab === "budget" &&
+        <BudgetOverview categories={categories} transactions={transactions} />
+        }
       </main>
 
       {/* Bottom tab bar */}
@@ -118,9 +118,9 @@ export default function Index() {
             type="button"
             onClick={() => setTab("dashboard")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
-              tab === "dashboard" ? "text-primary" : "text-muted-foreground"
-            }`}
-          >
+            tab === "dashboard" ? "text-primary" : "text-muted-foreground"}`
+            }>
+
             <LayoutDashboard className="h-5 w-5" />
             Dashboard
           </button>
@@ -128,14 +128,14 @@ export default function Index() {
             type="button"
             onClick={() => setTab("budget")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
-              tab === "budget" ? "text-primary" : "text-muted-foreground"
-            }`}
-          >
+            tab === "budget" ? "text-primary" : "text-muted-foreground"}`
+            }>
+
             <PieChart className="h-5 w-5" />
             Budget
           </button>
         </div>
       </nav>
-    </div>
-  );
+    </div>);
+
 }
