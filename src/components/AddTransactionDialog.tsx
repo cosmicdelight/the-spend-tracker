@@ -90,17 +90,15 @@ export default function AddTransactionDialog() {
               </SelectContent>
             </Select>
           </div>
-          {paymentMode === "credit_card" && cards && cards.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>Credit Card</Label>
-              <Select value={creditCardId} onValueChange={setCreditCardId}>
-                <SelectTrigger><SelectValue placeholder="Select card" /></SelectTrigger>
-                <SelectContent>
-                  {cards.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label>Credit Card</Label>
+            <Select value={creditCardId} onValueChange={setCreditCardId} disabled={paymentMode !== "credit_card"}>
+              <SelectTrigger><SelectValue placeholder="Select card" /></SelectTrigger>
+              <SelectContent>
+                {cards?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1.5">
             <Label>Category</Label>
             <Select value={category} onValueChange={setCategory}>
