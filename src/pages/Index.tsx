@@ -102,7 +102,7 @@ export default function Index() {
 
         {/* Budget + Transactions */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <BudgetOverview categories={categories} transactions={transactions} onDeleteCategory={(id) => deleteCat.mutate(id)} />
+          <BudgetOverview categories={categories} transactions={transactions} />
           <TransactionList transactions={transactions} cards={cards} onDelete={(id) => deleteTx.mutate(id)} />
         </div>
       </main>
