@@ -32,24 +32,23 @@ export default function BudgetOverview({ categories, transactions, onDeleteCateg
           const spent = monthlyTxs
             .filter((t) => t.category === cat.name)
             .reduce((s, t) => s + Number(t.personal_amount), 0);
-          const limit = Number(cat.monthly_limit);
-          const pct = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
-          const over = spent > limit;
 
           return (
-            <div key={cat.id} className="space-y-1.5">
+            <div key={cat.id} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{cat.name}</span>
+                <div>
+                  <span className="font-medium">{cat.name}</span>
+                  {cat.sub_category_name && (
+                    <span className="ml-2 text-xs text-muted-foreground">/ {cat.sub_category_name}</span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
-                  <span className={over ? "text-destructive font-semibold" : "text-muted-foreground"}>
-                    ${spent.toFixed(2)} / ${limit.toFixed(2)}
-                  </span>
+                  <span className="text-muted-foreground">${spent.toFixed(2)}</span>
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => onDeleteCategory(cat.id)}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
-              <Progress value={pct} className={`h-2 ${over ? "[&>div]:bg-destructive" : ""}`} />
             </div>
           );
         })}

@@ -5,7 +5,6 @@ import { useAuth } from "./useAuth";
 export interface BudgetCategory {
   id: string;
   name: string;
-  monthly_limit: number;
   sub_category_name: string | null;
   created_at: string;
 }
