@@ -47,3 +47,14 @@ export function useDeleteCreditCard() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["credit_cards"] }),
   });
 }
+
+export function useUpdateCreditCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...fields }: Partial<CreditCard> & { id: string }) => {
+      const { error } = await supabase.from("credit_cards").update(fields).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit_cards"] }),
+  });
+}
