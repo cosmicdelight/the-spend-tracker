@@ -57,8 +57,10 @@ export default function AddTransactionDialog() {
         payment_mode: paymentMode,
         credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
-        notes: currency !== "SGD" ? `${currency} ${amtNum.toFixed(2)}${notes ? ` | ${notes}` : ""}` : notes || null,
+        notes: notes || null,
         sub_category: subCategory || null,
+        original_currency: currency,
+        original_amount: amtNum,
       },
       {
         onSuccess: () => {
