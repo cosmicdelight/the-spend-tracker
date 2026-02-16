@@ -18,7 +18,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          monthly_limit: number
           name: string
           sub_category_name: string | null
           user_id: string
@@ -26,7 +25,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          monthly_limit?: number
           name: string
           sub_category_name?: string | null
           user_id: string
@@ -34,7 +32,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          monthly_limit?: number
           name?: string
           sub_category_name?: string | null
           user_id?: string

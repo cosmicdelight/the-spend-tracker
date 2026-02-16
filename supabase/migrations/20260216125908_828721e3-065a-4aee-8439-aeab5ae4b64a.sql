@@ -1,0 +1,1 @@
+ALTER TABLE public.budget_categories DROP COLUMN monthly_limit;
