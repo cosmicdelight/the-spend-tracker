@@ -15,6 +15,7 @@ const PAYMENT_MODES = [
   { value: "credit_card", label: "Credit Card" },
   { value: "cash", label: "Cash" },
   { value: "paynow", label: "PayNow" },
+  { value: "giro", label: "GIRO" },
 ];
 
 const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

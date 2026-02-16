@@ -14,6 +14,7 @@ const PAYMENT_MODES = [
   { value: "credit_card", label: "Credit Card" },
   { value: "cash", label: "Cash" },
   { value: "paynow", label: "PayNow" },
+  { value: "giro", label: "GIRO" },
 ];
 
 interface Props {
