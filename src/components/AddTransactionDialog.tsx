@@ -8,6 +8,7 @@ import { Plus } from "lucide-react";
 import { useAddTransaction } from "@/hooks/useTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { useToast } from "@/hooks/use-toast";
 
 const PAYMENT_MODES = [
@@ -27,31 +28,36 @@ export default function AddTransactionDialog() {
   const [creditCardId, setCreditCardId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
+  const [currency, setCurrency] = useState("SGD");
 
   const addTx = useAddTransaction();
   const { data: cards } = useCreditCards();
   const { data: categories } = useBudgetCategories();
+  const { convertToSGD, currencies, loading: ratesLoading } = useCurrencyConversion();
   const { toast } = useToast();
 
   const hasSubs = categories?.some((c) => c.name === category && c.sub_category_name) ?? false;
 
+  const amtNum = parseFloat(amount) || 0;
+  const personalNum = personalAmount ? parseFloat(personalAmount) || 0 : amtNum;
+  const sgdAmount = currency !== "SGD" ? convertToSGD(amtNum, currency) : amtNum;
+  const sgdPersonal = currency !== "SGD" ? convertToSGD(personalNum, currency) : personalNum;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amt = parseFloat(amount);
-    const personal = personalAmount ? parseFloat(personalAmount) : amt;
-    if (isNaN(amt) || amt <= 0 || !category || !description.trim()) return;
+    if (amtNum <= 0 || !category || !description.trim()) return;
     if (paymentMode === "credit_card" && !creditCardId) return;
 
     addTx.mutate(
       {
-        amount: amt,
-        personal_amount: personal,
+        amount: sgdAmount,
+        personal_amount: sgdPersonal,
         date,
         category,
         payment_mode: paymentMode,
         credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
-        notes: notes || null,
+        notes: currency !== "SGD" ? `${currency} ${amtNum.toFixed(2)}${notes ? ` | ${notes}` : ""}` : notes || null,
         sub_category: subCategory || null,
       },
       {
@@ -59,7 +65,7 @@ export default function AddTransactionDialog() {
           toast({ title: "Transaction added" });
           setOpen(false);
           setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId(""); setNotes("");
-          setCategory(""); setSubCategory("");
+          setCategory(""); setSubCategory(""); setCurrency("SGD");
         },
         onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
       }
@@ -74,16 +80,31 @@ export default function AddTransactionDialog() {
       <DialogContent className="max-w-md">
         <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Currency</Label>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Total Amount</Label>
+              <Label>Total Amount {currency !== "SGD" ? `(${currency})` : ""}</Label>
               <Input type="number" step="0.01" min="0" placeholder="200.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
-              <Label>Your Share</Label>
+              <Label>Your Share {currency !== "SGD" ? `(${currency})` : ""}</Label>
               <Input type="number" step="0.01" min="0" placeholder="Same as total" value={personalAmount} onChange={(e) => setPersonalAmount(e.target.value)} />
             </div>
           </div>
+          {currency !== "SGD" && amtNum > 0 && (
+            <p className="text-xs text-muted-foreground">
+              ≈ SGD {sgdAmount.toFixed(2)}{personalAmount ? ` (personal: SGD ${sgdPersonal.toFixed(2)})` : ""}
+              {ratesLoading && " (loading rates...)"}
+            </p>
+          )}
           <div className="space-y-1.5">
             <Label>Date</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
