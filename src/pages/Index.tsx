@@ -5,6 +5,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useTransactions, useDeleteTransaction } from "@/hooks/useTransactions";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useRecurringTransactions, useDeleteRecurringTransaction, useCreateFromRecurring } from "@/hooks/useRecurringTransactions";
+import { useTransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import AddTransactionDialog from "@/components/AddTransactionDialog";
 import ImportTransactionsDialog from "@/components/ImportTransactionsDialog";
 import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
@@ -12,6 +13,7 @@ import RecurringTransactionList from "@/components/RecurringTransactionList";
 import CreditCardProgress from "@/components/CreditCardProgress";
 import BudgetOverview from "@/components/BudgetOverview";
 import TransactionList from "@/components/TransactionList";
+import TransactionFieldSettings from "@/components/TransactionFieldSettings";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import ManagePaymentModesDialog from "@/components/ManagePaymentModesDialog";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,7 @@ export default function Index() {
   const { data: recurring = [] } = useRecurringTransactions();
   const deleteRec = useDeleteRecurringTransaction();
   const createFromRec = useCreateFromRecurring();
+  const { prefs: fieldPrefs, toggle: toggleField } = useTransactionFieldPrefs();
   const [tab, setTab] = useState<"dashboard" | "budget">("dashboard");
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
@@ -81,7 +84,7 @@ export default function Index() {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2">
-              <AddTransactionDialog />
+              <AddTransactionDialog fieldPrefs={fieldPrefs} />
               <ImportTransactionsDialog />
               <AddRecurringTransactionDialog />
               <Link to="/cards">
@@ -91,6 +94,7 @@ export default function Index() {
                 <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
               </Link>
               <ManagePaymentModesDialog />
+              <TransactionFieldSettings prefs={fieldPrefs} onToggle={toggleField} />
             </div>
 
             {/* Credit Cards */}
@@ -113,7 +117,7 @@ export default function Index() {
 
 
             {/* Transactions */}
-            <TransactionList transactions={transactions} cards={cards} />
+            <TransactionList transactions={transactions} cards={cards} fieldPrefs={fieldPrefs} />
           </>
         }
 

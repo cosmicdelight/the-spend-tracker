@@ -4,15 +4,17 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Transaction } from "@/hooks/useTransactions";
 import type { CreditCard } from "@/hooks/useCreditCards";
+import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { format, parseISO } from "date-fns";
 import EditTransactionDialog from "./EditTransactionDialog";
 
 interface Props {
   transactions: Transaction[];
   cards: CreditCard[];
+  fieldPrefs: TransactionFieldPrefs;
 }
 
-export default function TransactionList({ transactions, cards }: Props) {
+export default function TransactionList({ transactions, cards, fieldPrefs }: Props) {
 
   const now = new Date();
   const [monthOffset, setMonthOffset] = useState(0);
@@ -98,7 +100,7 @@ export default function TransactionList({ transactions, cards }: Props) {
           </div>
         </CardContent>
       </Card>
-      <EditTransactionDialog transaction={editingTx} open={!!editingTx} onOpenChange={(o) => !o && setEditingTx(null)} />
+      <EditTransactionDialog transaction={editingTx} open={!!editingTx} onOpenChange={(o) => !o && setEditingTx(null)} fieldPrefs={fieldPrefs} />
     </>
   );
 }

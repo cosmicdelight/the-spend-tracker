@@ -12,14 +12,18 @@ import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
+import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 
 interface Props {
   transaction: Transaction | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  fieldPrefs?: TransactionFieldPrefs;
 }
 
-export default function EditTransactionDialog({ transaction, open, onOpenChange }: Props) {
+const defaultPrefs: TransactionFieldPrefs = { currency: true, creditCard: true, subCategory: true, notes: true };
+
+export default function EditTransactionDialog({ transaction, open, onOpenChange, fieldPrefs = defaultPrefs }: Props) {
   const [amount, setAmount] = useState("");
   const [personalAmount, setPersonalAmount] = useState("");
   const [date, setDate] = useState("");
@@ -47,7 +51,6 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
       setCurrency(cur);
       if (cur !== "SGD" && transaction.original_amount > 0) {
         setAmount(String(transaction.original_amount));
-        // Derive personal share ratio from SGD amounts
         const ratio = transaction.amount > 0 ? transaction.personal_amount / transaction.amount : 1;
         const origPersonal = transaction.original_amount * ratio;
         setPersonalAmount(ratio < 1 ? String(Math.round(origPersonal * 100) / 100) : "");
@@ -65,18 +68,19 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
     }
   }, [transaction]);
 
-  const hasSubs = categories?.some((c) => c.name === category && c.sub_category_name) ?? false;
+  const hasSubs = fieldPrefs.subCategory && (categories?.some((c) => c.name === category && c.sub_category_name) ?? false);
 
   const amtNum = parseFloat(amount) || 0;
   const personalNum = personalAmount ? parseFloat(personalAmount) || 0 : amtNum;
-  const sgdAmount = currency !== "SGD" ? convertToSGD(amtNum, currency) : amtNum;
-  const sgdPersonal = currency !== "SGD" ? convertToSGD(personalNum, currency) : personalNum;
+  const activeCurrency = fieldPrefs.currency ? currency : "SGD";
+  const sgdAmount = activeCurrency !== "SGD" ? convertToSGD(amtNum, activeCurrency) : amtNum;
+  const sgdPersonal = activeCurrency !== "SGD" ? convertToSGD(personalNum, activeCurrency) : personalNum;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!transaction) return;
     if (amtNum <= 0 || !category || !description.trim()) return;
-    if (paymentMode === "credit_card" && !creditCardId) return;
+    if (fieldPrefs.creditCard && paymentMode === "credit_card" && !creditCardId) return;
 
     updateTx.mutate(
       {
@@ -86,11 +90,11 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
         date,
         category,
         payment_mode: paymentMode,
-        credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
+        credit_card_id: fieldPrefs.creditCard && paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
-        notes: notes || null,
-        sub_category: subCategory || null,
-        original_currency: currency,
+        notes: fieldPrefs.notes ? (notes || null) : null,
+        sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
+        original_currency: activeCurrency,
         original_amount: amtNum,
       },
       {
@@ -108,26 +112,28 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Edit Transaction</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>Currency</Label>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {fieldPrefs.currency && (
+            <div className="space-y-1.5">
+              <Label>Currency</Label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Total Amount {currency !== "SGD" ? `(${currency})` : ""}</Label>
+              <Label>Total Amount {activeCurrency !== "SGD" ? `(${activeCurrency})` : ""}</Label>
               <Input type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
-              <Label>Your Share {currency !== "SGD" ? `(${currency})` : ""}</Label>
+              <Label>Your Share {activeCurrency !== "SGD" ? `(${activeCurrency})` : ""}</Label>
               <Input type="number" step="0.01" min="0" placeholder="Same as total" value={personalAmount} onChange={(e) => setPersonalAmount(e.target.value)} />
             </div>
           </div>
-          {currency !== "SGD" && amtNum > 0 && (
+          {activeCurrency !== "SGD" && amtNum > 0 && (
             <p className="text-xs text-muted-foreground">
               ≈ SGD {sgdAmount.toFixed(2)}{personalAmount ? ` (personal: SGD ${sgdPersonal.toFixed(2)})` : ""}
               {ratesLoading && " (loading rates...)"}
@@ -146,7 +152,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
               </SelectContent>
             </Select>
           </div>
-          {paymentMode === "credit_card" && (
+          {fieldPrefs.creditCard && paymentMode === "credit_card" && (
             <div className="space-y-1.5">
               <Label>Credit Card</Label>
               <Select value={creditCardId} onValueChange={setCreditCardId} required>
@@ -186,10 +192,12 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange 
             <Label>Description</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" required />
           </div>
-          <div className="space-y-1.5">
-            <Label>Notes (optional)</Label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
-          </div>
+          {fieldPrefs.notes && (
+            <div className="space-y-1.5">
+              <Label>Notes (optional)</Label>
+              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
+            </div>
+          )}
           <div className="flex gap-2">
             {!confirmDelete ? (
               <Button type="button" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
