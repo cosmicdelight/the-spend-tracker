@@ -43,6 +43,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          sort_order: number
           spend_target: number
           start_date: string
           time_period_months: number
@@ -53,6 +54,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          sort_order?: number
           spend_target?: number
           start_date?: string
           time_period_months?: number
@@ -63,6 +65,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          sort_order?: number
           spend_target?: number
           start_date?: string
           time_period_months?: number
