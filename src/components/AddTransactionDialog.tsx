@@ -12,8 +12,13 @@ import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
+import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 
-export default function AddTransactionDialog() {
+interface Props {
+  fieldPrefs: TransactionFieldPrefs;
+}
+
+export default function AddTransactionDialog({ fieldPrefs }: Props) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [personalAmount, setPersonalAmount] = useState("");
@@ -33,12 +38,13 @@ export default function AddTransactionDialog() {
   const { convertToSGD, currencies, loading: ratesLoading } = useCurrencyConversion();
   const { toast } = useToast();
 
-  const hasSubs = categories?.some((c) => c.name === category && c.sub_category_name) ?? false;
+  const hasSubs = fieldPrefs.subCategory && (categories?.some((c) => c.name === category && c.sub_category_name) ?? false);
 
   const amtNum = parseFloat(amount) || 0;
   const personalNum = personalAmount ? parseFloat(personalAmount) || 0 : amtNum;
-  const sgdAmount = currency !== "SGD" ? convertToSGD(amtNum, currency) : amtNum;
-  const sgdPersonal = currency !== "SGD" ? convertToSGD(personalNum, currency) : personalNum;
+  const activeCurrency = fieldPrefs.currency ? currency : "SGD";
+  const sgdAmount = activeCurrency !== "SGD" ? convertToSGD(amtNum, activeCurrency) : amtNum;
+  const sgdPersonal = activeCurrency !== "SGD" ? convertToSGD(personalNum, activeCurrency) : personalNum;
 
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -48,7 +54,7 @@ export default function AddTransactionDialog() {
     if (amtNum <= 0) newErrors.push("Amount must be greater than 0.");
     if (!category) newErrors.push("Please select a category.");
     if (!description.trim()) newErrors.push("Please enter a description.");
-    if (paymentMode === "credit_card" && !creditCardId) newErrors.push("Please select a credit card.");
+    if (fieldPrefs.creditCard && paymentMode === "credit_card" && !creditCardId) newErrors.push("Please select a credit card.");
     if (newErrors.length > 0) {
       setErrors(newErrors);
       return;
@@ -62,11 +68,11 @@ export default function AddTransactionDialog() {
         date,
         category,
         payment_mode: paymentMode,
-        credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
+        credit_card_id: fieldPrefs.creditCard && paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
-        notes: notes || null,
-        sub_category: subCategory || null,
-        original_currency: currency,
+        notes: fieldPrefs.notes ? (notes || null) : null,
+        sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
+        original_currency: activeCurrency,
         original_amount: amtNum,
       },
       {
@@ -89,26 +95,28 @@ export default function AddTransactionDialog() {
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>Currency</Label>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {fieldPrefs.currency && (
+            <div className="space-y-1.5">
+              <Label>Currency</Label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {currencies.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Total Amount {currency !== "SGD" ? `(${currency})` : ""}</Label>
+              <Label>Total Amount {activeCurrency !== "SGD" ? `(${activeCurrency})` : ""}</Label>
               <Input type="number" step="0.01" min="0" placeholder="200.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
-              <Label>Your Share {currency !== "SGD" ? `(${currency})` : ""}</Label>
+              <Label>Your Share {activeCurrency !== "SGD" ? `(${activeCurrency})` : ""}</Label>
               <Input type="number" step="0.01" min="0" placeholder="Same as total" value={personalAmount} onChange={(e) => setPersonalAmount(e.target.value)} />
             </div>
           </div>
-          {currency !== "SGD" && amtNum > 0 && (
+          {activeCurrency !== "SGD" && amtNum > 0 && (
             <p className="text-xs text-muted-foreground">
               ≈ SGD {sgdAmount.toFixed(2)}{personalAmount ? ` (personal: SGD ${sgdPersonal.toFixed(2)})` : ""}
               {ratesLoading && " (loading rates...)"}
@@ -127,7 +135,7 @@ export default function AddTransactionDialog() {
               </SelectContent>
             </Select>
           </div>
-          {paymentMode === "credit_card" && (
+          {fieldPrefs.creditCard && paymentMode === "credit_card" && (
             <div className="space-y-1.5">
               <Label>Credit Card</Label>
               <Select value={creditCardId} onValueChange={setCreditCardId} required>
@@ -167,10 +175,12 @@ export default function AddTransactionDialog() {
             <Label>Description</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" required />
           </div>
-          <div className="space-y-1.5">
-            <Label>Notes (optional)</Label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
-          </div>
+          {fieldPrefs.notes && (
+            <div className="space-y-1.5">
+              <Label>Notes (optional)</Label>
+              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
+            </div>
+          )}
           {errors.length > 0 && (
             <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 space-y-1">
               {errors.map((err, i) => (
