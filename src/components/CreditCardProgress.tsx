@@ -35,8 +35,8 @@ export default function CreditCardProgress({ card, transactions }: Props) {
         <Progress value={pct} className="h-2.5" />
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Personal: ${personalSpend.toFixed(2)}</span>
-          <span className={onPace ? "text-success" : "text-warning"}>
-            {daysLeft}d left · {onPace ? "On pace" : "Behind"}
+          <span className={target > 0 ? (onPace ? "text-success" : "text-warning") : ""}>
+            {daysLeft}d left{target > 0 ? ` · ${onPace ? "On pace" : "Behind"}` : ""}
           </span>
         </div>
       </CardContent>
