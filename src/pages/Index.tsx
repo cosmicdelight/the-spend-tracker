@@ -44,15 +44,18 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 border-b bg-card/80 backdrop-blur-sm overflow-hidden">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-heading font-bold">SpendTracker</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <Wallet className="h-5 w-5 shrink-0 text-primary" />
+            <h1 className="text-lg font-heading font-bold truncate">SpendTracker</h1>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <ChangePasswordDialog />
-            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="mr-1.5 h-4 w-4" />Sign Out</Button>
+            <Button variant="ghost" size="sm" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1.5">Sign Out</span>
+            </Button>
           </div>
         </div>
       </header>

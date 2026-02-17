@@ -44,7 +44,8 @@ export default function ChangePasswordDialog() {
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm">
-          <KeyRound className="mr-1.5 h-4 w-4" />Change Password
+          <KeyRound className="h-4 w-4" />
+          <span className="hidden sm:inline ml-1.5">Change Password</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
