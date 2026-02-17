@@ -40,10 +40,20 @@ export default function AddTransactionDialog() {
   const sgdAmount = currency !== "SGD" ? convertToSGD(amtNum, currency) : amtNum;
   const sgdPersonal = currency !== "SGD" ? convertToSGD(personalNum, currency) : personalNum;
 
+  const [errors, setErrors] = useState<string[]>([]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (amtNum <= 0 || !category || !description.trim()) return;
-    if (paymentMode === "credit_card" && !creditCardId) return;
+    const newErrors: string[] = [];
+    if (amtNum <= 0) newErrors.push("Amount must be greater than 0.");
+    if (!category) newErrors.push("Please select a category.");
+    if (!description.trim()) newErrors.push("Please enter a description.");
+    if (paymentMode === "credit_card" && !creditCardId) newErrors.push("Please select a credit card.");
+    if (newErrors.length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors([]);
 
     addTx.mutate(
       {
@@ -161,6 +171,13 @@ export default function AddTransactionDialog() {
             <Label>Notes (optional)</Label>
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
           </div>
+          {errors.length > 0 && (
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 space-y-1">
+              {errors.map((err, i) => (
+                <p key={i} className="text-sm text-destructive">{err}</p>
+              ))}
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={addTx.isPending}>
             {addTx.isPending ? "Adding..." : "Add Transaction"}
           </Button>
