@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useCreditCards, useDeleteCreditCard, type CreditCard } from "@/hooks/useCreditCards";
+import { useCreditCards, useDeleteCreditCard, useReorderCreditCards, type CreditCard } from "@/hooks/useCreditCards";
 import { useTransactions } from "@/hooks/useTransactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard as CreditCardIcon, Pencil } from "lucide-react";
+import { ArrowLeft, CreditCard as CreditCardIcon, Pencil, ChevronUp, ChevronDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { differenceInDays, addMonths, parseISO } from "date-fns";
 import AddCreditCardDialog from "@/components/AddCreditCardDialog";
@@ -17,7 +17,17 @@ export default function Cards() {
   const { data: cards = [] } = useCreditCards();
   const { data: transactions = [] } = useTransactions();
   const deleteCard = useDeleteCreditCard();
+  const reorder = useReorderCreditCards();
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
+
+  const moveCard = (index: number, direction: -1 | 1) => {
+    const swapIndex = index + direction;
+    if (swapIndex < 0 || swapIndex >= cards.length) return;
+    reorder.mutate([
+      { id: cards[index].id, sort_order: cards[swapIndex].sort_order },
+      { id: cards[swapIndex].id, sort_order: cards[index].sort_order },
+    ]);
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -39,7 +49,7 @@ export default function Cards() {
         <AddCreditCardDialog />
 
         <div className="space-y-3">
-          {cards.map((card) => {
+          {cards.map((card, index) => {
             const cardTxs = transactions.filter((t) => t.credit_card_id === card.id);
             const totalCharged = cardTxs.reduce((s, t) => s + Number(t.amount), 0);
             const personalSpend = cardTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
@@ -56,6 +66,12 @@ export default function Cards() {
                     <CardTitle className="text-base">{card.name}</CardTitle>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-muted-foreground/60" disabled={index === 0} onClick={() => moveCard(index, -1)}>
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-muted-foreground/60" disabled={index === cards.length - 1} onClick={() => moveCard(index, 1)}>
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingCard(card)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
