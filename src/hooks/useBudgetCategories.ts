@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { seedDefaultCategories } from "@/lib/seedDefaultCategories";
 
 export interface BudgetCategory {
   id: string;
@@ -14,6 +15,7 @@ export function useBudgetCategories() {
   return useQuery({
     queryKey: ["budget_categories", user?.id],
     queryFn: async () => {
+      await seedDefaultCategories(user!.id);
       const { data, error } = await supabase.from("budget_categories").select("*").order("name");
       if (error) throw error;
       return data as BudgetCategory[];
