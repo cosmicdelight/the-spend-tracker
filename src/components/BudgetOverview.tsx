@@ -272,7 +272,7 @@ export default function BudgetOverview({ categories, transactions }: Props) {
         {categories.length === 0 && <p className="text-sm text-muted-foreground">No budget categories yet.</p>}
 
         {pieData.length > 0 && (
-          <div className="mb-4 h-72">
+          <div className="mb-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -284,18 +284,37 @@ export default function BudgetOverview({ categories, transactions }: Props) {
                   paddingAngle={3}
                   dataKey="value"
                   strokeWidth={0}
-                  label={({ name, percent, x, y, textAnchor }) => {
+                  label={({ name, percent, midAngle, outerRadius: oR, cx: cxVal, cy: cyVal }) => {
                     if (!topLabelNames.has(name)) return null;
+                    const RADIAN = Math.PI / 180;
+                    const radius = oR + 35;
+                    const x = cxVal + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cyVal + radius * Math.sin(-midAngle * RADIAN);
+                    const textAnchor = x > cxVal ? "start" : "end";
                     return (
                       <text x={x} y={y} textAnchor={textAnchor} dominantBaseline="central" className="fill-foreground text-[10px] font-medium">
                         {`${name} ${(percent * 100).toFixed(0)}%`}
                       </text>
                     );
                   }}
-                  labelLine={({ points, stroke, name }: any) => {
+                  labelLine={({ points, name, midAngle, outerRadius: oR, cx: cxVal, cy: cyVal }: any) => {
                     if (!topLabelNames.has(name)) return <line style={{ display: 'none' }} />;
+                    const RADIAN = Math.PI / 180;
+                    const startX = points[0].x;
+                    const startY = points[0].y;
+                    const midRadius = oR + 18;
+                    const midX = cxVal + midRadius * Math.cos(-midAngle * RADIAN);
+                    const midY = cyVal + midRadius * Math.sin(-midAngle * RADIAN);
+                    const endRadius = oR + 30;
+                    const endX = cxVal + endRadius * Math.cos(-midAngle * RADIAN);
+                    const endY = cyVal + endRadius * Math.sin(-midAngle * RADIAN);
                     return (
-                      <path d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`} stroke="hsl(var(--muted-foreground))" strokeWidth={1} fill="none" />
+                      <polyline
+                        points={`${startX},${startY} ${midX},${midY} ${endX},${endY}`}
+                        stroke="hsl(var(--muted-foreground))"
+                        strokeWidth={1}
+                        fill="none"
+                      />
                     );
                   }}
                 >
