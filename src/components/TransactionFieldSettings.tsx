@@ -23,8 +23,8 @@ export default function TransactionFieldSettings({ prefs, onToggle }: Props) {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <SlidersHorizontal className="mr-1 h-3 w-3" />
-          <span className="hidden sm:inline">Form Fields</span>
-          <span className="sm:hidden">Fields</span>
+          <span className="hidden sm:inline">Transaction Fields</span>
+          <span className="sm:hidden">Txn Fields</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
