@@ -113,7 +113,7 @@ export default function Index() {
 
 
             {/* Transactions */}
-            <TransactionList transactions={transactions} cards={cards} onDelete={(id) => deleteTx.mutate(id)} />
+            <TransactionList transactions={transactions} cards={cards} />
           </>
         }
 

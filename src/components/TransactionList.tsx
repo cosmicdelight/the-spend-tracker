@@ -1,21 +1,18 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Transaction } from "@/hooks/useTransactions";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import { format, parseISO } from "date-fns";
 import EditTransactionDialog from "./EditTransactionDialog";
-import DeleteConfirmButton from "./DeleteConfirmButton";
 
 interface Props {
   transactions: Transaction[];
   cards: CreditCard[];
-  onDelete: (id: string) => void;
 }
 
-export default function TransactionList({ transactions, cards, onDelete }: Props) {
-  const cardMap = Object.fromEntries(cards.map((c) => [c.id, c.name]));
+export default function TransactionList({ transactions, cards }: Props) {
 
   const now = new Date();
   const [monthOffset, setMonthOffset] = useState(0);
@@ -79,28 +76,18 @@ export default function TransactionList({ transactions, cards, onDelete }: Props
                   {txs.map((tx) => {
                     const isSplit = Number(tx.personal_amount) !== Number(tx.amount);
                     return (
-                      <div key={tx.id} className="flex items-center justify-between rounded-lg border bg-card p-3">
-                        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setEditingTx(tx)}>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm truncate">{tx.description || tx.category}</span>
-                            <span className="rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground">{tx.category}</span>
-                          </div>
-                          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="capitalize">{tx.payment_mode.replace("_", " ")}</span>
-                            {tx.credit_card_id && cardMap[tx.credit_card_id] && (
-                              <><span>·</span><span>{cardMap[tx.credit_card_id]}</span></>
-                            )}
-                          </div>
+                      <div key={tx.id} className="rounded-lg border bg-card p-3 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setEditingTx(tx)}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm truncate min-w-0 flex-1 mr-2">{tx.description || tx.category}</span>
+                          <span className="text-sm font-semibold shrink-0">${Number(tx.amount).toFixed(2)}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-right">
-                            <p className="text-sm font-semibold">${Number(tx.amount).toFixed(2)}</p>
-                            {isSplit && <p className="text-xs text-muted-foreground">Yours: ${Number(tx.personal_amount).toFixed(2)}</p>}
+                        <div className="mt-0.5 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="rounded-full bg-accent px-2 py-0.5 text-accent-foreground">{tx.category}</span>
+                            <span>·</span>
+                            <span className="capitalize">{tx.payment_mode.replace("_", " ")}</span>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingTx(tx)}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <DeleteConfirmButton label="this transaction" onConfirm={() => onDelete(tx.id)} />
+                          {isSplit && <span className="text-xs text-muted-foreground shrink-0">Yours: ${Number(tx.personal_amount).toFixed(2)}</span>}
                         </div>
                       </div>
                     );
