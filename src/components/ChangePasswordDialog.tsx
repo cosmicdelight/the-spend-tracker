@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PasswordInput from "@/components/PasswordInput";
+import PasswordRequirements from "@/components/PasswordRequirements";
+import { isPasswordValid } from "@/lib/passwordValidation";
 
 export default function ChangePasswordDialog() {
   const [open, setOpen] = useState(false);
@@ -18,12 +20,12 @@ export default function ChangePasswordDialog() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirm) {
-      toast({ title: "Passwords don't match", variant: "destructive" });
+    if (!isPasswordValid(password)) {
+      toast({ title: "Password doesn't meet requirements", variant: "destructive" });
       return;
     }
-    if (password.length < 6) {
-      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+    if (password !== confirm) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -52,11 +54,12 @@ export default function ChangePasswordDialog() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label>New Password</Label>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
+          <PasswordRequirements password={password} />
           <div className="space-y-1.5">
             <Label>Confirm Password</Label>
-            <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={6} />
+            <PasswordInput value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
           </div>
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Updating..." : "Update Password"}

@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import PasswordInput from "@/components/PasswordInput";
+import PasswordRequirements from "@/components/PasswordRequirements";
+import { isPasswordValid } from "@/lib/passwordValidation";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -16,13 +18,11 @@ export default function ResetPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event from the magic link
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsRecovery(true);
       }
     });
-    // Also check hash params on mount
     if (window.location.hash.includes("type=recovery")) {
       setIsRecovery(true);
     }
@@ -31,12 +31,12 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirm) {
-      toast({ title: "Passwords don't match", variant: "destructive" });
+    if (!isPasswordValid(password)) {
+      toast({ title: "Password doesn't meet requirements", variant: "destructive" });
       return;
     }
-    if (password.length < 6) {
-      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+    if (password !== confirm) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -77,8 +77,9 @@ export default function ResetPassword() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input type="password" placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-            <Input type="password" placeholder="Confirm new password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={6} />
+            <PasswordInput placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <PasswordRequirements password={password} />
+            <PasswordInput placeholder="Confirm new password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Updating..." : "Update Password"}
             </Button>

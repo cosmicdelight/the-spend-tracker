@@ -7,12 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import PasswordInput from "@/components/PasswordInput";
+import PasswordRequirements from "@/components/PasswordRequirements";
+import { isPasswordValid } from "@/lib/passwordValidation";
 
 export default function Auth() {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { signUp, signIn } = useAuth();
   const { toast } = useToast();
@@ -36,6 +40,19 @@ export default function Auth() {
         setMode("signin");
       }
       return;
+    }
+
+    if (mode === "signup") {
+      if (!isPasswordValid(password)) {
+        toast({ title: "Password doesn't meet requirements", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast({ title: "Passwords don't match", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
     }
 
     const { error } = mode === "signup" ? await signUp(email, password) : await signIn(email, password);
@@ -64,7 +81,13 @@ export default function Auth() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             {mode !== "forgot" && (
-              <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+              <PasswordInput placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            )}
+            {mode === "signup" && (
+              <>
+                <PasswordRequirements password={password} />
+                <PasswordInput placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+              </>
             )}
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Please wait..." : mode === "signup" ? "Sign Up" : mode === "forgot" ? "Send Reset Link" : "Sign In"}
@@ -85,7 +108,7 @@ export default function Auth() {
             ) : (
               <>
                 {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
-                <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="font-medium text-primary underline-offset-4 hover:underline">
+                <button onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setConfirmPassword(""); }} className="font-medium text-primary underline-offset-4 hover:underline">
                   {mode === "signup" ? "Sign In" : "Sign Up"}
                 </button>
               </>
