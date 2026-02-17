@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SearchableSelect from "@/components/SearchableSelect";
 import { Plus } from "lucide-react";
 import { useAddTransaction } from "@/hooks/useTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -129,27 +130,27 @@ export default function AddTransactionDialog() {
           )}
           <div className="space-y-1.5">
             <Label>Category</Label>
-            <Select value={category} onValueChange={(v) => { setCategory(v); setSubCategory(""); }} required>
-              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-              <SelectContent>
-                {[...new Set(categories?.map((c) => c.name))].map((name) => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              options={[...new Set(categories?.map((c) => c.name))].sort().map((name) => ({ value: name, label: name }))}
+              value={category}
+              onValueChange={(v) => { setCategory(v); setSubCategory(""); }}
+              placeholder="Select category"
+            />
           </div>
           {hasSubs && (
             <div className="space-y-1.5">
               <Label>Sub-category</Label>
-              <Select value={subCategory} onValueChange={setSubCategory}>
-                <SelectTrigger><SelectValue placeholder="Select sub-category" /></SelectTrigger>
-                <SelectContent>
-                  {categories
+              <SearchableSelect
+                options={
+                  categories
                     ?.filter((c) => c.name === category && c.sub_category_name)
                     .sort((a, b) => a.sub_category_name!.localeCompare(b.sub_category_name!))
-                    .map((c) => <SelectItem key={c.id} value={c.sub_category_name!}>{c.sub_category_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+                    .map((c) => ({ value: c.sub_category_name!, label: c.sub_category_name! })) ?? []
+                }
+                value={subCategory}
+                onValueChange={setSubCategory}
+                placeholder="Select sub-category"
+              />
             </div>
           )}
           <div className="space-y-1.5">
