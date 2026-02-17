@@ -1,50 +1,35 @@
-# Finance & Credit Card Spend Tracker
 
-## Overview
 
-A personal finance app that helps you track spending across multiple credit cards, monitor progress toward minimum spend requirements, and manage a simple monthly budget with categories — all with user accounts so your data syncs across devices.
+# Making SpendTracker a Progressive Web App (PWA)
 
-## Core Features
+This will allow users to install the app directly from their browser to their phone's home screen, making it feel like a native app with offline support and fast loading.
 
-### 1. Dashboard
+## What You'll Get
+- An "Install" option when visiting the app on your phone or desktop browser
+- The app will appear on your home screen with its own icon
+- Faster loading after the first visit
+- Works offline for previously loaded pages
 
-- At-a-glance view of each credit card's minimum spend progress (progress bars showing how close you are to hitting the target)
-- Monthly spending summary broken down by category
-- Total personal spending vs. total credit card charges (distinguishing your own spend from amounts others owe you)
+## Technical Plan
 
-### 2. Credit Card Management
+### 1. Install the PWA plugin
+- Add `vite-plugin-pwa` dependency to the project
 
-- Add multiple credit cards with a name, minimum spend target, and time period (e.g., "spend $4,000 in 3 months")
-- Each card shows a progress tracker: total charged, your personal portion, and how much more you need to spend
+### 2. Configure PWA in `vite.config.ts`
+- Add the PWA plugin with app manifest settings (name, icons, theme color, display mode)
+- Configure the service worker with `navigateFallbackDenylist` to exclude `/~oauth` from caching (required for authentication to work)
+- Set up runtime caching strategies for API calls and static assets
 
-### 3. Transaction Logging
+### 3. Create PWA icons
+- Add standard PWA icon sizes (192x192 and 512x512) to the `public` folder using the app's branding
 
-- Log transactions with: amount, date, category, payment mode (cash, PayNow, credit card), credit card used (if applicable), and an optional description
-- **Split amount support**: Enter the full amount charged to the card AND the portion that's actually yours (e.g., dinner was $200 total, your share was $50)
-- The full amount counts toward CC minimum spend progress; only your portion counts toward your personal budget
-- Quick-add form for fast entry
+### 4. Update `index.html`
+- Add mobile-optimized meta tags (`theme-color`, `apple-mobile-web-app-capable`, Apple touch icon link)
 
-### 4. Budget Categories
+### 5. Create an Install page (`/install`)
+- A dedicated page at `/install` that detects the `beforeinstallprompt` event and provides a button to trigger the browser's install flow
+- Includes instructions for iOS users (who need to use "Share > Add to Home Screen" manually)
 
-- Create simple monthly budget categories (e.g., Food, Transport, Entertainment, Bills)
-- Set a monthly budget limit per category
-- See spending per category with progress indicators
-- Only your personal portion of split transactions counts against category budgets
+### 6. Update routing in `App.tsx`
+- Add the `/install` route
 
-### 5. Monthly Summary View
-
-- Calendar month view showing spending trends
-- Breakdown: total charged to cards vs. your actual personal expenses
-- Category-by-category budget vs. actual comparison
-
-### 6. User Accounts & Authentication
-
-- Email/password sign-up and login
-- All data stored securely in the cloud via Supabase
-- Each user's data is private and accessible across devices
-
-## Design Direction
-
-- Clean, modern dashboard layout
-- Card-based UI with clear progress indicators
-- Mobile-friendly so you can log transactions on the go
