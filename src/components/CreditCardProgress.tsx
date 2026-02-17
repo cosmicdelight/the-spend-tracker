@@ -19,7 +19,7 @@ export default function CreditCardProgress({ card, transactions }: Props) {
 
   const { daysLeft, totalDays, daysElapsed } = getCurrentCardPeriod(card);
   const expectedPct = totalDays > 0 ? (daysElapsed / totalDays) * 100 : 100;
-  const onPace = pct >= expectedPct;
+  const onPace = target <= 0 || pct >= expectedPct;
 
   return (
     <Card>
