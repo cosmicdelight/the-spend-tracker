@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { CreditCard as CreditCardIcon } from "lucide-react";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import type { Transaction } from "@/hooks/useTransactions";
-import { differenceInDays, addMonths, parseISO } from "date-fns";
+import { getCurrentCardPeriod, filterTransactionsForCurrentPeriod } from "@/lib/creditCardPeriod";
 
 interface Props {
   card: CreditCard;
@@ -11,16 +11,13 @@ interface Props {
 }
 
 export default function CreditCardProgress({ card, transactions }: Props) {
-  const cardTxs = transactions.filter((t) => t.credit_card_id === card.id);
-  const totalCharged = cardTxs.reduce((s, t) => s + Number(t.amount), 0);
-  const personalSpend = cardTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
+  const periodTxs = filterTransactionsForCurrentPeriod(card, transactions);
+  const totalCharged = periodTxs.reduce((s, t) => s + Number(t.amount), 0);
+  const personalSpend = periodTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
   const target = Number(card.spend_target);
   const pct = target > 0 ? Math.min((totalCharged / target) * 100, 100) : 0;
 
-  const endDate = addMonths(parseISO(card.start_date), card.time_period_months);
-  const totalDays = differenceInDays(endDate, parseISO(card.start_date));
-  const daysElapsed = differenceInDays(new Date(), parseISO(card.start_date));
-  const daysLeft = Math.max(differenceInDays(endDate, new Date()), 0);
+  const { daysLeft, totalDays, daysElapsed } = getCurrentCardPeriod(card);
   const expectedPct = totalDays > 0 ? (daysElapsed / totalDays) * 100 : 100;
   const onPace = pct >= expectedPct;
 

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CreditCard as CreditCardIcon, Pencil, GripVertical } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { differenceInDays, addMonths, parseISO } from "date-fns";
+import { getCurrentCardPeriod, filterTransactionsForCurrentPeriod } from "@/lib/creditCardPeriod";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import AddCreditCardDialog from "@/components/AddCreditCardDialog";
 import EditCreditCardDialog from "@/components/EditCreditCardDialog";
@@ -57,13 +57,12 @@ export default function Cards() {
             {(provided) => (
               <div className="space-y-3" ref={provided.innerRef} {...provided.droppableProps}>
                 {cards.map((card, index) => {
-                  const cardTxs = transactions.filter((t) => t.credit_card_id === card.id);
-                  const totalCharged = cardTxs.reduce((s, t) => s + Number(t.amount), 0);
-                  const personalSpend = cardTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
+                  const periodTxs = filterTransactionsForCurrentPeriod(card, transactions);
+                  const totalCharged = periodTxs.reduce((s, t) => s + Number(t.amount), 0);
+                  const personalSpend = periodTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
                   const target = Number(card.spend_target);
                   const pct = target > 0 ? Math.min((totalCharged / target) * 100, 100) : 0;
-                  const endDate = addMonths(parseISO(card.start_date), card.time_period_months);
-                  const daysLeft = Math.max(differenceInDays(endDate, new Date()), 0);
+                  const { daysLeft } = getCurrentCardPeriod(card);
 
                   return (
                     <Draggable key={card.id} draggableId={card.id} index={index}>
