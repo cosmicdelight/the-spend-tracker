@@ -3,6 +3,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 
 interface Option {
@@ -60,28 +61,30 @@ export default function SearchableSelect({ options, value, onValueChange, placeh
             className="h-8"
           />
         </div>
-        <div className="max-h-48 overflow-y-auto">
-          {filtered.length === 0 && (
-            <p className="py-4 text-center text-sm text-muted-foreground">No results.</p>
-          )}
-          {filtered.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={cn(
-                "flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                value === option.value && "bg-accent/50"
-              )}
-              onClick={() => {
-                onValueChange(option.value);
-                setOpen(false);
-              }}
-            >
-              <Check className={cn("h-3.5 w-3.5 shrink-0", value === option.value ? "opacity-100" : "opacity-0")} />
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <ScrollArea className="max-h-48">
+          <div className="p-1">
+            {filtered.length === 0 && (
+              <p className="py-4 text-center text-sm text-muted-foreground">No results.</p>
+            )}
+            {filtered.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={cn(
+                  "flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-sm",
+                  value === option.value && "bg-accent/50"
+                )}
+                onClick={() => {
+                  onValueChange(option.value);
+                  setOpen(false);
+                }}
+              >
+                <Check className={cn("h-3.5 w-3.5 shrink-0", value === option.value ? "opacity-100" : "opacity-0")} />
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   );
