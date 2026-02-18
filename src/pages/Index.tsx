@@ -120,7 +120,13 @@ export default function Index() {
         }
 
         {tab === "transactions" &&
-          <TransactionList transactions={transactions} cards={cards} fieldPrefs={fieldPrefs} />
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <AddTransactionDialog fieldPrefs={fieldPrefs} />
+              <ImportTransactionsDialog />
+            </div>
+            <TransactionList transactions={transactions} cards={cards} fieldPrefs={fieldPrefs} />
+          </div>
         }
 
         {tab === "budget" &&
