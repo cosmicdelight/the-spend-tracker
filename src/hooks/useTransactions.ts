@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
@@ -66,4 +67,25 @@ export function useUpdateTransaction() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["transactions"] }),
   });
+}
+
+export function useDescriptionSuggestions(): string[] {
+  const { data: transactions } = useTransactions();
+  return useMemo(() => {
+    if (!transactions) return [];
+    const seen = new Map<string, string>(); // lowerKey -> most recent date
+    for (const tx of transactions) {
+      if (!tx.description) continue;
+      const key = tx.description.toLowerCase();
+      if (!seen.has(key) || tx.date > seen.get(key)!) {
+        seen.set(key, tx.date);
+      }
+    }
+    const unique = [...new Map(
+      transactions
+        .filter((tx) => !!tx.description)
+        .map((tx) => [tx.description!.toLowerCase(), tx])
+    ).values()].sort((a, b) => b.date.localeCompare(a.date));
+    return unique.map((tx) => tx.description!);
+  }, [transactions]);
 }
