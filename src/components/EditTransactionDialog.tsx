@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
-import { useUpdateTransaction, useDeleteTransaction, type Transaction } from "@/hooks/useTransactions";
+import { useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
+import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
@@ -36,6 +37,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const [currency, setCurrency] = useState("SGD");
 
   const updateTx = useUpdateTransaction();
+  const descriptionSuggestions = useDescriptionSuggestions();
   const deleteTx = useDeleteTransaction();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { data: cards } = useCreditCards();
@@ -190,7 +192,13 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
           )}
           <div className="space-y-1.5">
             <Label>Description</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" required />
+            <DescriptionAutocomplete
+              value={description}
+              onChange={setDescription}
+              suggestions={descriptionSuggestions}
+              placeholder="Dinner with friends"
+              required
+            />
           </div>
           {fieldPrefs.notes && (
             <div className="space-y-1.5">

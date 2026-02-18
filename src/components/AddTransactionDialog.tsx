@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
 import { Plus } from "lucide-react";
-import { useAddTransaction } from "@/hooks/useTransactions";
+import { useAddTransaction, useDescriptionSuggestions } from "@/hooks/useTransactions";
+import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
@@ -32,6 +33,7 @@ export default function AddTransactionDialog({ fieldPrefs }: Props) {
   const [currency, setCurrency] = useState("SGD");
 
   const addTx = useAddTransaction();
+  const descriptionSuggestions = useDescriptionSuggestions();
   const { data: cards } = useCreditCards();
   const { data: categories } = useBudgetCategories();
   const { data: paymentModes = [] } = usePaymentModes();
@@ -173,7 +175,13 @@ export default function AddTransactionDialog({ fieldPrefs }: Props) {
           )}
           <div className="space-y-1.5">
             <Label>Description</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner with friends" required />
+            <DescriptionAutocomplete
+              value={description}
+              onChange={setDescription}
+              suggestions={descriptionSuggestions}
+              placeholder="Dinner with friends"
+              required
+            />
           </div>
           {fieldPrefs.notes && (
             <div className="space-y-1.5">
