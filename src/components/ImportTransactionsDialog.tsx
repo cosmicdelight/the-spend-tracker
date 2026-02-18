@@ -21,6 +21,19 @@ interface ParsedRow {
   notes: string | null;
 }
 
+const MAX_LENGTHS: Record<string, number> = {
+  description: 500,
+  notes: 1000,
+  category: 100,
+  sub_category: 100,
+  payment_mode: 100,
+};
+
+function sanitizeString(input: string): string {
+  // Remove null bytes and non-printable control characters (keep tab/newline)
+  return input.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, "").trim();
+}
+
 function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) return { rows: [], errors: ["File must have a header row and at least one data row."] };
@@ -34,11 +47,20 @@ function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
 
   for (let i = 1; i < lines.length; i++) {
     const vals = lines[i].split(",").map((v) => v.trim());
-    const get = (key: string) => vals[headers.indexOf(key)] || "";
+    const getRaw = (key: string) => vals[headers.indexOf(key)] || "";
+    const get = (key: string) => {
+      const raw = sanitizeString(getRaw(key));
+      const max = MAX_LENGTHS[key];
+      if (max && raw.length > max) {
+        errors.push(`Row ${i + 1}: ${key} exceeds ${max} characters (truncated)`);
+        return raw.substring(0, max);
+      }
+      return raw;
+    };
 
-    const amount = parseFloat(get("amount"));
-    const personalAmount = parseFloat(get("personal_amount"));
-    const date = get("date");
+    const amount = parseFloat(getRaw("amount"));
+    const personalAmount = parseFloat(getRaw("personal_amount"));
+    const date = getRaw("date");
     const category = get("category");
     const description = get("description");
 
@@ -55,6 +77,11 @@ function parseCSV(text: string): { rows: ParsedRow[]; errors: string[] } {
 
     if (isNaN(personalAmount)) {
       errors.push(`Row ${i + 1}: invalid personal_amount`);
+      continue;
+    }
+
+    if (amount <= 0) {
+      errors.push(`Row ${i + 1}: amount must be greater than 0`);
       continue;
     }
 
