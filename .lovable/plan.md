@@ -1,28 +1,55 @@
 
+# Description Field Auto-suggest
 
-# Simplify Transaction Card Layout
+## What's being built
 
-## Changes to `src/components/TransactionList.tsx`
+A new `DescriptionAutocomplete` component that replaces the plain `<Input>` for the Description field in both `AddTransactionDialog` and `EditTransactionDialog`. As you type, a dropdown appears below showing matching descriptions from your past transactions, sorted by most recent. Clicking a suggestion fills the field. The field still works as a normal text input when no matches exist or you dismiss the dropdown.
 
-1. **Swap category and description placement**
-   - Row 1: Description (primary text) + Amount on the right
-   - Row 2: Category badge + payment mode as secondary info
+## Behaviour
 
-2. **Remove card name** from the metadata line (the `credit_card_id` lookup display)
+- Suggestions appear after typing 1+ characters
+- Filtered case-insensitively against all unique past descriptions
+- Sorted by most recently used (most recent transaction date first)
+- Max 6 suggestions shown at a time to keep the list compact
+- Clicking a suggestion sets the value and closes the dropdown
+- Pressing Escape closes the dropdown
+- Keyboard navigation (Up/Down arrows, Enter to select) for accessibility
+- Clicking outside closes the dropdown
 
-3. **Remove edit and delete buttons entirely** -- the pencil icon button and the `DeleteConfirmButton` component
-   - Clicking anywhere on the transaction card already opens the Edit dialog, which is sufficient
-   - The `DeleteConfirmButton` import can be removed
+## Technical approach
 
-4. **Keep the Edit dialog** -- it already supports editing; we just need to ensure users can also delete from within it (already handled by `EditTransactionDialog`)
+### New component: `src/components/DescriptionAutocomplete.tsx`
 
-### Result layout per transaction:
-```text
-+------------------------------------------+
-| Test lunch                       $63.10  |
-| Food & Dining · Cash        Yours: $50   |
-+------------------------------------------+
-```
+A self-contained component that accepts:
+- `value` / `onChange` — works identically to a normal input
+- `suggestions` — the deduplicated, pre-sorted list of past descriptions passed in from the dialog
 
-Only `src/components/TransactionList.tsx` needs to be modified.
+It renders:
+- A standard `<Input>` for typing
+- A `<div>` dropdown (not a Popover, to avoid z-index/portal complications inside the dialog's scroll container) positioned below the input using `relative`/`absolute` CSS
+- Suggestion items styled consistently with the rest of the app (`bg-popover`, `hover:bg-accent`, `border`, `rounded-md`, `shadow`)
 
+### Hook addition: `useDescriptionSuggestions` (inside `useTransactions.ts`)
+
+A simple derived hook that:
+1. Reads the already-cached `transactions` query data (no extra network request)
+2. Deduplicates descriptions
+3. Sorts by most recent `date`
+4. Returns the sorted unique string array
+
+### Dialog changes
+
+Both `AddTransactionDialog` and `EditTransactionDialog`:
+- Import `useTransactions` (already imported in the hooks file, just need to call it in the dialog) and `useDescriptionSuggestions`
+- Replace the Description `<Input>` with `<DescriptionAutocomplete>`
+
+No database changes required — suggestions are derived from already-fetched transaction data.
+
+## Files changed
+
+| File | Change |
+|---|---|
+| `src/components/DescriptionAutocomplete.tsx` | New component |
+| `src/hooks/useTransactions.ts` | Add `useDescriptionSuggestions` export |
+| `src/components/AddTransactionDialog.tsx` | Swap Description input for new component |
+| `src/components/EditTransactionDialog.tsx` | Swap Description input for new component |
