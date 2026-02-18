@@ -159,7 +159,7 @@ export default function Index() {
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
             tab === "budget" ? "text-primary" : "text-muted-foreground"}`}>
             <PieChart className="h-5 w-5" />
-            Statistics
+            Stats
           </button>
         </div>
       </nav>
