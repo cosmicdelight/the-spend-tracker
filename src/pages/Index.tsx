@@ -17,7 +17,7 @@ import TransactionFieldSettings from "@/components/TransactionFieldSettings";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import ManagePaymentModesDialog from "@/components/ManagePaymentModesDialog";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart } from "lucide-react";
+import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart, List } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Index() {
@@ -30,7 +30,7 @@ export default function Index() {
   const deleteRec = useDeleteRecurringTransaction();
   const createFromRec = useCreateFromRecurring();
   const { prefs: fieldPrefs, toggle: toggleField } = useTransactionFieldPrefs();
-  const [tab, setTab] = useState<"dashboard" | "budget">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "transactions" | "budget">("dashboard");
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -116,9 +116,11 @@ export default function Index() {
             onCreateNow={(rec) => createFromRec.mutate(rec)} />
 
 
-            {/* Transactions */}
-            <TransactionList transactions={transactions} cards={cards} fieldPrefs={fieldPrefs} />
-          </>
+        </>
+        }
+
+        {tab === "transactions" &&
+          <TransactionList transactions={transactions} cards={cards} fieldPrefs={fieldPrefs} />
         }
 
         {tab === "budget" &&
@@ -133,19 +135,23 @@ export default function Index() {
             type="button"
             onClick={() => setTab("dashboard")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
-            tab === "dashboard" ? "text-primary" : "text-muted-foreground"}`
-            }>
-
+            tab === "dashboard" ? "text-primary" : "text-muted-foreground"}`}>
             <LayoutDashboard className="h-5 w-5" />
             Dashboard
           </button>
           <button
             type="button"
+            onClick={() => setTab("transactions")}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
+            tab === "transactions" ? "text-primary" : "text-muted-foreground"}`}>
+            <List className="h-5 w-5" />
+            Transactions
+          </button>
+          <button
+            type="button"
             onClick={() => setTab("budget")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
-            tab === "budget" ? "text-primary" : "text-muted-foreground"}`
-            }>
-
+            tab === "budget" ? "text-primary" : "text-muted-foreground"}`}>
             <PieChart className="h-5 w-5" />
             Statistics
           </button>
