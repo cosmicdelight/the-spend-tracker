@@ -4,26 +4,36 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   useBudgetCategories,
   useDeleteBudgetCategory,
+  useDeleteBudgetCategoryGroup,
   useUpdateBudgetCategory,
+  useRenameBudgetCategoryGroup,
   useAddBudgetCategory,
 } from "@/hooks/useBudgetCategories";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Pencil, Plus, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 
 export default function Categories() {
   const { user, loading } = useAuth();
   const { data: categories = [] } = useBudgetCategories();
   const deleteCat = useDeleteBudgetCategory();
+  const deleteGroup = useDeleteBudgetCategoryGroup();
   const updateCat = useUpdateBudgetCategory();
+  const renameGroup = useRenameBudgetCategoryGroup();
   const addCat = useAddBudgetCategory();
   const { toast } = useToast();
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editSub, setEditSub] = useState("");
+  // Sub-category inline edit
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [editSubValue, setEditSubValue] = useState("");
+
+  // Group (category) inline edit
+  const [editingGroupName, setEditingGroupName] = useState<string | null>(null);
+  const [editGroupValue, setEditGroupValue] = useState("");
+
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [newCatName, setNewCatName] = useState("");
   const [newSubName, setNewSubName] = useState("");
@@ -33,7 +43,6 @@ export default function Categories() {
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
-  // Group categories by name
   const grouped = categories.reduce<Record<string, typeof categories>>((acc, cat) => {
     if (!acc[cat.name]) acc[cat.name] = [];
     acc[cat.name].push(cat);
@@ -50,18 +59,37 @@ export default function Categories() {
     });
   };
 
-  const startEdit = (cat: typeof categories[0]) => {
-    setEditingId(cat.id);
-    setEditName(cat.name);
-    setEditSub(cat.sub_category_name || "");
+  const startEditGroup = (groupName: string) => {
+    setEditingGroupName(groupName);
+    setEditGroupValue(groupName);
+    setEditingSubId(null);
+    if (!expandedGroups.has(groupName)) toggleGroup(groupName);
   };
 
-  const saveEdit = () => {
-    if (!editingId || !editName.trim()) return;
-    updateCat.mutate(
-      { id: editingId, name: editName.trim(), sub_category_name: editSub.trim() || null },
+  const saveGroupEdit = () => {
+    if (!editingGroupName || !editGroupValue.trim()) return;
+    if (editGroupValue.trim() === editingGroupName) { setEditingGroupName(null); return; }
+    renameGroup.mutate(
+      { oldName: editingGroupName, newName: editGroupValue.trim() },
       {
-        onSuccess: () => { toast({ title: "Updated" }); setEditingId(null); },
+        onSuccess: () => { toast({ title: "Category renamed" }); setEditingGroupName(null); },
+        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+      }
+    );
+  };
+
+  const startEditSub = (cat: typeof categories[0]) => {
+    setEditingSubId(cat.id);
+    setEditSubValue(cat.sub_category_name || "");
+    setEditingGroupName(null);
+  };
+
+  const saveSubEdit = (cat: typeof categories[0]) => {
+    if (!editSubValue.trim()) return;
+    updateCat.mutate(
+      { id: cat.id, name: cat.name, sub_category_name: editSubValue.trim() },
+      {
+        onSuccess: () => { toast({ title: "Updated" }); setEditingSubId(null); },
         onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
       }
     );
@@ -133,91 +161,111 @@ export default function Categories() {
         <div className="space-y-2">
           {sortedGroups.map((groupName) => {
             const items = grouped[groupName];
-            const hasSubs = items.some((i) => i.sub_category_name);
-            const isExpanded = expandedGroups.has(groupName);
-            // Find the "parent" row (no sub-category) or use first item
-            const parentItem = items.find((i) => !i.sub_category_name) || items[0];
             const subItems = items.filter((i) => i.sub_category_name);
+            const hasSubs = subItems.length > 0;
+            const isExpanded = expandedGroups.has(groupName);
+            const isEditingGroup = editingGroupName === groupName;
 
             return (
               <Card key={groupName}>
+                {/* Group header row */}
                 <div
                   className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors rounded-xl"
-                  onClick={() => hasSubs && toggleGroup(groupName)}
+                  onClick={() => { if (!isEditingGroup) hasSubs && toggleGroup(groupName); }}
                 >
                   <div className="flex items-center gap-2">
                     {hasSubs ? (
-                      isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      isExpanded
+                        ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        : <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     ) : (
                       <span className="w-4" />
                     )}
-                    {editingId === parentItem.id ? (
+
+                    {isEditingGroup ? (
                       <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="h-7 w-40"
+                        value={editGroupValue}
+                        onChange={(e) => setEditGroupValue(e.target.value)}
+                        className="h-7 w-44"
                         onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.key === "Enter" && saveGroupEdit()}
+                        autoFocus
                       />
                     ) : (
                       <span className="font-medium text-sm">{groupName}</span>
                     )}
-                    {hasSubs && (
+
+                    {hasSubs && !isEditingGroup && (
                       <span className="text-xs text-muted-foreground">
                         {subItems.length} sub-categor{subItems.length === 1 ? "y" : "ies"}
                       </span>
                     )}
                   </div>
+
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    {editingId === parentItem.id ? (
+                    {isEditingGroup ? (
                       <>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveEdit}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveGroupEdit}>
                           <Save className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingId(null)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingGroupName(null)}>
                           <X className="h-3.5 w-3.5" />
                         </Button>
                       </>
                     ) : (
                       <>
-                        {!hasSubs && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => startEdit(parentItem)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-muted-foreground"
-                          onClick={() => { setAddingSubTo(addingSubTo === groupName ? null : groupName); setNewSubForGroup(""); toggleGroup(groupName); }}
+                          onClick={() => startEditGroup(groupName)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground"
+                          onClick={() => {
+                            setAddingSubTo(addingSubTo === groupName ? null : groupName);
+                            setNewSubForGroup("");
+                            if (!isExpanded) toggleGroup(groupName);
+                          }}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
-                        {!hasSubs && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            onClick={() => deleteCat.mutate(parentItem.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
+                        <DeleteConfirmButton
+                          label={`"${groupName}"${hasSubs ? " and all its sub-categories" : ""}`}
+                          onConfirm={() =>
+                            deleteGroup.mutate(groupName, {
+                              onSuccess: () => toast({ title: "Category deleted" }),
+                              onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                            })
+                          }
+                        />
                       </>
                     )}
                   </div>
                 </div>
 
+                {/* Sub-categories */}
                 {isExpanded && (
                   <div className="border-t px-4 pb-3">
                     {subItems.map((sub) => (
                       <div key={sub.id} className="flex items-center justify-between py-2 pl-6 text-sm">
-                        {editingId === sub.id ? (
+                        {editingSubId === sub.id ? (
                           <div className="flex items-center gap-2">
-                            <Input value={editSub} onChange={(e) => setEditSub(e.target.value)} className="h-7 w-36" />
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveEdit}>
+                            <Input
+                              value={editSubValue}
+                              onChange={(e) => setEditSubValue(e.target.value)}
+                              className="h-7 w-36"
+                              onKeyDown={(e) => e.key === "Enter" && saveSubEdit(sub)}
+                              autoFocus
+                            />
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveSubEdit(sub)}>
                               <Save className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingId(null)}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingSubId(null)}>
                               <X className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -225,17 +273,23 @@ export default function Categories() {
                           <>
                             <span className="text-muted-foreground">{sub.sub_category_name}</span>
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => startEdit(sub)}>
-                                <Pencil className="h-3 w-3" />
-                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                onClick={() => deleteCat.mutate(sub.id)}
+                                className="h-7 w-7 text-muted-foreground"
+                                onClick={() => startEditSub(sub)}
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Pencil className="h-3 w-3" />
                               </Button>
+                              <DeleteConfirmButton
+                                label={`"${sub.sub_category_name}"`}
+                                onConfirm={() =>
+                                  deleteCat.mutate(sub.id, {
+                                    onSuccess: () => toast({ title: "Sub-category deleted" }),
+                                    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                                  })
+                                }
+                              />
                             </div>
                           </>
                         )}

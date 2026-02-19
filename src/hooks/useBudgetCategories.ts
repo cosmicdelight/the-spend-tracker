@@ -57,3 +57,35 @@ export function useUpdateBudgetCategory() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["budget_categories"] }),
   });
 }
+
+export function useDeleteBudgetCategoryGroup() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (groupName: string) => {
+      const { error } = await supabase
+        .from("budget_categories")
+        .delete()
+        .eq("user_id", user!.id)
+        .eq("name", groupName);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget_categories"] }),
+  });
+}
+
+export function useRenameBudgetCategoryGroup() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
+      const { error } = await supabase
+        .from("budget_categories")
+        .update({ name: newName })
+        .eq("user_id", user!.id)
+        .eq("name", oldName);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget_categories"] }),
+  });
+}
