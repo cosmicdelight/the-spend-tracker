@@ -288,6 +288,7 @@ export default function ImportTransactionsDialog() {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Import from CSV</DialogTitle>
+          {/* toggle: expense | income */}
         </DialogHeader>
 
         <div className="space-y-4">
