@@ -27,6 +27,9 @@ export default function RecurringTransactionList({ recurring, onDelete, onCreate
                 <Badge variant="secondary" className="text-xs shrink-0">
                   {rec.frequency}
                 </Badge>
+                {rec.transaction_type === "income" && (
+                  <Badge variant="outline" className="text-xs shrink-0 border-primary text-primary">income</Badge>
+                )}
                 {rec.auto_generate && (
                   <Badge variant="outline" className="text-xs shrink-0">auto</Badge>
                 )}
