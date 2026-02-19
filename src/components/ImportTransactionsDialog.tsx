@@ -94,7 +94,7 @@ function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: string[
     if (!date || isNaN(amount) || !category) { errors.push(`Row ${rowNum}: missing required field (date, amount, or category)`); continue; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date))) { errors.push(`Row ${rowNum}: invalid date "${date}" — expected YYYY-MM-DD`); continue; }
     if (isNaN(personalAmount)) { errors.push(`Row ${rowNum}: invalid personal_amount`); continue; }
-    if (amount <= 0) { errors.push(`Row ${rowNum}: amount must be greater than 0`); continue; }
+    if (amount < 0) { errors.push(`Row ${rowNum}: amount must be 0 or greater`); continue; }
     rows.push({ date, amount, personal_amount: personalAmount, category, sub_category: get("sub_category") || null, payment_mode: get("payment_mode") || "cash", description: get("description"), notes: get("notes") || null });
   }
   return { rows, errors };
@@ -123,7 +123,7 @@ function parseIncomeCSV(text: string): { rows: ParsedIncome[]; errors: string[] 
     const category = get("category");
     if (!date || isNaN(amount) || !category) { errors.push(`Row ${rowNum}: missing required field (date, amount, or category)`); continue; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date))) { errors.push(`Row ${rowNum}: invalid date "${date}" — expected YYYY-MM-DD`); continue; }
-    if (amount <= 0) { errors.push(`Row ${rowNum}: amount must be greater than 0`); continue; }
+    if (amount < 0) { errors.push(`Row ${rowNum}: amount must be 0 or greater`); continue; }
     rows.push({ date, amount, category, sub_category: get("sub_category") || null, description: get("description") || null, notes: get("notes") || null });
   }
   return { rows, errors };
