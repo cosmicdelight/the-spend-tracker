@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, DragEvent } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, ArrowLeft, CheckCircle2, AlertCircle, Plus } from "lucide-react";
+import { Upload, ArrowLeft, CheckCircle2, AlertCircle, Plus, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -340,6 +340,8 @@ export default function ImportTransactionsDialog() {
   const [importing, setImporting] = useState(false);
   const [resolutions, setResolutions] = useState<Map<ResolutionKey, CategoryResolution>>(new Map());
   const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
@@ -368,6 +370,7 @@ export default function ImportTransactionsDialog() {
     setResolutions(new Map());
     setReviewItems([]);
     setStep("upload");
+    setFileName(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -406,9 +409,12 @@ export default function ImportTransactionsDialog() {
     return map;
   };
 
-  const handleFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFile = useCallback((file: File) => {
+    if (!file.name.endsWith(".csv")) {
+      setParseErrors(["Please upload a .csv file."]);
+      return;
+    }
+    setFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
       const text = reader.result as string;
@@ -429,6 +435,22 @@ export default function ImportTransactionsDialog() {
     };
     reader.readAsText(file);
   }, [importType]);
+
+  const handleFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
+  }, [processFile]);
+
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
+  }, [processFile]);
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => { e.preventDefault(); setDragOver(true); };
+  const handleDragLeave = () => setDragOver(false);
 
   const downloadTemplate = () => {
     let header: string, sample: string, filename: string;
@@ -599,18 +621,44 @@ export default function ImportTransactionsDialog() {
               </button>
             </div>
 
-            <div>
-              <p className="mb-2 text-xs text-muted-foreground">
-                Columns: <span className="font-medium">{columnHeaders}</span>.{" "}
-                <button type="button" className="underline text-primary hover:text-primary/80" onClick={downloadTemplate}>
-                  Download template
-                </button>
-              </p>
-              <input
-                ref={fileRef} type="file" accept=".csv" onChange={handleFile}
-                className="w-full text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-muted"
-              />
+            {/* Drop zone */}
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => fileRef.current?.click()}
+              className={`relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 cursor-pointer transition-colors select-none ${
+                dragOver
+                  ? "border-primary bg-primary/5"
+                  : fileName
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-input hover:border-primary/50 hover:bg-muted/40"
+              }`}
+            >
+              <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
+              {fileName ? (
+                <>
+                  <FileText className="h-8 w-8 text-primary" />
+                  <p className="text-sm font-medium text-foreground truncate max-w-[16rem]">{fileName}</p>
+                  <p className="text-xs text-muted-foreground">Click or drop to replace</p>
+                </>
+              ) : (
+                <>
+                  <Upload className={`h-8 w-8 transition-colors ${dragOver ? "text-primary" : "text-muted-foreground"}`} />
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Drop your CSV here</p>
+                    <p className="text-xs text-muted-foreground">or click to browse</p>
+                  </div>
+                </>
+              )}
             </div>
+
+            <p className="text-xs text-muted-foreground -mt-1">
+              Columns: <span className="font-medium">{columnHeaders}</span>.{" "}
+              <button type="button" className="underline text-primary hover:text-primary/80" onClick={(e) => { e.stopPropagation(); downloadTemplate(); }}>
+                Download template
+              </button>
+            </p>
 
             {parseErrors.length > 0 && (
               <div className="max-h-24 overflow-y-auto rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
