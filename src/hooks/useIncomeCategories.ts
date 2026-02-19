@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { seedDefaultIncomeCategories } from "@/lib/seedDefaultIncomeCategories";
 
 export interface IncomeCategory {
   id: string;
@@ -14,6 +15,7 @@ export function useIncomeCategories() {
   return useQuery({
     queryKey: ["income_categories", user?.id],
     queryFn: async () => {
+      await seedDefaultIncomeCategories(user!.id);
       const { data, error } = await supabase
         .from("income_categories")
         .select("*")
