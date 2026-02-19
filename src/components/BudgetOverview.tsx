@@ -69,12 +69,12 @@ const COLORS = [
 ];
 
 const INCOME_COLORS = [
-  "hsl(140, 55%, 42%)",
-  "hsl(152, 50%, 38%)",
-  "hsl(165, 48%, 35%)",
-  "hsl(130, 45%, 48%)",
-  "hsl(110, 40%, 44%)",
-  "hsl(175, 52%, 40%)",
+  "hsl(210, 75%, 52%)",   // blue
+  "hsl(262, 60%, 58%)",   // purple
+  "hsl(340, 70%, 52%)",   // rose
+  "hsl(35, 90%, 52%)",    // amber
+  "hsl(185, 65%, 42%)",   // teal
+  "hsl(16, 80%, 52%)",    // orange
 ];
 
 interface Props {
