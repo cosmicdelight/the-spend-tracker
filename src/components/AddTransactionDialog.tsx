@@ -162,9 +162,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const isPending = addTx.isPending || addIncome.isPending;
 
   const trigger = dashboardTrigger ? (
-    <Button variant="outline" size="sm">
-      <Plus className="mr-1.5 h-3.5 w-3.5" />Add Transaction
-    </Button>
+    <Button><Plus className="mr-1.5 h-3.5 w-3.5" />Add Transaction</Button>
   ) : (
     <Button><Plus className="mr-2 h-4 w-4" />Add Expense</Button>
   );
