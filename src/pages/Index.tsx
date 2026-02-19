@@ -86,20 +86,6 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2">
-              <AddTransactionDialog fieldPrefs={fieldPrefs} />
-              <ImportTransactionsDialog />
-              <AddRecurringTransactionDialog />
-              <Link to="/cards">
-                <Button variant="outline" size="sm"><CreditCard className="mr-1 h-3 w-3" />Manage Cards</Button>
-              </Link>
-              <Link to="/categories">
-                <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
-              </Link>
-              <ManagePaymentModesDialog />
-              <TransactionFieldSettings prefs={fieldPrefs} onToggle={toggleField} />
-            </div>
 
             {/* Credit Cards */}
             {cards.length > 0 &&
@@ -126,6 +112,15 @@ export default function Index() {
             <div className="flex flex-wrap gap-2">
               <AddTransactionDialog fieldPrefs={fieldPrefs} />
               <ImportTransactionsDialog />
+              <AddRecurringTransactionDialog />
+              <Link to="/cards">
+                <Button variant="outline" size="sm"><CreditCard className="mr-1 h-3 w-3" />Manage Cards</Button>
+              </Link>
+              <Link to="/categories">
+                <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
+              </Link>
+              <ManagePaymentModesDialog />
+              <TransactionFieldSettings prefs={fieldPrefs} onToggle={toggleField} />
             </div>
             <TransactionList transactions={transactions} cards={cards} fieldPrefs={fieldPrefs} />
           </div>
