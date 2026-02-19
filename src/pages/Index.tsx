@@ -87,8 +87,9 @@ export default function Index() {
             </div>
 
             {/* Dashboard quick-add */}
-            <div>
+            <div className="flex flex-wrap gap-2">
               <AddTransactionDialog fieldPrefs={fieldPrefs} dashboardTrigger />
+              <ImportTransactionsDialog />
             </div>
 
             {/* Credit Cards */}
@@ -115,7 +116,6 @@ export default function Index() {
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <AddTransactionDialog fieldPrefs={fieldPrefs} />
-              <ImportTransactionsDialog />
               <AddRecurringTransactionDialog />
               <Link to="/cards">
                 <Button variant="outline" size="sm"><CreditCard className="mr-1 h-3 w-3" />Manage Cards</Button>
