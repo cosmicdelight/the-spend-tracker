@@ -78,7 +78,7 @@ export default function AddIncomeDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+        <Button>
           <Plus className="mr-2 h-4 w-4" />Add Income
         </Button>
       </DialogTrigger>
