@@ -635,7 +635,9 @@ function IncomeBreakdownCard({ incomeGrouped, totalIncome, view, periodLabel }: 
                         ) : (
                           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                         )
-                      ) : null}
+                      ) : (
+                        <span className="h-3.5 w-3.5" />
+                      )}
                     </button>
                     {isExpanded && hasSubs && (
                       <div className="mb-2 ml-6">
