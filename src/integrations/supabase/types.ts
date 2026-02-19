@@ -77,6 +77,7 @@ export type Database = {
       income: {
         Row: {
           amount: number
+          category: string
           created_at: string
           date: string
           description: string | null
@@ -84,11 +85,12 @@ export type Database = {
           notes: string | null
           original_amount: number
           original_currency: string
-          source: string
+          sub_category: string | null
           user_id: string
         }
         Insert: {
           amount?: number
+          category?: string
           created_at?: string
           date?: string
           description?: string | null
@@ -96,11 +98,12 @@ export type Database = {
           notes?: string | null
           original_amount?: number
           original_currency?: string
-          source?: string
+          sub_category?: string | null
           user_id: string
         }
         Update: {
           amount?: number
+          category?: string
           created_at?: string
           date?: string
           description?: string | null
@@ -108,7 +111,31 @@ export type Database = {
           notes?: string | null
           original_amount?: number
           original_currency?: string
-          source?: string
+          sub_category?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      income_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sub_category_name: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sub_category_name?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sub_category_name?: string | null
           user_id?: string
         }
         Relationships: []

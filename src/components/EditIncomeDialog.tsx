@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SearchableSelect from "@/components/SearchableSelect";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 import { useUpdateIncome, useDeleteIncome } from "@/hooks/useIncome";
 import type { IncomeEntry } from "@/hooks/useIncome";
+import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
+import { Settings } from "lucide-react";
 
 interface Props {
   entry: IncomeEntry | null;
@@ -20,13 +24,15 @@ export default function EditIncomeDialog({ entry, open, onOpenChange }: Props) {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("SGD");
   const [date, setDate] = useState("");
-  const [source, setSource] = useState("");
+  const [category, setCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
 
   const updateIncome = useUpdateIncome();
   const deleteIncome = useDeleteIncome();
+  const { data: incomeCategories = [] } = useIncomeCategories();
   const { convertToSGD, currencies, loading: ratesLoading } = useCurrencyConversion();
   const { toast } = useToast();
 
@@ -35,7 +41,8 @@ export default function EditIncomeDialog({ entry, open, onOpenChange }: Props) {
       setAmount(String(entry.original_amount));
       setCurrency(entry.original_currency);
       setDate(entry.date);
-      setSource(entry.source);
+      setCategory(entry.category);
+      setSubCategory(entry.sub_category || "");
       setDescription(entry.description || "");
       setNotes(entry.notes || "");
       setErrors([]);
@@ -45,12 +52,21 @@ export default function EditIncomeDialog({ entry, open, onOpenChange }: Props) {
   const amtNum = parseFloat(amount) || 0;
   const sgdAmount = currency !== "SGD" ? convertToSGD(amtNum, currency) : amtNum;
 
+  const categoryOptions = [...new Set(incomeCategories.map((c) => c.name))].sort()
+    .map((name) => ({ value: name, label: name }));
+
+  const hasSubs = incomeCategories.some((c) => c.name === category && c.sub_category_name);
+  const subOptions = incomeCategories
+    .filter((c) => c.name === category && c.sub_category_name)
+    .sort((a, b) => a.sub_category_name!.localeCompare(b.sub_category_name!))
+    .map((c) => ({ value: c.sub_category_name!, label: c.sub_category_name! }));
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!entry) return;
     const newErrors: string[] = [];
     if (amtNum <= 0) newErrors.push("Amount must be greater than 0.");
-    if (!source.trim()) newErrors.push("Please enter a source.");
+    if (!category.trim()) newErrors.push("Please select a category.");
     if (newErrors.length > 0) { setErrors(newErrors); return; }
     setErrors([]);
 
@@ -61,7 +77,8 @@ export default function EditIncomeDialog({ entry, open, onOpenChange }: Props) {
         original_amount: amtNum,
         original_currency: currency,
         date,
-        source: source.trim(),
+        category: category.trim(),
+        sub_category: subCategory || null,
         description: description.trim() || null,
         notes: notes.trim() || null,
       },
@@ -122,12 +139,34 @@ export default function EditIncomeDialog({ entry, open, onOpenChange }: Props) {
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           </div>
           <div className="space-y-1.5">
-            <Label>Source</Label>
-            <Input
-              value={source} onChange={(e) => setSource(e.target.value)}
-              placeholder="e.g. Salary, Freelance, Investment" required
+            <div className="flex items-center justify-between">
+              <Label>Category</Label>
+              <Link
+                to="/income-categories"
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Settings className="h-3 w-3" />Manage
+              </Link>
+            </div>
+            <SearchableSelect
+              options={categoryOptions}
+              value={category}
+              onValueChange={(v) => { setCategory(v); setSubCategory(""); }}
+              placeholder="Select category"
             />
           </div>
+          {hasSubs && (
+            <div className="space-y-1.5">
+              <Label>Sub-category (optional)</Label>
+              <SearchableSelect
+                options={subOptions}
+                value={subCategory}
+                onValueChange={setSubCategory}
+                placeholder="Select sub-category"
+              />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Description (optional)</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add a note" />
