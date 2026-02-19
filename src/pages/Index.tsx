@@ -86,6 +86,10 @@ export default function Index() {
               </div>
             </div>
 
+            {/* Dashboard quick-add */}
+            <div>
+              <AddTransactionDialog fieldPrefs={fieldPrefs} dashboardTrigger />
+            </div>
 
             {/* Credit Cards */}
             {cards.length > 0 &&
