@@ -52,6 +52,22 @@ export function useDeleteIncomeCategory() {
   });
 }
 
+export function useDeleteIncomeCategoryGroup() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (groupName: string) => {
+      const { error } = await supabase
+        .from("income_categories")
+        .delete()
+        .eq("user_id", user!.id)
+        .eq("name", groupName);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["income_categories"] }),
+  });
+}
+
 export function useUpdateIncomeCategory() {
   const qc = useQueryClient();
   return useMutation({
@@ -60,6 +76,22 @@ export function useUpdateIncomeCategory() {
         .from("income_categories")
         .update({ name, sub_category_name })
         .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["income_categories"] }),
+  });
+}
+
+export function useRenameIncomeCategoryGroup() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
+      const { error } = await supabase
+        .from("income_categories")
+        .update({ name: newName })
+        .eq("user_id", user!.id)
+        .eq("name", oldName);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["income_categories"] }),
