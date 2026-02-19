@@ -134,6 +134,7 @@ export default function Index() {
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <AddIncomeDialog />
+              <AddRecurringTransactionDialog />
               <Link to="/income-categories">
                 <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
               </Link>
