@@ -160,7 +160,7 @@ export default function Index() {
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
             tab === "transactions" ? "text-primary" : "text-muted-foreground"}`}>
             <List className="h-5 w-5" />
-            Transactions
+            Expenses
           </button>
           <button
             type="button"

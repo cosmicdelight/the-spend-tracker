@@ -92,7 +92,7 @@ export default function AddTransactionDialog({ fieldPrefs }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button><Plus className="mr-2 h-4 w-4" />Add Transaction</Button>
+        <Button><Plus className="mr-2 h-4 w-4" />Add Expense</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
@@ -197,7 +197,7 @@ export default function AddTransactionDialog({ fieldPrefs }: Props) {
             </div>
           )}
           <Button type="submit" className="w-full" disabled={addTx.isPending}>
-            {addTx.isPending ? "Adding..." : "Add Transaction"}
+            {addTx.isPending ? "Adding..." : "Add Expense"}
           </Button>
         </form>
       </DialogContent>
