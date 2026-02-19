@@ -68,6 +68,15 @@ const COLORS = [
   "hsl(170, 60%, 40%)",
 ];
 
+const INCOME_COLORS = [
+  "hsl(140, 55%, 42%)",
+  "hsl(152, 50%, 38%)",
+  "hsl(165, 48%, 35%)",
+  "hsl(130, 45%, 48%)",
+  "hsl(110, 40%, 44%)",
+  "hsl(175, 52%, 40%)",
+];
+
 interface Props {
   categories: BudgetCategory[];
   transactions: Transaction[];
@@ -180,6 +189,30 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
   const totalIncome = filteredIncome.reduce((s, e) => s + Number(e.amount), 0);
   const netSavings = totalIncome - totalSpent;
   const showSavings = income && filteredIncome.length > 0;
+
+  // Group income by category
+  const incomeGrouped: GroupedEntry[] = useMemo(() => {
+    const map = new Map<string, { total: number; subs: Map<string, number> }>();
+    for (const entry of filteredIncome) {
+      if (!map.has(entry.category)) map.set(entry.category, { total: 0, subs: new Map() });
+      const bucket = map.get(entry.category)!;
+      const amt = Number(entry.amount);
+      bucket.total += amt;
+      const subKey = entry.sub_category || "(no sub-category)";
+      bucket.subs.set(subKey, (bucket.subs.get(subKey) || 0) + amt);
+    }
+    return [...map.entries()]
+      .map(([name, { total, subs }]) => ({
+        name,
+        value: total,
+        subs: [...subs.entries()]
+          .map(([n, v]) => ({ name: n, value: v }))
+          .filter((s) => s.value > 0)
+          .sort((a, b) => b.value - a.value),
+      }))
+      .filter((g) => g.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [filteredIncome]);
 
   const pieData = grouped.map((g) => ({ name: g.name, value: g.value }));
   const topLabelNames = new Set(pieData.slice(0, 7).map((d) => d.name));
@@ -457,7 +490,201 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
       </CardContent>
     </Card>
 
-    <SpendingTrendsChart transactions={transactions} />
+    <SpendingTrendsChart transactions={transactions} income={income} />
+
+    {/* Income Breakdown card */}
+    {income && (
+      <IncomeBreakdownCard
+        incomeGrouped={incomeGrouped}
+        totalIncome={totalIncome}
+        view={view}
+        periodLabel={periodLabel}
+      />
+    )}
     </div>
   );
 }
+
+// ── Income Breakdown Card ──────────────────────────────────────────────────────
+
+interface IncomeBreakdownCardProps {
+  incomeGrouped: GroupedEntry[];
+  totalIncome: number;
+  view: "month" | "year";
+  periodLabel: string;
+}
+
+function IncomeBreakdownCard({ incomeGrouped, totalIncome, view, periodLabel }: IncomeBreakdownCardProps) {
+  const [expandedIncome, setExpandedIncome] = useState<string | null>(null);
+  const incomePieData = incomeGrouped.map((g) => ({ name: g.name, value: g.value }));
+
+  const IncomePieTooltip = ({ active, payload }: any) => {
+    if (active && payload?.[0]) {
+      const entry = payload[0].payload as { name: string; value: number };
+      const pct = totalIncome > 0 ? ((entry.value / totalIncome) * 100).toFixed(1) : "0";
+      return (
+        <div className="rounded-lg border bg-card px-3 py-2 text-sm shadow-md">
+          <p className="font-medium">{entry.name}</p>
+          <p className="text-muted-foreground">${entry.value.toFixed(2)} ({pct}%)</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Income Breakdown</CardTitle>
+          <span className="text-sm text-muted-foreground">{periodLabel}</span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {incomeGrouped.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            No income {view === "month" ? "this month" : "this year"} yet.
+          </p>
+        ) : (
+          <>
+            <div className="mb-4 text-center">
+              <p className="text-xs text-muted-foreground">Total Income</p>
+              <p className="text-2xl font-heading font-bold" style={{ color: INCOME_COLORS[0] }}>
+                ${totalIncome.toFixed(2)}
+              </p>
+            </div>
+
+            {incomePieData.length > 0 && (
+              <div className="mb-4 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={incomePieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                      strokeWidth={0}
+                      label={({ name, percent, midAngle, outerRadius: oR, cx: cxVal, cy: cyVal }) => {
+                        const RADIAN = Math.PI / 180;
+                        const radius = oR + 35;
+                        const x = cxVal + radius * Math.cos(-midAngle * RADIAN);
+                        const y = cyVal + radius * Math.sin(-midAngle * RADIAN);
+                        const textAnchor = x > cxVal ? "start" : "end";
+                        return (
+                          <text x={x} y={y} textAnchor={textAnchor} dominantBaseline="central" className="fill-foreground text-[10px] font-medium">
+                            {`${name} ${(percent * 100).toFixed(0)}%`}
+                          </text>
+                        );
+                      }}
+                      labelLine={({ points, midAngle, outerRadius: oR, cx: cxVal, cy: cyVal }: any) => {
+                        const RADIAN = Math.PI / 180;
+                        const startX = points[0].x;
+                        const startY = points[0].y;
+                        const midRadius = oR + 18;
+                        const midX = cxVal + midRadius * Math.cos(-midAngle * RADIAN);
+                        const midY = cyVal + midRadius * Math.sin(-midAngle * RADIAN);
+                        const endRadius = oR + 30;
+                        const endX = cxVal + endRadius * Math.cos(-midAngle * RADIAN);
+                        const endY = cyVal + endRadius * Math.sin(-midAngle * RADIAN);
+                        return (
+                          <polyline
+                            points={`${startX},${startY} ${midX},${midY} ${endX},${endY}`}
+                            stroke="hsl(var(--muted-foreground))"
+                            strokeWidth={1}
+                            fill="none"
+                          />
+                        );
+                      }}
+                    >
+                      {incomePieData.map((_, i) => (
+                        <Cell key={i} fill={INCOME_COLORS[i % INCOME_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<IncomePieTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            <div className="divide-y">
+              {incomeGrouped.map((entry, i) => {
+                const isExpanded = expandedIncome === entry.name;
+                const hasSubs = entry.subs.length > 1 || (entry.subs.length === 1 && entry.subs[0].name !== "(no sub-category)");
+                const color = INCOME_COLORS[i % INCOME_COLORS.length];
+                return (
+                  <div key={entry.name}>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted/50"
+                      onClick={() => setExpandedIncome(isExpanded ? null : entry.name)}
+                    >
+                      <span
+                        className="inline-flex min-w-[2.5rem] items-center justify-center rounded-md px-1.5 py-0.5 text-xs font-bold text-white"
+                        style={{ backgroundColor: color }}
+                      >
+                        {totalIncome > 0 ? ((entry.value / totalIncome) * 100).toFixed(0) : 0}%
+                      </span>
+                      <span className="flex-1 text-left font-medium">{entry.name}</span>
+                      <span className="font-medium">${entry.value.toFixed(2)}</span>
+                      {hasSubs ? (
+                        isExpanded ? (
+                          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        )
+                      ) : null}
+                    </button>
+                    {isExpanded && hasSubs && (
+                      <div className="mb-2 ml-6">
+                        <div className="rounded-lg border bg-muted/30 p-3">
+                          <div className="flex items-center gap-4">
+                            <div className="h-28 w-28 shrink-0">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie
+                                    data={entry.subs}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={25}
+                                    outerRadius={48}
+                                    paddingAngle={3}
+                                    dataKey="value"
+                                    strokeWidth={0}
+                                  >
+                                    {entry.subs.map((_, j) => (
+                                      <Cell key={j} fill={INCOME_COLORS[(i + j + 1) % INCOME_COLORS.length]} />
+                                    ))}
+                                  </Pie>
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                            <div className="space-y-1 text-sm">
+                              {entry.subs.map((sub, j) => (
+                                <div key={sub.name} className="flex items-center gap-2">
+                                  <span
+                                    className="inline-block h-2.5 w-2.5 rounded-full"
+                                    style={{ backgroundColor: INCOME_COLORS[(i + j + 1) % INCOME_COLORS.length] }}
+                                  />
+                                  <span className="text-muted-foreground">{sub.name}</span>
+                                  <span className="font-medium">${sub.value.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+

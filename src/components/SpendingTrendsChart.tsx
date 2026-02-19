@@ -11,6 +11,9 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Transaction } from "@/hooks/useTransactions";
+import type { IncomeEntry } from "@/hooks/useIncome";
+
+const INCOME_COLOR = "hsl(140, 55%, 42%)";
 
 const LINE_COLORS = [
   "hsl(var(--primary))",
@@ -19,7 +22,6 @@ const LINE_COLORS = [
   "hsl(190, 70%, 45%)",
   "hsl(340, 65%, 50%)",
   "hsl(45, 85%, 50%)",
-  "hsl(140, 55%, 42%)",
   "hsl(20, 80%, 55%)",
   "hsl(280, 50%, 60%)",
   "hsl(170, 60%, 40%)",
@@ -29,14 +31,14 @@ const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 
 interface Props {
   transactions: Transaction[];
+  income?: IncomeEntry[];
 }
 
-export default function SpendingTrendsChart({ transactions }: Props) {
+export default function SpendingTrendsChart({ transactions, income }: Props) {
   const [months, setMonths] = useState(6);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Build per-month, per-category data for the last N months
-  const { chartData, categoryNames } = useMemo(() => {
+  const { chartData, categoryNames, hasIncome } = useMemo(() => {
     const now = new Date();
     const periods: { year: number; month: number; label: string }[] = [];
     for (let i = months - 1; i >= 0; i--) {
@@ -51,9 +53,11 @@ export default function SpendingTrendsChart({ transactions }: Props) {
     // Aggregate spend per category per period
     const catTotals = new Map<string, number>();
     const periodCatMap = new Map<string, Map<string, number>>();
+    const periodIncomeMap = new Map<string, number>();
 
     for (const p of periods) {
       periodCatMap.set(`${p.year}-${p.month}`, new Map());
+      periodIncomeMap.set(`${p.year}-${p.month}`, 0);
     }
 
     for (const tx of transactions) {
@@ -66,6 +70,17 @@ export default function SpendingTrendsChart({ transactions }: Props) {
       catTotals.set(tx.category, (catTotals.get(tx.category) || 0) + amt);
     }
 
+    // Aggregate income per period
+    let hasIncome = false;
+    for (const entry of (income ?? [])) {
+      const d = new Date(entry.date);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (!periodIncomeMap.has(key)) continue;
+      const prev = periodIncomeMap.get(key) || 0;
+      periodIncomeMap.set(key, prev + Number(entry.amount));
+      hasIncome = true;
+    }
+
     // Top categories by total spend across all shown months
     const topCats = [...catTotals.entries()]
       .sort((a, b) => b[1] - a[1])
@@ -73,7 +88,8 @@ export default function SpendingTrendsChart({ transactions }: Props) {
       .map(([name]) => name);
 
     const chartData = periods.map((p) => {
-      const bucket = periodCatMap.get(`${p.year}-${p.month}`)!;
+      const key = `${p.year}-${p.month}`;
+      const bucket = periodCatMap.get(key)!;
       const row: Record<string, string | number> = { month: p.label, Total: 0 };
       let total = 0;
       for (const cat of topCats) {
@@ -82,26 +98,33 @@ export default function SpendingTrendsChart({ transactions }: Props) {
         total += val;
       }
       row.Total = Math.round(total * 100) / 100;
+      row.Income = Math.round((periodIncomeMap.get(key) || 0) * 100) / 100;
       return row;
     });
 
-    return { chartData, categoryNames: topCats };
-  }, [transactions, months]);
+    return { chartData, categoryNames: topCats, hasIncome };
+  }, [transactions, income, months]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
+    const incomeEntry = payload.find((p: any) => p.dataKey === "Income");
+    const others = payload.filter((p: any) => p.dataKey !== "Income" && p.value > 0)
+      .sort((a: any, b: any) => b.value - a.value);
     return (
       <div className="rounded-lg border bg-card px-3 py-2 text-sm shadow-md">
         <p className="mb-1 font-medium">{label}</p>
-        {payload
-          .filter((p: any) => p.value > 0)
-          .sort((a: any, b: any) => b.value - a.value)
-          .map((p: any) => (
-            <p key={p.dataKey} className="flex items-center gap-2 text-muted-foreground">
-              <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
-              {p.dataKey}: ${Number(p.value).toFixed(2)}
-            </p>
-          ))}
+        {incomeEntry && incomeEntry.value > 0 && (
+          <p className="flex items-center gap-2 font-medium" style={{ color: INCOME_COLOR }}>
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: INCOME_COLOR }} />
+            Income: +${Number(incomeEntry.value).toFixed(2)}
+          </p>
+        )}
+        {others.map((p: any) => (
+          <p key={p.dataKey} className="flex items-center gap-2 text-muted-foreground">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+            {p.dataKey}: ${Number(p.value).toFixed(2)}
+          </p>
+        ))}
       </div>
     );
   };
@@ -166,6 +189,17 @@ export default function SpendingTrendsChart({ transactions }: Props) {
                   wrapperStyle={{ fontSize: 11 }}
                   iconType="circle"
                   iconSize={8}
+                />
+              )}
+              {/* Income line — always visible, not affected by category filter */}
+              {hasIncome && (
+                <Line
+                  type="monotone"
+                  dataKey="Income"
+                  stroke={INCOME_COLOR}
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                 />
               )}
               {!selectedCategory && (
