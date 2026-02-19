@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { ChevronDown, ChevronRight, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeftIcon, ChevronRightIcon, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
@@ -94,6 +94,7 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 export default function BudgetOverview({ categories, transactions, income }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [view, setView] = useState<"month" | "year">("month");
+  const [showIncome, setShowIncome] = useState(true);
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
@@ -237,7 +238,7 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
     <div className="space-y-6">
 
     {/* Net savings summary */}
-    {showSavings && (
+    {showSavings && showIncome && (
       <Card>
         <CardContent className="pt-5">
           <div className="grid grid-cols-3 divide-x text-center">
@@ -268,21 +269,34 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
       <CardHeader className="flex flex-col gap-2 space-y-0 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{view === "month" ? "Monthly" : "Annual"} Budget</CardTitle>
-          <div className="flex gap-1 rounded-lg border bg-muted p-0.5">
-            <button
-              type="button"
-              onClick={() => setView("month")}
-              className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "month" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
-            >
-              Month
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("year")}
-              className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "year" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
-            >
-              Year
-            </button>
+          <div className="flex items-center gap-2">
+            {income && income.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowIncome((v) => !v)}
+                className="flex items-center gap-1.5 rounded-md border bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title={showIncome ? "Hide income data" : "Show income data"}
+              >
+                {showIncome ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                Income
+              </button>
+            )}
+            <div className="flex gap-1 rounded-lg border bg-muted p-0.5">
+              <button
+                type="button"
+                onClick={() => setView("month")}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "month" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              >
+                Month
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("year")}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === "year" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              >
+                Year
+              </button>
+            </div>
           </div>
         </div>
         <div className="flex items-center justify-center gap-2">
@@ -490,10 +504,10 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
       </CardContent>
     </Card>
 
-    <SpendingTrendsChart transactions={transactions} income={income} />
+    <SpendingTrendsChart transactions={transactions} income={showIncome ? income : undefined} />
 
     {/* Income Breakdown card */}
-    {income && (
+    {income && showIncome && (
       <IncomeBreakdownCard
         incomeGrouped={incomeGrouped}
         totalIncome={totalIncome}
