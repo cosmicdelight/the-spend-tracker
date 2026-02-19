@@ -6,6 +6,7 @@ import { useTransactions, useDeleteTransaction } from "@/hooks/useTransactions";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useRecurringTransactions, useDeleteRecurringTransaction, useCreateFromRecurring } from "@/hooks/useRecurringTransactions";
 import { useTransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
+import { useIncome } from "@/hooks/useIncome";
 import AddTransactionDialog from "@/components/AddTransactionDialog";
 import ImportTransactionsDialog from "@/components/ImportTransactionsDialog";
 import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
@@ -16,8 +17,10 @@ import TransactionList from "@/components/TransactionList";
 import TransactionFieldSettings from "@/components/TransactionFieldSettings";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import ManagePaymentModesDialog from "@/components/ManagePaymentModesDialog";
+import AddIncomeDialog from "@/components/AddIncomeDialog";
+import IncomeList from "@/components/IncomeList";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart, List } from "lucide-react";
+import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart, List, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Index() {
@@ -30,7 +33,8 @@ export default function Index() {
   const deleteRec = useDeleteRecurringTransaction();
   const createFromRec = useCreateFromRecurring();
   const { prefs: fieldPrefs, toggle: toggleField } = useTransactionFieldPrefs();
-  const [tab, setTab] = useState<"dashboard" | "transactions" | "budget">("dashboard");
+  const { data: income = [] } = useIncome();
+  const [tab, setTab] = useState<"dashboard" | "transactions" | "income" | "budget">("dashboard");
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -114,8 +118,6 @@ export default function Index() {
             recurring={recurring}
             onDelete={(id) => deleteRec.mutate(id)}
             onCreateNow={(rec) => createFromRec.mutate(rec)} />
-
-
         </>
         }
 
@@ -129,8 +131,17 @@ export default function Index() {
           </div>
         }
 
+        {tab === "income" &&
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <AddIncomeDialog />
+            </div>
+            <IncomeList income={income} />
+          </div>
+        }
+
         {tab === "budget" &&
-        <BudgetOverview categories={categories} transactions={transactions} />
+          <BudgetOverview categories={categories} transactions={transactions} income={income} />
         }
       </main>
 
@@ -155,6 +166,14 @@ export default function Index() {
           </button>
           <button
             type="button"
+            onClick={() => setTab("income")}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
+            tab === "income" ? "text-primary" : "text-muted-foreground"}`}>
+            <TrendingUp className="h-5 w-5" />
+            Income
+          </button>
+          <button
+            type="button"
             onClick={() => setTab("budget")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
             tab === "budget" ? "text-primary" : "text-muted-foreground"}`}>
@@ -164,5 +183,4 @@ export default function Index() {
         </div>
       </nav>
     </div>);
-
 }

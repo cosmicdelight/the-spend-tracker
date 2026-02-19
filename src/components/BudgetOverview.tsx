@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, ChevronLeftIcon, ChevronRightIcon } from "lu
 import { format } from "date-fns";
 import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
+import type { IncomeEntry } from "@/hooks/useIncome";
 import SpendingTrendsChart from "@/components/SpendingTrendsChart";
 import EditTransactionDialog from "@/components/EditTransactionDialog";
 
@@ -70,6 +71,7 @@ const COLORS = [
 interface Props {
   categories: BudgetCategory[];
   transactions: Transaction[];
+  income?: IncomeEntry[];
 }
 
 interface GroupedEntry {
@@ -80,7 +82,7 @@ interface GroupedEntry {
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export default function BudgetOverview({ categories, transactions }: Props) {
+export default function BudgetOverview({ categories, transactions, income }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [view, setView] = useState<"month" | "year">("month");
 
@@ -164,6 +166,21 @@ export default function BudgetOverview({ categories, transactions }: Props) {
 
   const totalSpent = grouped.reduce((s, d) => s + d.value, 0);
 
+  const filteredIncome = useMemo(
+    () =>
+      (income ?? []).filter((e) => {
+        const d = new Date(e.date);
+        if (view === "month") {
+          return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+        }
+        return d.getFullYear() === selectedYear;
+      }),
+    [income, selectedMonth, selectedYear, view],
+  );
+  const totalIncome = filteredIncome.reduce((s, e) => s + Number(e.amount), 0);
+  const netSavings = totalIncome - totalSpent;
+  const showSavings = income && filteredIncome.length > 0;
+
   const pieData = grouped.map((g) => ({ name: g.name, value: g.value }));
   const topLabelNames = new Set(pieData.slice(0, 7).map((d) => d.name));
 
@@ -185,6 +202,35 @@ export default function BudgetOverview({ categories, transactions }: Props) {
 
   return (
     <div className="space-y-6">
+
+    {/* Net savings summary */}
+    {showSavings && (
+      <Card>
+        <CardContent className="pt-5">
+          <div className="grid grid-cols-3 divide-x text-center">
+            <div className="px-3">
+              <p className="text-xs text-muted-foreground">Income</p>
+              <p className="mt-1 text-lg font-heading font-bold text-[hsl(var(--chart-2))]">
+                ${totalIncome.toFixed(2)}
+              </p>
+            </div>
+            <div className="px-3">
+              <p className="text-xs text-muted-foreground">Spending</p>
+              <p className="mt-1 text-lg font-heading font-bold text-destructive">
+                ${totalSpent.toFixed(2)}
+              </p>
+            </div>
+            <div className="px-3">
+              <p className="text-xs text-muted-foreground">Savings</p>
+              <p className={`mt-1 text-lg font-heading font-bold ${netSavings >= 0 ? "text-[hsl(var(--chart-2))]" : "text-destructive"}`}>
+                {netSavings >= 0 ? "+" : ""}${netSavings.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )}
+
     <Card>
       <CardHeader className="flex flex-col gap-2 space-y-0 pb-2">
         <div className="flex items-center justify-between">
