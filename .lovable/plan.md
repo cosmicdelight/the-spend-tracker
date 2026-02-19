@@ -1,89 +1,100 @@
+## Display Income in the Stats Tab
 
-## Smart Category Resolution During CSV Import
+### What exists today
 
-### What's being built
+The Stats tab (`BudgetOverview.tsx`) currently:
 
-After a user uploads a CSV file, the import flow will add a new "Category Review" step. Before showing the final preview table, the app checks every category (and sub-category) in the CSV against the user's existing categories. Any that are unrecognised are surfaced for the user to act on — either mapping them to an existing category or creating them as new ones. Only after all categories are resolved does the user reach the import confirmation.
+- Shows a **Net Savings summary card** (Income / Spending / Savings) when income exists for the period — this is already working correctly with the mock data.
+- Shows a **Monthly/Annual Budget card** with a spending pie chart + category list.
+- Shows a **Spending Trends line chart** (`SpendingTrendsChart`) — expense lines only, income not passed in.
 
----
+Income is already fetched and passed into `BudgetOverview` as `income={income}`, but it's only used for the three-number summary. There's no visual breakdown of income by category and no income trend line.
 
-### How the resolution logic works
-
-**Step 1 — Collect unique pairs from the CSV**
-After parsing the CSV, extract all unique `(category, sub_category)` pairs.
-
-**Step 2 — Compare against existing categories**
-For each CSV pair, check the user's existing `budget_categories` (or `income_categories`) for:
-- **Exact match** → no action needed, mark as resolved.
-- **Similar match** (case-insensitive, or partial string match like "food" ↔ "Food & Dining") → prompt the user to confirm the mapping or pick a different one.
-- **No match at all** → prompt the user to either create a new category or map it manually.
-
-**Step 3 — User resolves each unrecognised pair**
-A new "Category Review" screen appears inside the existing dialog. Each unrecognised pair is shown as a card:
-- If a similar category was found, a dropdown pre-selects the closest match. The user can accept, change the selection, or choose "Create new".
-- If no similar category was found, the card defaults to "Create new" but the user can pick any existing category instead.
-
-**Step 4 — Apply resolutions before import**
-When the user clicks "Confirm & Import":
-1. Any category marked "Create new" is inserted into `budget_categories` / `income_categories` via the existing `supabase.from(...).insert(...)` pattern (using the `useAddBudgetCategory` / `useAddIncomeCategory` hooks).
-2. The in-memory parsed rows are remapped so their `category` / `sub_category` fields reflect the chosen mapping.
-3. The normal bulk insert into `transactions` / `income` proceeds as today.
+The mock data covers Sep 2025–Feb 2026 with four categories: **Salary & Employment** (Base, Bonus, Commission), **Investments** (Dividends, Interest), **Rental Income**, and **Other**.
 
 ---
 
-### Dialog flow (multi-step inside the same Dialog)
+### What will be built
+
+**1. Income Breakdown Card** (new, inserted below the Spending Trends card)
+
+- A donut pie chart of income grouped by category for the selected period, using the same month/year navigation state already shared by the spending card.
+- A list below the chart showing each category with a coloured percentage badge and total amount, expandable to reveal sub-categories (e.g. Base, Bonus under Salary & Employment).
+- A "Total Income: $X" header above the chart.
+- If no income exists for the period: shows a quiet "No income this month/year yet" message.
+- Uses distinct green tones for the colour palette to visually separate income from expenses.
+
+**2. Income Trend Line in SpendingTrendsChart**
+
+- The `SpendingTrendsChart` component receives a new optional `income?: IncomeEntry[]` prop.
+- Monthly income totals are computed inside the existing `useMemo` and added as an `"Income"` key on each data row.
+- A single thick green line (`hsl(140, 55%, 42%)`) is always rendered at the top of the chart when income data is present — regardless of which expense category filter is selected.
+- The category filter pills do not affect the income line visibility (it stays on always as a reference).
+- The legend and tooltip both label it as "Income" and show it in green.
+
+**3. Wire-up in BudgetOverview**
+
+- Pass `income={income}` down to `<SpendingTrendsChart>`.
+
+---
+
+### Files to modify
+
+
+| File                                     | Change                                                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `src/components/BudgetOverview.tsx`      | Add `incomeGrouped` memo; add Income Breakdown card section; pass `income` to SpendingTrendsChart       |
+| `src/components/SpendingTrendsChart.tsx` | Accept `income` prop; add Income data key to chart rows; render fixed green Income line; update tooltip |
+
+
+No database changes. No new hooks.
+
+---
+
+### Visual layout after changes
 
 ```text
-Step 1 — Upload        Step 2 — Review Categories     Step 3 — Preview & Import
-┌──────────────────┐   ┌──────────────────────────┐   ┌──────────────────────────┐
-│ Expense / Income │   │ 3 categories need review │   │ 42 rows ready            │
-│ toggle           │ → │                          │ → │ [data table preview]     │
-│ [Choose file]    │   │ "Food" → ? [dropdown]    │   │ [Import 42 expenses]     │
-│ Download tpl.    │   │ "Salary" → ? [dropdown]  │   └──────────────────────────┘
-└──────────────────┘   │ [Confirm & continue]     │
-                       └──────────────────────────┘
+┌─────────────────────────────────────────┐
+│  Income / Spending / Savings            │  ← existing Net Savings card
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│  Monthly Budget     [Month | Year]      │  ← existing, unchanged
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│  Spending Trends   [3m | 6m | 12m]      │
+│  ── Income (thick green)                │  ← NEW line, always on top
+│  ── Total Spending (dark)               │
+│  -- Food / Transport / ...              │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│  Income Breakdown      [Feb ▾] [2026 ▾] │  ← NEW card (same nav state)
+│  Total Income: $7,050                   │
+│  ┌────── donut ──────┐                  │
+│  │  (green tones)    │  Salary  74% $5,200 │
+│  │                   │  Rental  17% $1,200 │
+│  │                   │  Invest   6%  $450  │
+│  └───────────────────┘  Other    3%  $200  │
+└─────────────────────────────────────────┘
 ```
 
-If all CSV categories already have exact matches, Step 2 is skipped automatically.
-
 ---
 
-### Similarity matching algorithm
+### Technical details
 
-A lightweight string similarity function (no external library needed) will be used:
-- Lowercase both strings.
-- Check if one string **contains** the other, or if they share significant words (split on spaces, check overlap ≥ 1 word).
-- Score the match; only surface it as a "suggestion" if the score is above a threshold (avoids false positives like "Food" ↔ "Salary").
+`**BudgetOverview.tsx**`
 
----
+- Add `incomeGrouped` memo (mirrors the `grouped` memo for expenses): groups `filteredIncome` by `category`, sums amounts, collects sub-categories.
+- Add a dedicated green `INCOME_COLORS` palette so the income pie is visually distinct from the spending pie.
+- The income card reuses the same `PieChart`/`Cell` components already imported — no new dependencies.
+- Expandable sub-category rows for income categories that have sub-categories (e.g. Salary → Base / Bonus / Commission).
 
-### Technical implementation
+`**SpendingTrendsChart.tsx**`
 
-**Files to modify:**
-- `src/components/ImportTransactionsDialog.tsx` — main changes. Add:
-  - A `step` state (`"upload" | "review" | "preview"`).
-  - A `CategoryResolution` type: `{ csvCategory: string; csvSubCategory: string | null; action: "map" | "create"; mappedTo: string | null; mappedSubTo: string | null }`.
-  - A `resolutions` state map keyed by `"category||sub_category"`.
-  - A `CategoryReviewStep` inline component rendered during Step 2.
-  - Updated `handleImport` to create new categories first, then remap rows.
-
-**Hooks used (already exist, no new hooks needed):**
-- `useBudgetCategories()` — reads existing expense categories.
-- `useIncomeCategories()` — reads existing income categories.
-- `useAddBudgetCategory()` — creates new expense categories.
-- `useAddIncomeCategory()` — creates new income categories.
-
-**No database migrations needed** — category tables already exist with the correct schema.
-
----
-
-### Edge cases handled
-
-| Scenario | Behaviour |
-|---|---|
-| All CSV categories already exist (exact match) | Step 2 is skipped; go straight to preview |
-| User picks "Create new" for a sub-category but the parent doesn't exist yet | Parent category row is also inserted automatically |
-| Two different CSV categories resolve to the same existing category | Rows are remapped correctly; no duplicates created |
-| User goes Back from Step 2 to change the file | Resolutions are cleared and recalculated |
-| Parse errors exist alongside unrecognised categories | Errors are shown on Step 1; Step 2 only shows valid rows |
-
+- Import `IncomeEntry` type from `@/hooks/useIncome`.
+- In the `useMemo`, loop through income entries per period and accumulate into `row["Income"]`.
+- Render `<Line dataKey="Income" stroke="hsl(140, 55%, 42%)" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />` — placed before the expense lines so it renders behind them.
+- In `CustomTooltip`, show Income value first (in green) with a `+` prefix to distinguish it.
+- In the category filter pill list, Income is not added as a filter button — it's always shown.
