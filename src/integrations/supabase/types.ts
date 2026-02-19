@@ -186,6 +186,7 @@ export type Database = {
           payment_mode: string
           personal_amount: number
           sub_category: string | null
+          transaction_type: string
           updated_at: string
           user_id: string
         }
@@ -207,6 +208,7 @@ export type Database = {
           payment_mode?: string
           personal_amount?: number
           sub_category?: string | null
+          transaction_type?: string
           updated_at?: string
           user_id: string
         }
@@ -228,6 +230,7 @@ export type Database = {
           payment_mode?: string
           personal_amount?: number
           sub_category?: string | null
+          transaction_type?: string
           updated_at?: string
           user_id?: string
         }

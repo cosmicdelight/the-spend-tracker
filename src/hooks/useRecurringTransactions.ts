@@ -4,6 +4,7 @@ import { useAuth } from "./useAuth";
 
 export interface RecurringTransaction {
   id: string;
+  transaction_type: "expense" | "income";
   amount: number;
   personal_amount: number;
   category: string;
@@ -67,20 +68,42 @@ export function useCreateFromRecurring() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (rec: RecurringTransaction) => {
-      const { error } = await supabase.from("transactions").insert({
-        user_id: user!.id,
-        amount: rec.amount,
-        personal_amount: rec.personal_amount,
-        category: rec.category,
-        sub_category: rec.sub_category,
-        payment_mode: rec.payment_mode,
-        credit_card_id: rec.credit_card_id,
-        description: rec.description,
-        notes: rec.notes,
-        date: new Date().toISOString().split("T")[0],
-      });
-      if (error) throw error;
+      const today = new Date().toISOString().split("T")[0];
+      if (rec.transaction_type === "income") {
+        const { error } = await supabase.from("income").insert({
+          user_id: user!.id,
+          amount: rec.amount,
+          original_amount: rec.amount,
+          original_currency: "SGD",
+          category: rec.category,
+          sub_category: rec.sub_category,
+          description: rec.description,
+          notes: rec.notes,
+          date: today,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("transactions").insert({
+          user_id: user!.id,
+          amount: rec.amount,
+          personal_amount: rec.personal_amount,
+          category: rec.category,
+          sub_category: rec.sub_category,
+          payment_mode: rec.payment_mode,
+          credit_card_id: rec.credit_card_id,
+          description: rec.description,
+          notes: rec.notes,
+          date: today,
+        });
+        if (error) throw error;
+      }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["transactions"] }),
+    onSuccess: (_, rec) => {
+      if (rec.transaction_type === "income") {
+        qc.invalidateQueries({ queryKey: ["income"] });
+      } else {
+        qc.invalidateQueries({ queryKey: ["transactions"] });
+      }
+    },
   });
 }

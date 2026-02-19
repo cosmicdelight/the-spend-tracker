@@ -10,6 +10,7 @@ import { useIncome } from "@/hooks/useIncome";
 import AddTransactionDialog from "@/components/AddTransactionDialog";
 import ImportTransactionsDialog from "@/components/ImportTransactionsDialog";
 import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
+import AddRecurringIncomeDialog from "@/components/AddRecurringIncomeDialog";
 import RecurringTransactionList from "@/components/RecurringTransactionList";
 import CreditCardProgress from "@/components/CreditCardProgress";
 import BudgetOverview from "@/components/BudgetOverview";
@@ -134,7 +135,7 @@ export default function Index() {
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <AddIncomeDialog />
-              <AddRecurringTransactionDialog />
+              <AddRecurringIncomeDialog />
               <Link to="/income-categories">
                 <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>
               </Link>
