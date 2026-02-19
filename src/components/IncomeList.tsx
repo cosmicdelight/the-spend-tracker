@@ -6,29 +6,25 @@ import { format, parseISO } from "date-fns";
 import type { IncomeEntry } from "@/hooks/useIncome";
 import EditIncomeDialog from "./EditIncomeDialog";
 
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 interface Props {
   income: IncomeEntry[];
 }
 
 export default function IncomeList({ income }: Props) {
   const now = new Date();
-  const [monthOffset, setMonthOffset] = useState(0);
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [editingEntry, setEditingEntry] = useState<IncomeEntry | null>(null);
-
-  const viewDate = useMemo(() => {
-    return new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-  }, [monthOffset]);
-
-  const viewMonth = viewDate.getMonth();
-  const viewYear = viewDate.getFullYear();
 
   const filtered = useMemo(
     () =>
       income.filter((e) => {
         const d = new Date(e.date);
-        return d.getMonth() === viewMonth && d.getFullYear() === viewYear;
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
       }),
-    [income, viewMonth, viewYear],
+    [income, selectedMonth, selectedYear],
   );
 
   // Group by date
@@ -42,14 +38,24 @@ export default function IncomeList({ income }: Props) {
   }, [filtered]);
 
   const monthTotal = filtered.reduce((s, e) => s + Number(e.amount), 0);
-  const isCurrentMonth = monthOffset === 0;
-  const monthLabel = format(viewDate, "MMMM yyyy");
+  const isCurrentMonth = selectedMonth === now.getMonth() && selectedYear === now.getFullYear();
+
+  const goBack = () => {
+    if (selectedMonth === 0) { setSelectedMonth(11); setSelectedYear((y) => y - 1); }
+    else setSelectedMonth((m) => m - 1);
+  };
+
+  const goForward = () => {
+    if (isCurrentMonth) return;
+    if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear((y) => y + 1); }
+    else setSelectedMonth((m) => m + 1);
+  };
 
   return (
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <CardTitle className="text-lg">Income</CardTitle>
               {filtered.length > 0 && (
@@ -59,17 +65,37 @@ export default function IncomeList({ income }: Props) {
               )}
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setMonthOffset((o) => o - 1)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goBack}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium min-w-[120px] text-center">{monthLabel}</span>
-              <Button
-                variant="ghost" size="icon" className="h-7 w-7"
-                disabled={isCurrentMonth}
-                onClick={() => setMonthOffset((o) => o + 1)}
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="rounded-md border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
               >
+                {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+              </select>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="rounded-md border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {Array.from({ length: now.getFullYear() - 2020 + 1 }, (_, i) => 2020 + i).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isCurrentMonth} onClick={goForward}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
+              {!isCurrentMonth && (
+                <button
+                  type="button"
+                  onClick={() => { setSelectedMonth(now.getMonth()); setSelectedYear(now.getFullYear()); }}
+                  className="rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  Today
+                </button>
+              )}
             </div>
           </div>
         </CardHeader>
