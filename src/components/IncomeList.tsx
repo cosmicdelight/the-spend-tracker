@@ -92,7 +92,7 @@ export default function IncomeList({ income }: Props) {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-sm truncate min-w-0 flex-1 mr-2">
-                          {entry.description || entry.source}
+                          {entry.description || entry.category}
                         </span>
                         <span className="text-sm font-semibold text-[hsl(var(--chart-2))] shrink-0">
                           +${Number(entry.amount).toFixed(2)}
@@ -100,8 +100,14 @@ export default function IncomeList({ income }: Props) {
                       </div>
                       <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                         <span className="rounded-full bg-accent px-2 py-0.5 text-accent-foreground font-medium">
-                          {entry.source}
+                          {entry.category}
                         </span>
+                        {entry.sub_category && (
+                          <>
+                            <span>·</span>
+                            <span>{entry.sub_category}</span>
+                          </>
+                        )}
                         {entry.original_currency !== "SGD" && (
                           <>
                             <span>·</span>

@@ -9,7 +9,8 @@ export interface IncomeEntry {
   original_amount: number;
   original_currency: string;
   date: string;
-  source: string;
+  category: string;
+  sub_category: string | null;
   description: string | null;
   notes: string | null;
   created_at: string;

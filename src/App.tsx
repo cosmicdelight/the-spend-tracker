@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Categories from "./pages/Categories";
+import IncomeCategories from "./pages/IncomeCategories";
 import Cards from "./pages/Cards";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/income-categories" element={<IncomeCategories />} />
             <Route path="/cards" element={<Cards />} />
             <Route path="/install" element={<Install />} />
             <Route path="*" element={<NotFound />} />
