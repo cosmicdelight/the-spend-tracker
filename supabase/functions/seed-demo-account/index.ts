@@ -30,16 +30,15 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Only allow requests with the service role key or anon key + seed header
+  // Allow: service role key OR a simple x-seed-admin header matching DEMO_PASSWORD
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace("Bearer ", "");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const demoPassword = Deno.env.get("DEMO_PASSWORD");
   const seedHeader = req.headers.get("x-seed-admin");
-  console.log("auth debug:", { tokenLen: token.length, hasServiceKey: !!serviceRoleKey, hasAnonKey: !!anonKey, seedHeader, anonMatch: token === anonKey });
   const isServiceRole = serviceRoleKey && token === serviceRoleKey;
-  const isAnonWithHeader = anonKey && token === anonKey && seedHeader === "1";
-  if (!isServiceRole && !isAnonWithHeader) {
+  const isSeedRequest = demoPassword && seedHeader === demoPassword;
+  if (!isServiceRole && !isSeedRequest) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
