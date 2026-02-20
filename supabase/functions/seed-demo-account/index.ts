@@ -38,8 +38,8 @@ Deno.serve(async (req) => {
   const seedHeader = req.headers.get("x-seed-admin");
   const isServiceRole = serviceRoleKey && token === serviceRoleKey;
   const isSeedRequest = demoPassword && seedHeader === demoPassword;
-  // Allow password-only sync with a static header (used internally by the system)
-  const isSyncOnly = req.headers.get("x-sync-only") === "bd8f3a2e9c1d7b4e" && req.method === "POST";
+  const syncOnlySecret = Deno.env.get("SYNC_ONLY_SECRET");
+  const isSyncOnly = syncOnlySecret && req.headers.get("x-sync-only") === syncOnlySecret && req.method === "POST";
   if (!isServiceRole && !isSeedRequest && !isSyncOnly) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
