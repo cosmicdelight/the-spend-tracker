@@ -16,14 +16,18 @@ const corsHeaders = {
 };
 
 const DEMO_EMAIL = "demo@spendtracker.app";
-const DEMO_PASSWORD = Deno.env.get("DEMO_PASSWORD");
-if (!DEMO_PASSWORD) {
-  throw new Error("DEMO_PASSWORD must be set in Supabase Edge Function secrets");
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const DEMO_PASSWORD = Deno.env.get("DEMO_PASSWORD");
+  if (!DEMO_PASSWORD) {
+    return new Response(JSON.stringify({ error: "DEMO_PASSWORD secret is not set" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   // Only allow requests with the service role key
