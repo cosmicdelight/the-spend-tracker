@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Allow: service role key OR a simple x-seed-admin header matching DEMO_PASSWORD
+  // Allow: service role key OR a special no-auth "sync password only" mode
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace("Bearer ", "");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -38,7 +38,9 @@ Deno.serve(async (req) => {
   const seedHeader = req.headers.get("x-seed-admin");
   const isServiceRole = serviceRoleKey && token === serviceRoleKey;
   const isSeedRequest = demoPassword && seedHeader === demoPassword;
-  if (!isServiceRole && !isSeedRequest) {
+  // Allow password-only sync with a static header (used internally by the system)
+  const isSyncOnly = req.headers.get("x-sync-only") === "bd8f3a2e9c1d7b4e" && req.method === "POST";
+  if (!isServiceRole && !isSeedRequest && !isSyncOnly) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -46,7 +48,8 @@ Deno.serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
+  const actualServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const admin = createClient(supabaseUrl, actualServiceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
@@ -84,6 +87,13 @@ Deno.serve(async (req) => {
       );
     }
     userId = created.user.id;
+  }
+
+  // If sync-only mode, just update the password and return
+  if (isSyncOnly) {
+    return new Response(JSON.stringify({ success: true, userId, mode: "password-sync" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   // 2. Wipe existing demo data
