@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Transaction } from "@/hooks/useTransactions";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
@@ -22,15 +23,23 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [search, setSearch] = useState("");
 
-  const filtered = useMemo(
-    () =>
-      transactions.filter((t) => {
-        const d = new Date(t.date);
-        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-      }),
-    [transactions, selectedMonth, selectedYear],
-  );
+  const isSearching = search.trim().length > 0;
+
+  const filtered = useMemo(() => {
+    if (isSearching) {
+      const q = search.trim().toLowerCase();
+      return transactions.filter((t) =>
+        (t.description ?? "").toLowerCase().includes(q) ||
+        t.category.toLowerCase().includes(q)
+      );
+    }
+    return transactions.filter((t) => {
+      const d = new Date(t.date);
+      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+    });
+  }, [transactions, selectedMonth, selectedYear, search, isSearching]);
 
   // Group by date
   const grouped = useMemo(() => {
@@ -59,33 +68,35 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   return (
     <>
       <Card>
-        <CardHeader>
+      <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-lg">Transactions</CardTitle>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goBack}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goBack} disabled={isSearching}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="rounded-md border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                disabled={isSearching}
+                className="rounded-md border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40"
               >
                 {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
               </select>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="rounded-md border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                disabled={isSearching}
+                className="rounded-md border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40"
               >
                 {Array.from({ length: now.getFullYear() - 2020 + 1 }, (_, i) => 2020 + i).map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isCurrentMonth} onClick={goForward}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isCurrentMonth || isSearching} onClick={goForward}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              {!isCurrentMonth && (
+              {!isCurrentMonth && !isSearching && (
                 <button
                   type="button"
                   onClick={() => { setSelectedMonth(now.getMonth()); setSelectedYear(now.getFullYear()); }}
@@ -96,9 +107,27 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
               )}
             </div>
           </div>
+          <div className="relative mt-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by description or category…"
+              className="pl-8 pr-8 h-9 text-sm"
+            />
+            {isSearching && (
+              <button type="button" onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          {grouped.length === 0 && <p className="text-sm text-muted-foreground">No transactions this month.</p>}
+          {grouped.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {isSearching ? `No transactions matching "${search}".` : "No transactions this month."}
+            </p>
+          )}
           <div className="space-y-4">
             {grouped.map(([date, txs]) => (
               <div key={date}>
