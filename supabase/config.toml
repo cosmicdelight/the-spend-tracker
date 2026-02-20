@@ -2,3 +2,6 @@ project_id = "tfkptixclpsdairmqmvx"
 
 [functions.seed-demo-account]
 verify_jwt = false
+
+[functions.demo-login]
+verify_jwt = false
