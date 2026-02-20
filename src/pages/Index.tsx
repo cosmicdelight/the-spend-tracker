@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -20,9 +20,12 @@ import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import ManagePaymentModesDialog from "@/components/ManagePaymentModesDialog";
 import AddIncomeDialog from "@/components/AddIncomeDialog";
 import IncomeList from "@/components/IncomeList";
+import DemoBanner from "@/components/DemoBanner";
+import OnboardingTour from "@/components/OnboardingTour";
 import { Button } from "@/components/ui/button";
 import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart, List, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import { DEMO_EMAIL } from "@/lib/seedDemoData";
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -36,6 +39,8 @@ export default function Index() {
   const { prefs: fieldPrefs, toggle: toggleField } = useTransactionFieldPrefs();
   const { data: income = [] } = useIncome();
   const [tab, setTab] = useState<"dashboard" | "transactions" | "income" | "budget">("dashboard");
+  const isDemo = user?.email === DEMO_EMAIL;
+  const handleSetTab = useCallback((t: "dashboard" | "transactions" | "income" | "budget") => setTab(t), []);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -69,6 +74,7 @@ export default function Index() {
       </header>
 
       <main className="mx-auto max-w-4xl w-full flex-1 space-y-6 px-4 py-6 pb-20">
+        {isDemo && <DemoBanner />}
         {tab === "dashboard" &&
         <>
             {/* Summary row */}
@@ -89,8 +95,8 @@ export default function Index() {
 
             {/* Dashboard quick-add */}
             <div className="flex flex-wrap gap-2">
-              <AddTransactionDialog fieldPrefs={fieldPrefs} dashboardTrigger />
-              <ImportTransactionsDialog />
+              <div data-tour="quick-add-button"><AddTransactionDialog fieldPrefs={fieldPrefs} dashboardTrigger /></div>
+              <div data-tour="import-csv-button"><ImportTransactionsDialog /></div>
             </div>
 
             {/* Credit Cards */}
@@ -154,6 +160,7 @@ export default function Index() {
         <div className="mx-auto flex max-w-4xl">
           <button
             type="button"
+            data-tour="dashboard-tab"
             onClick={() => setTab("dashboard")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
             tab === "dashboard" ? "text-primary" : "text-muted-foreground"}`}>
@@ -162,6 +169,7 @@ export default function Index() {
           </button>
           <button
             type="button"
+            data-tour="expenses-tab"
             onClick={() => setTab("transactions")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
             tab === "transactions" ? "text-primary" : "text-muted-foreground"}`}>
@@ -170,6 +178,7 @@ export default function Index() {
           </button>
           <button
             type="button"
+            data-tour="income-tab"
             onClick={() => setTab("income")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
             tab === "income" ? "text-primary" : "text-muted-foreground"}`}>
@@ -178,6 +187,7 @@ export default function Index() {
           </button>
           <button
             type="button"
+            data-tour="stats-tab"
             onClick={() => setTab("budget")}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
             tab === "budget" ? "text-primary" : "text-muted-foreground"}`}>
@@ -186,5 +196,9 @@ export default function Index() {
           </button>
         </div>
       </nav>
+
+      {/* Onboarding tour — only for real (non-demo) users */}
+      {!isDemo && <OnboardingTour onSetTab={handleSetTab} />}
     </div>);
 }
+

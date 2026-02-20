@@ -5,11 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PasswordInput from "@/components/PasswordInput";
 import PasswordRequirements from "@/components/PasswordRequirements";
 import { isPasswordValid } from "@/lib/passwordValidation";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/seedDemoData";
+import { TOUR_STORAGE_KEY } from "@/components/OnboardingTour";
 
 export default function Auth() {
   const { user, loading } = useAuth();
@@ -23,6 +25,17 @@ export default function Auth() {
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
   if (user) return <Navigate to="/" replace />;
+
+  const handleTryDemo = async () => {
+    setSubmitting(true);
+    // Pre-set tour as seen so demo users skip the onboarding tour
+    localStorage.setItem(TOUR_STORAGE_KEY, "true");
+    const { error } = await signIn(DEMO_EMAIL, DEMO_PASSWORD);
+    setSubmitting(false);
+    if (error) {
+      toast({ title: "Demo unavailable", description: "Could not load the demo account. Please try again later.", variant: "destructive" });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +127,25 @@ export default function Auth() {
               </>
             )}
           </p>
+          {mode === "signin" && (
+            <div className="mt-5 flex items-center gap-3">
+              <div className="flex-1 border-t" />
+              <span className="text-xs text-muted-foreground">or</span>
+              <div className="flex-1 border-t" />
+            </div>
+          )}
+          {mode === "signin" && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 w-full gap-2"
+              onClick={handleTryDemo}
+              disabled={submitting}
+            >
+              <Sparkles className="h-4 w-4 text-primary" />
+              Try Demo
+            </Button>
+          )}
         </CardContent>
       </Card>
     </div>
