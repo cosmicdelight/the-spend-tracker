@@ -6,6 +6,21 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: {
+    // Fallback values in case .env is not loaded (these are publishable/anon keys, safe to include)
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(
+      process.env.VITE_SUPABASE_URL ?? 'https://tfkptixclpsdairmqmvx.supabase.co'
+    ),
+    'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRma3B0aXhjbHBzZGFpcm1xbXZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyMzA1NTUsImV4cCI6MjA4NjgwNjU1NX0.tA5YD0SqTA4dPKXQyzAddUSywCQzEfmT6kV6xEaFBNk'
+    ),
+    ...(process.env.VITE_DEMO_PASSWORD
+      ? { 'import.meta.env.VITE_DEMO_PASSWORD': JSON.stringify(process.env.VITE_DEMO_PASSWORD) }
+      : {}),
+  },
+  optimizeDeps: {
+    force: false,
+  },
   server: {
     host: "::",
     port: 8080,
