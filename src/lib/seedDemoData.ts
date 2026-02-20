@@ -1,5 +1,5 @@
 export const DEMO_EMAIL = "demo@spendtracker.app";
-export const DEMO_PASSWORD = "DemoPass123!";
+export const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD ?? "";
 
 // Called from the seed-demo-account edge function
 export function buildDemoSeedPayload(userId: string) {

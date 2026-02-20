@@ -4,7 +4,7 @@
 //   curl -X POST https://<project>.supabase.co/functions/v1/seed-demo-account \
 //     -H "Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>"
 //
-// This will create the demo user (demo@spendtracker.app / DemoPass123!) and seed
+// This will create the demo user and seed
 // realistic mock data. Safe to call multiple times — it wipes existing demo data first.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -16,7 +16,10 @@ const corsHeaders = {
 };
 
 const DEMO_EMAIL = "demo@spendtracker.app";
-const DEMO_PASSWORD = "DemoPass123!";
+const DEMO_PASSWORD = Deno.env.get("DEMO_PASSWORD");
+if (!DEMO_PASSWORD) {
+  throw new Error("DEMO_PASSWORD must be set in Supabase Edge Function secrets");
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
