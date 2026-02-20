@@ -1,73 +1,72 @@
-# Welcome to your Lovable project
+# SpendTracker
 
-## Project info
+A budget and finance tracker that separates your **actual spending** from **credit card spending** so you can stay on track toward your monthly minimum spend goals — and know what counts as your own expenditure vs. split expenses (e.g., when you pay for the table and friends pay you back).
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**Built with Lovable** · [Live demo](https://the-spend-tracker.lovable.app/) · [GitHub](https://github.com/cosmicdelight/the-spend-tracker)
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## What it does
 
-**Use Lovable**
+- **Track actual + credit card spending** — Add both in a single expense dialog: the full amount on your card and your personal share (e.g., when you split with others)
+- **Monitor minimum spend** — See if you're on track to hit your credit card minimum for the month
+- **Handle split expenses** — Separate personal amount from total (e.g., group dinners, shared trips)
+- **Income tracking** — Log salary, bonuses, dividends
+- **Recurring transactions** — Auto-generate monthly subscriptions and bills
+- **CSV import** — Bulk import transactions from bank exports
+- **Try Demo** — Instant access to a pre-seeded demo account
+- **PWA** — Install as an app on your device
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Tech stack
 
-**Use your preferred IDE**
+| Layer | Stack |
+|-------|-------|
+| Frontend | React 18, TypeScript, Vite |
+| UI | Tailwind CSS, shadcn/ui, Radix UI, Recharts |
+| Forms | React Hook Form, Zod |
+| Backend | Supabase (Auth, Postgres, Edge Functions) |
+| Tools | TanStack Query, date-fns, Lucide icons |
+| Built with | [Lovable](https://lovable.dev/) (AI-powered app builder) |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Live demo
 
-Follow these steps:
+**[the-spend-tracker.lovable.app](https://the-spend-tracker.lovable.app/)**
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Use **Try Demo** on the login screen to explore without signing up.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Getting started
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+1. **Clone the repo**
+   ```sh
+   git clone https://github.com/cosmicdelight/the-spend-tracker.git
+   cd the-spend-tracker
+   ```
 
-**Edit a file directly in GitHub**
+2. **Set up environment variables**
+   - Copy `.env.example` to `.env`
+   - Add your Supabase project URL, anon key, and demo password (see `.env.example` for details)
+   - For Edge Functions (`demo-login`, `seed-demo-account`), set `DEMO_PASSWORD` in Supabase secrets
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. **Install and run**
+   ```sh
+   npm install
+   npm run dev
+   ```
 
-**Use GitHub Codespaces**
+4. **(Optional) Seed the demo account**
+   - Call the `seed-demo-account` Edge Function with your service role key to create the demo user and sample data
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Project structure
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- `src/pages/` — Auth, dashboard (Index), Categories, Cards, Income categories
+- `src/components/` — Transaction list, charts, dialogs, CSV import, onboarding tour
+- `src/hooks/` — Auth, transactions, income, budget categories, credit cards
+- `supabase/functions/` — `demo-login`, `seed-demo-account`, `process-recurring-transactions`
