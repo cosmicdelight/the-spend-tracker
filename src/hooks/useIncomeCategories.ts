@@ -15,7 +15,8 @@ export function useIncomeCategories() {
   return useQuery({
     queryKey: ["income_categories", user?.id],
     queryFn: async () => {
-      await seedDefaultIncomeCategories(user!.id);
+      if (!user) throw new Error("User must be signed in");
+      await seedDefaultIncomeCategories(user.id);
       const { data, error } = await supabase
         .from("income_categories")
         .select("*")
@@ -32,9 +33,10 @@ export function useAddIncomeCategory() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (cat: { name: string; sub_category_name?: string | null }) => {
+      if (!user) throw new Error("User must be signed in to add income categories");
       const { error } = await supabase
         .from("income_categories")
-        .insert({ ...cat, user_id: user!.id });
+        .insert({ ...cat, user_id: user.id });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["income_categories"] }),
@@ -57,10 +59,11 @@ export function useDeleteIncomeCategoryGroup() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (groupName: string) => {
+      if (!user) throw new Error("User must be signed in");
       const { error } = await supabase
         .from("income_categories")
         .delete()
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .eq("name", groupName);
       if (error) throw error;
     },
@@ -87,10 +90,11 @@ export function useRenameIncomeCategoryGroup() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
+      if (!user) throw new Error("User must be signed in");
       const { error } = await supabase
         .from("income_categories")
         .update({ name: newName })
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .eq("name", oldName);
       if (error) throw error;
     },

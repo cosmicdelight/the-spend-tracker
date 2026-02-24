@@ -10,6 +10,7 @@ import { useAddIncome } from "@/hooks/useIncome";
 import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 import { Link } from "react-router-dom";
 
 export default function AddIncomeDialog() {
@@ -70,7 +71,7 @@ export default function AddIncomeDialog() {
           setOpen(false);
           reset();
         },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };

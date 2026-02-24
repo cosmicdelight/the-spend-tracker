@@ -9,6 +9,7 @@ import { Repeat } from "lucide-react";
 import { useAddRecurringTransaction } from "@/hooks/useRecurringTransactions";
 import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -60,7 +61,7 @@ export default function AddRecurringIncomeDialog() {
           setOpen(false);
           setAmount(""); setDescription(""); setNotes(""); setCategory(""); setSubCategory("");
         },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };

@@ -53,9 +53,10 @@ export function useAddPaymentMode() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ value, label }: { value: string; label: string }) => {
+      if (!user) throw new Error("User must be signed in to add payment modes");
       const { error } = await supabase
         .from("payment_modes")
-        .insert({ value, label, user_id: user!.id, is_system: false });
+        .insert({ value, label, user_id: user.id, is_system: false });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["payment_modes"] }),

@@ -218,7 +218,7 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
   const pieData = grouped.map((g) => ({ name: g.name, value: g.value }));
   const topLabelNames = new Set(pieData.slice(0, 7).map((d) => d.name));
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payload: { name: string; value: number } }[] }) => {
     if (active && payload?.[0]) {
       const entry = payload[0].payload as { name: string; value: number };
       const pct = totalSpent > 0 ? ((entry.value / totalSpent) * 100).toFixed(1) : "0";
@@ -390,7 +390,7 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
                       </text>
                     );
                   }}
-                  labelLine={({ points, name, midAngle, outerRadius: oR, cx: cxVal, cy: cyVal }: any) => {
+                  labelLine={({ points, name, midAngle, outerRadius: oR, cx: cxVal, cy: cyVal }: { points: { x: number; y: number }[]; name?: string; midAngle: number; outerRadius: number; cx: number; cy: number }) => {
                     if (!topLabelNames.has(name)) return <line style={{ display: 'none' }} />;
                     const RADIAN = Math.PI / 180;
                     const startX = points[0].x;
@@ -532,7 +532,7 @@ function IncomeBreakdownCard({ incomeGrouped, totalIncome, view, periodLabel }: 
   const [expandedIncome, setExpandedIncome] = useState<string | null>(null);
   const incomePieData = incomeGrouped.map((g) => ({ name: g.name, value: g.value }));
 
-  const IncomePieTooltip = ({ active, payload }: any) => {
+  const IncomePieTooltip = ({ active, payload }: { active?: boolean; payload?: { payload: { name: string; value: number } }[] }) => {
     if (active && payload?.[0]) {
       const entry = payload[0].payload as { name: string; value: number };
       const pct = totalIncome > 0 ? ((entry.value / totalIncome) * 100).toFixed(1) : "0";
@@ -593,7 +593,7 @@ function IncomeBreakdownCard({ incomeGrouped, totalIncome, view, periodLabel }: 
                           </text>
                         );
                       }}
-                      labelLine={({ points, midAngle, outerRadius: oR, cx: cxVal, cy: cyVal }: any) => {
+                      labelLine={({ points, midAngle, outerRadius: oR, cx: cxVal, cy: cyVal }: { points: { x: number; y: number }[]; midAngle: number; outerRadius: number; cx: number; cy: number }) => {
                         const RADIAN = Math.PI / 180;
                         const startX = points[0].x;
                         const startY = points[0].y;

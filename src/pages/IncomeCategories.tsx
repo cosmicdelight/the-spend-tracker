@@ -13,8 +13,9 @@ import { Card } from "@/components/ui/card";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ChevronDown, ChevronRight, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Pencil, Plus, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 
 export default function IncomeCategories() {
@@ -56,7 +57,8 @@ export default function IncomeCategories() {
   const toggleGroup = (name: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
       return next;
     });
   };
@@ -76,7 +78,7 @@ export default function IncomeCategories() {
       { oldName: editingGroupName, newName: editGroupValue.trim() },
       {
         onSuccess: () => { toast({ title: "Category renamed" }); setEditingGroupName(null); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };
@@ -94,7 +96,7 @@ export default function IncomeCategories() {
       { id: cat.id, name: cat.name, sub_category_name: editSubValue.trim() },
       {
         onSuccess: () => { toast({ title: "Updated" }); setEditingSubId(null); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };
@@ -106,7 +108,7 @@ export default function IncomeCategories() {
       { name: newCatName.trim(), sub_category_name: newSubName.trim() || null },
       {
         onSuccess: () => { toast({ title: "Category added" }); setNewCatName(""); setNewSubName(""); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };
@@ -117,7 +119,7 @@ export default function IncomeCategories() {
       { name: groupName, sub_category_name: newSubForGroup.trim() },
       {
         onSuccess: () => { toast({ title: "Sub-category added" }); setNewSubForGroup(""); setAddingSubTo(null); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };
@@ -176,7 +178,7 @@ export default function IncomeCategories() {
                 <div
                   className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors rounded-xl"
                   onClick={() => {
-                    if (!isEditingGroup) hasSubs && toggleGroup(groupName);
+                    if (!isEditingGroup && hasSubs) toggleGroup(groupName);
                   }}
                 >
                   <div className="flex items-center gap-2">
@@ -248,7 +250,7 @@ export default function IncomeCategories() {
                           onConfirm={() =>
                             deleteGroup.mutate(groupName, {
                               onSuccess: () => toast({ title: "Category deleted" }),
-                              onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                              onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
                             })
                           }
                         />
@@ -295,7 +297,7 @@ export default function IncomeCategories() {
                                 onConfirm={() =>
                                   deleteCat.mutate(sub.id, {
                                     onSuccess: () => toast({ title: "Sub-category deleted" }),
-                                    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                                    onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
                                   })
                                 }
                               />

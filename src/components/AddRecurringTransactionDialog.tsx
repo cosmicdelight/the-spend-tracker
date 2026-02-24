@@ -11,6 +11,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -70,7 +71,7 @@ export default function AddRecurringTransactionDialog() {
           setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId("");
           setNotes(""); setCategory(""); setSubCategory("");
         },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };

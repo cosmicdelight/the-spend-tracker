@@ -37,7 +37,8 @@ export function useAddIncome() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (entry: Omit<IncomeEntry, "id" | "created_at" | "user_id">) => {
-      const { error } = await supabase.from("income").insert({ ...entry, user_id: user!.id });
+      if (!user) throw new Error("User must be signed in to add income");
+      const { error } = await supabase.from("income").insert({ ...entry, user_id: user.id });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["income"] }),

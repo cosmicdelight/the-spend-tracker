@@ -45,7 +45,8 @@ export function useAddRecurringTransaction() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (tx: Omit<RecurringTransaction, "id" | "created_at" | "updated_at" | "last_generated_at">) => {
-      const { error } = await supabase.from("recurring_transactions").insert({ ...tx, user_id: user!.id });
+      if (!user) throw new Error("User must be signed in to add recurring transactions");
+      const { error } = await supabase.from("recurring_transactions").insert({ ...tx, user_id: user.id });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["recurring_transactions"] }),
@@ -68,10 +69,11 @@ export function useCreateFromRecurring() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (rec: RecurringTransaction) => {
+      if (!user) throw new Error("User must be signed in");
       const today = new Date().toISOString().split("T")[0];
       if (rec.transaction_type === "income") {
         const { error } = await supabase.from("income").insert({
-          user_id: user!.id,
+          user_id: user.id,
           amount: rec.amount,
           original_amount: rec.amount,
           original_currency: "SGD",
@@ -84,7 +86,7 @@ export function useCreateFromRecurring() {
         if (error) throw error;
       } else {
         const { error } = await supabase.from("transactions").insert({
-          user_id: user!.id,
+          user_id: user.id,
           amount: rec.amount,
           personal_amount: rec.personal_amount,
           category: rec.category,

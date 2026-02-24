@@ -31,10 +31,10 @@ export function useAddCreditCard() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (card: { name: string; spend_target: number; time_period_months: number; start_date: string }) => {
-      // Get max sort_order for this user
-      const { data: existing } = await supabase.from("credit_cards").select("sort_order").eq("user_id", user!.id).order("sort_order", { ascending: false }).limit(1);
+      if (!user) throw new Error("User must be signed in to add credit cards");
+      const { data: existing } = await supabase.from("credit_cards").select("sort_order").eq("user_id", user.id).order("sort_order", { ascending: false }).limit(1);
       const nextOrder = (existing && existing.length > 0 ? existing[0].sort_order : 0) + 1;
-      const { error } = await supabase.from("credit_cards").insert({ ...card, user_id: user!.id, sort_order: nextOrder });
+      const { error } = await supabase.from("credit_cards").insert({ ...card, user_id: user.id, sort_order: nextOrder });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["credit_cards"] }),

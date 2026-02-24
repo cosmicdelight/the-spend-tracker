@@ -105,11 +105,12 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
     return { chartData, categoryNames: topCats, hasIncome };
   }, [transactions, income, months]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface TooltipPayload { dataKey: string; value?: number; color?: string }
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: TooltipPayload[]; label?: string }) => {
     if (!active || !payload?.length) return null;
-    const incomeEntry = payload.find((p: any) => p.dataKey === "Income");
-    const others = payload.filter((p: any) => p.dataKey !== "Income" && p.value > 0)
-      .sort((a: any, b: any) => b.value - a.value);
+    const incomeEntry = payload.find((p) => p.dataKey === "Income");
+    const others = payload.filter((p) => p.dataKey !== "Income" && (p.value ?? 0) > 0)
+      .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
     return (
       <div className="rounded-lg border bg-card px-3 py-2 text-sm shadow-md">
         <p className="mb-1 font-medium">{label}</p>
@@ -119,7 +120,7 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
             Income: +${Number(incomeEntry.value).toFixed(2)}
           </p>
         )}
-        {others.map((p: any) => (
+        {others.map((p) => (
           <p key={p.dataKey} className="flex items-center gap-2 text-muted-foreground">
             <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
             {p.dataKey}: ${Number(p.value).toFixed(2)}

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { useAddCreditCard } from "@/hooks/useCreditCards";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export default function AddCreditCardDialog() {
   const [open, setOpen] = useState(false);
@@ -22,7 +23,7 @@ export default function AddCreditCardDialog() {
       { name, spend_target: parseFloat(target), time_period_months: parseInt(months), start_date: startDate },
       {
         onSuccess: () => { toast({ title: "Card added" }); setOpen(false); setName(""); setTarget(""); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };

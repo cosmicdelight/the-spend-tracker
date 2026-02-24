@@ -41,7 +41,7 @@ export default function Auth() {
       // Pre-set tour as seen so demo users skip the onboarding tour
       localStorage.setItem(TOUR_STORAGE_KEY, "true");
       await supabase.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
-    } catch (err: any) {
+    } catch (err) {
       toast({ title: "Demo unavailable", description: "Could not load the demo account. Please try again later.", variant: "destructive" });
     }
     setSubmitting(false);

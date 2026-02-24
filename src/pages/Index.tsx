@@ -22,6 +22,7 @@ import AddIncomeDialog from "@/components/AddIncomeDialog";
 import IncomeList from "@/components/IncomeList";
 import DemoBanner from "@/components/DemoBanner";
 import OnboardingTour from "@/components/OnboardingTour";
+import IndexPageSkeleton from "@/components/IndexPageSkeleton";
 import { Button } from "@/components/ui/button";
 import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart, List, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -42,7 +43,7 @@ export default function Index() {
   const isDemo = user?.email === DEMO_EMAIL;
   const handleSetTab = useCallback((t: "dashboard" | "transactions" | "income" | "budget") => setTab(t), []);
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
+  if (loading) return <IndexPageSkeleton />;
   if (!user) return <Navigate to="/auth" replace />;
 
   const now = new Date();

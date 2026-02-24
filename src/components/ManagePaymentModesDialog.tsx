@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Settings, Plus, Trash2, Lock } from "lucide-react";
 import { usePaymentModes, useAddPaymentMode, useDeletePaymentMode } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export default function ManagePaymentModesDialog() {
   const [open, setOpen] = useState(false);
@@ -33,7 +34,7 @@ export default function ManagePaymentModesDialog() {
           toast({ title: "Payment mode added" });
           setNewLabel("");
         },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       },
     );
   };
@@ -41,7 +42,7 @@ export default function ManagePaymentModesDialog() {
   const handleDelete = (mode: { id: string; label: string }) => {
     deleteMode.mutate(mode.id, {
       onSuccess: () => toast({ title: `"${mode.label}" removed` }),
-      onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+      onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
     });
   };
 

@@ -13,6 +13,7 @@ import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 
 interface Props {
@@ -104,7 +105,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
           toast({ title: "Transaction updated" });
           onOpenChange(false);
         },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       },
     );
   };
@@ -224,7 +225,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
                       setConfirmDelete(false);
                       onOpenChange(false);
                     },
-                    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                    onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
                   });
                 }}
               >

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { useAddBudgetCategory } from "@/hooks/useBudgetCategories";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export default function AddBudgetCategoryDialog() {
   const [open, setOpen] = useState(false);
@@ -20,7 +21,7 @@ export default function AddBudgetCategoryDialog() {
       { name, sub_category_name: subCategoryName || null },
       {
         onSuccess: () => { toast({ title: "Category added" }); setOpen(false); setName(""); setSubCategoryName(""); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };

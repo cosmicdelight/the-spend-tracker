@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUpdateCreditCard, type CreditCard } from "@/hooks/useCreditCards";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface Props {
   card: CreditCard | null;
@@ -36,7 +37,7 @@ export default function EditCreditCardDialog({ card, open, onOpenChange }: Props
       { id: card.id, name, spend_target: parseFloat(target), time_period_months: parseInt(months), start_date: startDate },
       {
         onSuccess: () => { toast({ title: "Card updated" }); onOpenChange(false); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       },
     );
   };

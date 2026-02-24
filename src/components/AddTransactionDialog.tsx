@@ -15,6 +15,7 @@ import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { Link } from "react-router-dom";
 
@@ -127,7 +128,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
             setOpen(false);
             resetAll();
           },
-          onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+          onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
         }
       );
     } else {
@@ -153,7 +154,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
             setOpen(false);
             resetAll();
           },
-          onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+          onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
         }
       );
     }

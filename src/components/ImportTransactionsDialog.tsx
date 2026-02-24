@@ -6,38 +6,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useAddBudgetCategory } from "@/hooks/useBudgetCategories";
 import { useAddIncomeCategory } from "@/hooks/useIncomeCategories";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// ── Expense ──────────────────────────────────────────────────────────────────
-const EXPENSE_HEADERS = ["date", "amount", "personal_amount", "category", "sub_category", "payment_mode", "description", "notes"];
-
-interface ParsedExpense {
-  date: string;
-  amount: number;
-  personal_amount: number;
-  category: string;
-  sub_category: string | null;
-  payment_mode: string;
-  description: string;
-  notes: string | null;
-}
-
-// ── Income ────────────────────────────────────────────────────────────────────
-const INCOME_HEADERS = ["date", "amount", "category", "sub_category", "description", "notes"];
-
-interface ParsedIncome {
-  date: string;
-  amount: number;
-  category: string;
-  sub_category: string | null;
-  description: string | null;
-  notes: string | null;
-}
+import {
+  EXPENSE_HEADERS,
+  INCOME_HEADERS,
+  parseExpenseCSV,
+  parseIncomeCSV,
+  type ParsedExpense,
+  type ParsedIncome,
+} from "@/lib/csvImport";
 
 // ── Category Resolution ───────────────────────────────────────────────────────
 interface CategoryResolution {
@@ -51,82 +34,6 @@ interface CategoryResolution {
 type ResolutionKey = string; // "category||sub_category"
 function makeKey(cat: string, sub: string | null): ResolutionKey {
   return `${cat}||${sub ?? ""}`;
-}
-
-// ── Shared ────────────────────────────────────────────────────────────────────
-const MAX_LENGTHS: Record<string, number> = {
-  description: 500, notes: 1000, category: 100, sub_category: 100, payment_mode: 100,
-};
-
-function sanitizeString(input: string): string {
-  return input.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, "").trim();
-}
-
-function parseCSVLines(text: string): { headers: string[]; lines: string[] } | { error: string } {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return { error: "File must have a header row and at least one data row." };
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
-  return { headers, lines: lines.slice(1) };
-}
-
-function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: string[] } {
-  const parsed = parseCSVLines(text);
-  if ("error" in parsed) return { rows: [], errors: [parsed.error] };
-  const { headers, lines } = parsed;
-  const missing = EXPENSE_HEADERS.filter((h) => !headers.includes(h));
-  if (missing.length) return { rows: [], errors: [`Missing columns: ${missing.join(", ")}`] };
-  const rows: ParsedExpense[] = [];
-  const errors: string[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    const rowNum = i + 2;
-    const vals = lines[i].split(",").map((v) => v.trim());
-    const getRaw = (key: string) => vals[headers.indexOf(key)] ?? "";
-    const get = (key: string) => {
-      const raw = sanitizeString(getRaw(key));
-      const max = MAX_LENGTHS[key];
-      if (max && raw.length > max) { errors.push(`Row ${rowNum}: ${key} exceeds ${max} characters (truncated)`); return raw.substring(0, max); }
-      return raw;
-    };
-    const amount = parseFloat(getRaw("amount"));
-    const personalAmount = parseFloat(getRaw("personal_amount"));
-    const date = getRaw("date");
-    const category = get("category");
-    if (!date || isNaN(amount) || !category) { errors.push(`Row ${rowNum}: missing required field (date, amount, or category)`); continue; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date))) { errors.push(`Row ${rowNum}: invalid date "${date}" — expected YYYY-MM-DD`); continue; }
-    if (isNaN(personalAmount)) { errors.push(`Row ${rowNum}: invalid personal_amount`); continue; }
-    if (amount < 0) { errors.push(`Row ${rowNum}: amount must be 0 or greater`); continue; }
-    rows.push({ date, amount, personal_amount: personalAmount, category, sub_category: get("sub_category") || null, payment_mode: get("payment_mode") || "cash", description: get("description"), notes: get("notes") || null });
-  }
-  return { rows, errors };
-}
-
-function parseIncomeCSV(text: string): { rows: ParsedIncome[]; errors: string[] } {
-  const parsed = parseCSVLines(text);
-  if ("error" in parsed) return { rows: [], errors: [parsed.error] };
-  const { headers, lines } = parsed;
-  const missing = INCOME_HEADERS.filter((h) => !headers.includes(h));
-  if (missing.length) return { rows: [], errors: [`Missing columns: ${missing.join(", ")}`] };
-  const rows: ParsedIncome[] = [];
-  const errors: string[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    const rowNum = i + 2;
-    const vals = lines[i].split(",").map((v) => v.trim());
-    const getRaw = (key: string) => vals[headers.indexOf(key)] ?? "";
-    const get = (key: string) => {
-      const raw = sanitizeString(getRaw(key));
-      const max = MAX_LENGTHS[key];
-      if (max && raw.length > max) { errors.push(`Row ${rowNum}: ${key} exceeds ${max} characters (truncated)`); return raw.substring(0, max); }
-      return raw;
-    };
-    const amount = parseFloat(getRaw("amount"));
-    const date = getRaw("date");
-    const category = get("category");
-    if (!date || isNaN(amount) || !category) { errors.push(`Row ${rowNum}: missing required field (date, amount, or category)`); continue; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date))) { errors.push(`Row ${rowNum}: invalid date "${date}" — expected YYYY-MM-DD`); continue; }
-    if (amount < 0) { errors.push(`Row ${rowNum}: amount must be 0 or greater`); continue; }
-    rows.push({ date, amount, category, sub_category: get("sub_category") || null, description: get("description") || null, notes: get("notes") || null });
-  }
-  return { rows, errors };
 }
 
 // ── Similarity matching ───────────────────────────────────────────────────────
@@ -573,8 +480,8 @@ export default function ImportTransactionsDialog() {
 
       reset();
       setOpen(false);
-    } catch (err: unknown) {
-      toast({ title: "Import failed", description: (err as Error).message, variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Import failed", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setImporting(false);
     }

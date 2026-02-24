@@ -15,7 +15,8 @@ export function useBudgetCategories() {
   return useQuery({
     queryKey: ["budget_categories", user?.id],
     queryFn: async () => {
-      await seedDefaultCategories(user!.id);
+      if (!user) throw new Error("User must be signed in");
+      await seedDefaultCategories(user.id);
       const { data, error } = await supabase.from("budget_categories").select("*").order("name");
       if (error) throw error;
       return data as BudgetCategory[];
@@ -29,7 +30,8 @@ export function useAddBudgetCategory() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (cat: { name: string; sub_category_name?: string | null }) => {
-      const { error } = await supabase.from("budget_categories").insert({ ...cat, user_id: user!.id });
+      if (!user) throw new Error("User must be signed in to add categories");
+      const { error } = await supabase.from("budget_categories").insert({ ...cat, user_id: user.id });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["budget_categories"] }),
@@ -63,10 +65,11 @@ export function useDeleteBudgetCategoryGroup() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (groupName: string) => {
+      if (!user) throw new Error("User must be signed in");
       const { error } = await supabase
         .from("budget_categories")
         .delete()
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .eq("name", groupName);
       if (error) throw error;
     },
@@ -79,10 +82,11 @@ export function useRenameBudgetCategoryGroup() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
+      if (!user) throw new Error("User must be signed in");
       const { error } = await supabase
         .from("budget_categories")
         .update({ name: newName })
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .eq("name", oldName);
       if (error) throw error;
     },

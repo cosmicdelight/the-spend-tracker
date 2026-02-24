@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ChevronDown, ChevronRight, Pencil, Plus, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
 
 export default function Categories() {
@@ -54,7 +55,8 @@ export default function Categories() {
   const toggleGroup = (name: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
       return next;
     });
   };
@@ -73,7 +75,7 @@ export default function Categories() {
       { oldName: editingGroupName, newName: editGroupValue.trim() },
       {
         onSuccess: () => { toast({ title: "Category renamed" }); setEditingGroupName(null); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };
@@ -90,7 +92,7 @@ export default function Categories() {
       { id: cat.id, name: cat.name, sub_category_name: editSubValue.trim() },
       {
         onSuccess: () => { toast({ title: "Updated" }); setEditingSubId(null); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };
@@ -102,7 +104,7 @@ export default function Categories() {
       { name: newCatName.trim(), sub_category_name: newSubName.trim() || null },
       {
         onSuccess: () => { toast({ title: "Category added" }); setNewCatName(""); setNewSubName(""); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };
@@ -113,7 +115,7 @@ export default function Categories() {
       { name: groupName, sub_category_name: newSubForGroup.trim() },
       {
         onSuccess: () => { toast({ title: "Sub-category added" }); setNewSubForGroup(""); setAddingSubTo(null); },
-        onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       }
     );
   };
@@ -171,7 +173,9 @@ export default function Categories() {
                 {/* Group header row */}
                 <div
                   className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors rounded-xl"
-                  onClick={() => { if (!isEditingGroup) hasSubs && toggleGroup(groupName); }}
+                  onClick={() => {
+                    if (!isEditingGroup && hasSubs) toggleGroup(groupName);
+                  }}
                 >
                   <div className="flex items-center gap-2">
                     {hasSubs ? (
@@ -239,7 +243,7 @@ export default function Categories() {
                           onConfirm={() =>
                             deleteGroup.mutate(groupName, {
                               onSuccess: () => toast({ title: "Category deleted" }),
-                              onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                              onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
                             })
                           }
                         />
@@ -286,7 +290,7 @@ export default function Categories() {
                                 onConfirm={() =>
                                   deleteCat.mutate(sub.id, {
                                     onSuccess: () => toast({ title: "Sub-category deleted" }),
-                                    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                                    onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
                                   })
                                 }
                               />
