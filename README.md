@@ -15,6 +15,7 @@ A budget and finance tracker that separates your **actual spending** from **cred
 - **Recurring transactions** — Auto-generate monthly subscriptions and bills
 - **CSV import** — Bulk import transactions from bank exports
 - **Duplicate transaction** — Copy an existing expense from the Edit dialog (uses today's date)
+- **Auto-populate category** — Enter a description first; if Category is empty, it fills from past matching transactions on blur
 - **Try Demo** — Instant access to a pre-seeded demo account
 - **PWA** — Install as an app on your device
 
