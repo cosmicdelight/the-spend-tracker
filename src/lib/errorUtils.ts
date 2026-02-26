@@ -1,6 +1,6 @@
 /**
  * Safely extracts a user-facing message from an unknown error.
- * Use in onError handlers instead of (err: any) => err.message
+ * Use in onError handlers instead of casting err directly.
  */
 export function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Trash2 } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
-import { useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
+import { useAddTransaction, useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
 import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
@@ -37,6 +37,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const [notes, setNotes] = useState("");
   const [currency, setCurrency] = useState("SGD");
 
+  const addTx = useAddTransaction();
   const updateTx = useUpdateTransaction();
   const descriptionSuggestions = useDescriptionSuggestions();
   const deleteTx = useDeleteTransaction();
@@ -108,6 +109,30 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
         onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       },
     );
+  };
+
+  const handleDuplicate = () => {
+    if (!transaction) return;
+    const payload = {
+      amount: transaction.amount,
+      personal_amount: transaction.personal_amount,
+      date: new Date().toISOString().split("T")[0],
+      category: transaction.category,
+      payment_mode: transaction.payment_mode,
+      credit_card_id: transaction.credit_card_id,
+      description: transaction.description,
+      notes: transaction.notes,
+      sub_category: transaction.sub_category,
+      original_currency: transaction.original_currency,
+      original_amount: transaction.original_amount,
+    };
+    addTx.mutate(payload, {
+      onSuccess: () => {
+        toast({ title: "Transaction duplicated" });
+        onOpenChange(false);
+      },
+      onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
+    });
   };
 
   return (
@@ -232,6 +257,14 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
                 {deleteTx.isPending ? "Deleting..." : "Confirm Delete"}
               </Button>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDuplicate}
+              disabled={addTx.isPending}
+            >
+              <Copy className="h-4 w-4 mr-1" /> {addTx.isPending ? "Duplicating..." : "Duplicate"}
+            </Button>
             <Button type="submit" className="flex-1" disabled={updateTx.isPending}>
               {updateTx.isPending ? "Saving..." : "Save Changes"}
             </Button>
