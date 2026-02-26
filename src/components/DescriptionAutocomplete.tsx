@@ -8,9 +8,11 @@ interface Props {
   suggestions: string[];
   placeholder?: string;
   required?: boolean;
+  /** Called when the input loses focus (e.g. for auto-populate on blur) */
+  onBlur?: () => void;
 }
 
-export default function DescriptionAutocomplete({ value, onChange, suggestions, placeholder, required }: Props) {
+export default function DescriptionAutocomplete({ value, onChange, suggestions, placeholder, required, onBlur }: Props) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,6 +71,7 @@ export default function DescriptionAutocomplete({ value, onChange, suggestions, 
         value={value}
         onChange={(e) => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
+        onBlur={onBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         required={required}

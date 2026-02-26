@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
 import { Plus, Settings } from "lucide-react";
-import { useAddTransaction, useDescriptionSuggestions } from "@/hooks/useTransactions";
+import { useAddTransaction, useCategoryFromDescription, useDescriptionSuggestions } from "@/hooks/useTransactions";
 import { useAddIncome } from "@/hooks/useIncome";
 import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -54,6 +54,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const addTx = useAddTransaction();
   const addIncome = useAddIncome();
   const descriptionSuggestions = useDescriptionSuggestions();
+  const getCategoryFromDescription = useCategoryFromDescription();
   const { data: cards } = useCreditCards();
   const { data: categories } = useBudgetCategories();
   const { data: incomeCategories = [] } = useIncomeCategories();
@@ -303,6 +304,15 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
                   suggestions={descriptionSuggestions}
                   placeholder="Dinner with friends"
                   required
+                  onBlur={() => {
+                    if (!category && description.trim()) {
+                      const match = getCategoryFromDescription(description);
+                      if (match) {
+                        setCategory(match.category);
+                        setSubCategory(match.sub_category ?? "");
+                      }
+                    }
+                  }}
                 />
               </div>
               {fieldPrefs.notes && (

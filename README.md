@@ -14,6 +14,7 @@ A budget and finance tracker that separates your **actual spending** from **cred
 - **Income tracking** — Log salary, bonuses, dividends
 - **Recurring transactions** — Auto-generate monthly subscriptions and bills
 - **CSV import** — Bulk import transactions from bank exports
+- **Duplicate transaction** — Copy an existing expense from the Edit dialog (uses today's date)
 - **Try Demo** — Instant access to a pre-seeded demo account
 - **PWA** — Install as an app on your device
 
