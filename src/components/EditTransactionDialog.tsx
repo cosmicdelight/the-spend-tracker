@@ -232,6 +232,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
             </div>
           )}
+          {(() => { console.log("[EditTxDialog] Rendering buttons. addTx available:", !!addTx, "addTx.isPending:", addTx.isPending, "transaction:", !!transaction); return null; })()}
           <div className="flex flex-wrap gap-2">
             {!confirmDelete ? (
               <Button type="button" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
@@ -257,6 +258,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
                 {deleteTx.isPending ? "Deleting..." : "Confirm Delete"}
               </Button>
             )}
+            {(() => { console.log("[EditTxDialog] About to render Duplicate button"); return null; })()}
             <Button
               type="button"
               variant="outline"
