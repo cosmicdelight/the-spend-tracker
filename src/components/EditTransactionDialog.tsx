@@ -138,7 +138,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Edit Expense (v2-debug)</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Edit Expense</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {fieldPrefs.currency && (
             <div className="space-y-1.5">
@@ -232,7 +232,6 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
             </div>
           )}
-          {(() => { console.log("[EditTxDialog] Rendering buttons. addTx available:", !!addTx, "addTx.isPending:", addTx.isPending, "transaction:", !!transaction); return null; })()}
           <div className="flex flex-wrap gap-2">
             {!confirmDelete ? (
               <Button type="button" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
@@ -258,7 +257,6 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
                 {deleteTx.isPending ? "Deleting..." : "Confirm Delete"}
               </Button>
             )}
-            {(() => { console.log("[EditTxDialog] About to render Duplicate button"); return null; })()}
             <Button
               type="button"
               variant="outline"
