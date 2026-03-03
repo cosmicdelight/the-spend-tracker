@@ -232,7 +232,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
             </div>
           )}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {!confirmDelete ? (
               <Button type="button" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
                 <Trash2 className="h-4 w-4 mr-1" /> Delete
