@@ -71,6 +71,8 @@ export function useCreateFromRecurring() {
     mutationFn: async (rec: RecurringTransaction) => {
       if (!user) throw new Error("User must be signed in");
       const today = new Date().toISOString().split("T")[0];
+      
+      // 1. Create the transaction
       if (rec.transaction_type === "income") {
         const { error } = await supabase.from("income").insert({
           user_id: user.id,
@@ -99,8 +101,27 @@ export function useCreateFromRecurring() {
         });
         if (error) throw error;
       }
+
+      // 2. Advance the schedule
+      const nextDate = new Date(rec.next_due_date);
+      if (rec.frequency === "weekly") {
+        nextDate.setDate(nextDate.getDate() + 7);
+      } else {
+        nextDate.setMonth(nextDate.getMonth() + 1);
+      }
+
+      const { error: updateError } = await supabase
+        .from("recurring_transactions")
+        .update({
+          last_generated_at: new Date().toISOString(),
+          next_due_date: nextDate.toISOString().split("T")[0],
+        })
+        .eq("id", rec.id);
+
+      if (updateError) throw updateError;
     },
     onSuccess: (_, rec) => {
+      qc.invalidateQueries({ queryKey: ["recurring_transactions"] });
       if (rec.transaction_type === "income") {
         qc.invalidateQueries({ queryKey: ["income"] });
       } else {
