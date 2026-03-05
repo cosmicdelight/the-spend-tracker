@@ -447,6 +447,7 @@ export default function ImportTransactionsDialog() {
           category: r.category, sub_category: r.sub_category,
           payment_mode: normalizePaymentMode(r.payment_mode),
           description: r.description, notes: r.notes, credit_card_id: null,
+          original_amount: r.amount, original_currency: "SGD",
         }));
         const { error } = await supabase.from("transactions").insert(payload);
         if (error) throw error;

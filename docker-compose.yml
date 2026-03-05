@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # The Frontend Service (Vite React App)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # These are passed into the build process so Vite can embed them in the static files.
+        # If testing against the hosted backend, these will be pulled from your .env
+        # If testing against local Supabase, use the start-local.sh script.
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+        - VITE_DEMO_PASSWORD=${VITE_DEMO_PASSWORD}
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    # If running a local backend container, you might attach to its network here.
+    # networks:
+    #   - local-supabase-network
+
+# If you prefer to self-host the entire Supabase stack rather than using `supabase start`, 
+# you would merge the official Supabase docker-compose configuration here. 
+# However, for typical development, it is vastly easier to run the backend 
+# using the Supabase CLI (`npx supabase start`), which manages its own Docker containers.

@@ -41,10 +41,30 @@ function sanitizeString(input: string): string {
 }
 
 export function parseCSVLines(text: string): { headers: string[]; lines: string[] } | { error: string } {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return { error: "File must have a header row and at least one data row." };
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
-  return { headers, lines: lines.slice(1) };
+  const allLines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (allLines.length < 2) return { error: "File must have a header row and at least one data row." };
+
+  const parseLine = (line: string) => {
+    const result = [];
+    let cur = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === "," && !inQuotes) {
+        result.push(cur.trim());
+        cur = "";
+      } else {
+        cur += char;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  };
+
+  const headers = parseLine(allLines[0]).map((h) => h.toLowerCase().replace(/\s+/g, "_"));
+  return { headers, lines: allLines.slice(1) };
 }
 
 export function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: string[] } {
@@ -53,11 +73,31 @@ export function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: 
   const { headers, lines } = parsed;
   const missing = EXPENSE_HEADERS.filter((h) => !headers.includes(h));
   if (missing.length) return { rows: [], errors: [`Missing columns: ${missing.join(", ")}`] };
+
+  const parseLine = (line: string) => {
+    const result = [];
+    let cur = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === "," && !inQuotes) {
+        result.push(cur.trim());
+        cur = "";
+      } else {
+        cur += char;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  };
+
   const rows: ParsedExpense[] = [];
   const errors: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     const rowNum = i + 2;
-    const vals = lines[i].split(",").map((v) => v.trim());
+    const vals = parseLine(lines[i]);
     const getRaw = (key: string) => vals[headers.indexOf(key)] ?? "";
     const get = (key: string) => {
       const raw = sanitizeString(getRaw(key));
@@ -108,11 +148,31 @@ export function parseIncomeCSV(text: string): { rows: ParsedIncome[]; errors: st
   const { headers, lines } = parsed;
   const missing = INCOME_HEADERS.filter((h) => !headers.includes(h));
   if (missing.length) return { rows: [], errors: [`Missing columns: ${missing.join(", ")}`] };
+
+  const parseLine = (line: string) => {
+    const result = [];
+    let cur = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === "," && !inQuotes) {
+        result.push(cur.trim());
+        cur = "";
+      } else {
+        cur += char;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  };
+
   const rows: ParsedIncome[] = [];
   const errors: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     const rowNum = i + 2;
-    const vals = lines[i].split(",").map((v) => v.trim());
+    const vals = parseLine(lines[i]);
     const getRaw = (key: string) => vals[headers.indexOf(key)] ?? "";
     const get = (key: string) => {
       const raw = sanitizeString(getRaw(key));

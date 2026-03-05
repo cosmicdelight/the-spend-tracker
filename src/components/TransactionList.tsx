@@ -96,15 +96,13 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isCurrentMonth || isSearching} onClick={goForward}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              {!isCurrentMonth && !isSearching && (
-                <button
-                  type="button"
-                  onClick={() => { setSelectedMonth(now.getMonth()); setSelectedYear(now.getFullYear()); }}
-                  className="rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  Today
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => { setSelectedMonth(now.getMonth()); setSelectedYear(now.getFullYear()); }}
+                className={`rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${(isCurrentMonth || isSearching) ? "invisible pointer-events-none" : ""}`}
+              >
+                Today
+              </button>
             </div>
           </div>
           <div className="relative mt-1">

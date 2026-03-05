@@ -343,15 +343,13 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
           >
             <ChevronRightIcon className="h-4 w-4" />
           </button>
-          {!isAtCurrent && (
-            <button
-              type="button"
-              onClick={() => { setSelectedMonth(now.getMonth()); setSelectedYear(now.getFullYear()); }}
-              className="ml-1 rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              Today
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => { setSelectedMonth(now.getMonth()); setSelectedYear(now.getFullYear()); }}
+            className={`ml-1 rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${isAtCurrent ? "invisible pointer-events-none" : ""}`}
+          >
+            Today
+          </button>
         </div>
       </CardHeader>
       <CardContent>
