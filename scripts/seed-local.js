@@ -1,7 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'http://127.0.0.1:54321';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Get from environment
 const DEMO_EMAIL = 'demo@spendtracker.app';
 
