@@ -232,8 +232,23 @@ export default function Categories() {
                           className="h-7 w-7 text-muted-foreground"
                           onClick={() => startEditGroup(groupName)}
                         >
-                          <Pencil className="h-3 w-3" />
+                        <Pencil className="h-3 w-3" />
                         </Button>
+                        {sortedGroups.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            onClick={() => {
+                              setMergeMode("group");
+                              setMergeSource(groupName);
+                              setMergeTargets(sortedGroups.filter(g => g !== groupName));
+                              setMergeOpen(true);
+                            }}
+                          >
+                            <GitMerge className="h-3 w-3" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
