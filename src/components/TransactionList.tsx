@@ -131,7 +131,14 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
           <div className="space-y-4">
             {grouped.map(([date, txs]) => (
               <div key={date}>
-                <p className="text-xs font-semibold text-muted-foreground mb-1.5">{format(parseISO(date), "EEEE, MMM d")}</p>
+                <button
+                  type="button"
+                  onClick={() => setAddTxDate(date)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5 cursor-pointer hover:text-foreground transition-colors group"
+                >
+                  {format(parseISO(date), "EEEE, MMM d")}
+                  <Plus className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
                 <div className="space-y-2">
                   {txs.map((tx) => {
                     const isSplit = Number(tx.personal_amount) !== Number(tx.amount);
