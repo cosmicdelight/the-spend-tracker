@@ -25,10 +25,19 @@ interface Props {
   dashboardTrigger?: boolean;
   /** Force the dialog to open on a specific type */
   defaultType?: "expense" | "income";
+  /** Pre-fill the date field (YYYY-MM-DD) */
+  initialDate?: string;
+  /** Controlled open state from parent */
+  externalOpen?: boolean;
+  /** Callback when controlled open state changes */
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, defaultType }: Props) {
-  const [open, setOpen] = useState(false);
+export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, defaultType, initialDate, externalOpen, onExternalOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = isControlled ? (o: boolean) => onExternalOpenChange?.(o) : setInternalOpen;
   const [type, setType] = useState<"expense" | "income">(defaultType ?? "expense");
 
   // Expense fields
