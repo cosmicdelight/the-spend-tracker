@@ -12,10 +12,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ChevronDown, ChevronRight, Pencil, Plus, Save, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, GitMerge, Pencil, Plus, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import MergeCategoryDialog from "@/components/MergeCategoryDialog";
 
 export default function Categories() {
   const { user, loading } = useAuth();
@@ -40,6 +41,13 @@ export default function Categories() {
   const [newSubName, setNewSubName] = useState("");
   const [addingSubTo, setAddingSubTo] = useState<string | null>(null);
   const [newSubForGroup, setNewSubForGroup] = useState("");
+
+  // Merge state
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeMode, setMergeMode] = useState<"group" | "sub">("group");
+  const [mergeSource, setMergeSource] = useState("");
+  const [mergeCategoryName, setMergeCategoryName] = useState("");
+  const [mergeTargets, setMergeTargets] = useState<string[]>([]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -224,8 +232,23 @@ export default function Categories() {
                           className="h-7 w-7 text-muted-foreground"
                           onClick={() => startEditGroup(groupName)}
                         >
-                          <Pencil className="h-3 w-3" />
+                        <Pencil className="h-3 w-3" />
                         </Button>
+                        {sortedGroups.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            onClick={() => {
+                              setMergeMode("group");
+                              setMergeSource(groupName);
+                              setMergeTargets(sortedGroups.filter(g => g !== groupName));
+                              setMergeOpen(true);
+                            }}
+                          >
+                            <GitMerge className="h-3 w-3" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -283,8 +306,24 @@ export default function Categories() {
                                 className="h-7 w-7 text-muted-foreground"
                                 onClick={() => startEditSub(sub)}
                               >
-                                <Pencil className="h-3 w-3" />
+                              <Pencil className="h-3 w-3" />
                               </Button>
+                              {subItems.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground"
+                                  onClick={() => {
+                                    setMergeMode("sub");
+                                    setMergeSource(sub.sub_category_name!);
+                                    setMergeCategoryName(groupName);
+                                    setMergeTargets(subItems.filter(s => s.id !== sub.id).map(s => s.sub_category_name!));
+                                    setMergeOpen(true);
+                                  }}
+                                >
+                                  <GitMerge className="h-3 w-3" />
+                                </Button>
+                              )}
                               <DeleteConfirmButton
                                 label={`"${sub.sub_category_name}"`}
                                 onConfirm={() =>
@@ -329,6 +368,15 @@ export default function Categories() {
           <p className="text-center text-sm text-muted-foreground py-8">No categories yet. Add one above!</p>
         )}
       </main>
+
+      <MergeCategoryDialog
+        open={mergeOpen}
+        onOpenChange={setMergeOpen}
+        mode={mergeMode}
+        sourceName={mergeSource}
+        categoryName={mergeCategoryName}
+        targets={mergeTargets}
+      />
     </div>
   );
 }

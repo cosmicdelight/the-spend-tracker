@@ -1,44 +1,26 @@
 
+## New User Onboarding: Demo Account + In-App Tour (with CSV Import Step)
 
-## Merge Categories / Sub-categories
+### Status: COMPLETE ✅
 
-### What it does
-A new "Merge" action lets users combine two categories (or two sub-categories) into one. All existing transactions/income/recurring templates referencing the source are reassigned to the target, and the source category row is deleted.
+### What was built
 
-### Two merge scenarios
+**Part 1 — Demo Account**
+- `src/pages/Auth.tsx` — "Try Demo" button (using `DEMO_EMAIL`/`DEMO_PASSWORD` from seedDemoData.ts). Sets `localStorage["onboarding-tour-seen"]` so demo users skip the tour.
+- `src/components/DemoBanner.tsx` — Dismissible amber banner shown when `user.email === DEMO_EMAIL`.
+- `src/lib/seedDemoData.ts` — Exports `DEMO_EMAIL = "demo@spendtracker.app"` and `DEMO_PASSWORD = "DemoPass123!"`.
+- `supabase/functions/seed-demo-account/index.ts` — Edge function for re-seeding. Protected by service role key.
+- Demo user seeded directly in DB: `demo@spendtracker.app` / `DemoPass123!` with 38 transactions, 6 income entries, 3 recurring, 2 credit cards, categories.
 
-1. **Merge category groups** — merge all items under category A into category B. Updates `transactions.category`, `income.category`, `recurring_transactions.category` from A→B, moves all `budget_categories` rows with `name=A` into `name=B` (deduplicating sub-categories), then deletes leftover source rows.
+**Part 2 — In-App Onboarding Tour**
+- `src/components/OnboardingTour.tsx` — 6-step spotlight tour with spotlight cutout, tooltip positioning, tab navigation via `onSetTab` prop, `localStorage["onboarding-tour-seen"]` persistence.
 
-2. **Merge sub-categories** — within the same parent category, merge sub-category X into sub-category Y. Updates `transactions.sub_category`, `income.sub_category`, `recurring_transactions.sub_category` from X→Y (scoped to that category), then deletes the source `budget_categories` row.
+**Tour steps:**
+1. `dashboard-tab` — Dashboard overview
+2. `quick-add-button` — Log expense
+3. `import-csv-button` — Import CSV
+4. `expenses-tab` — Expenses tab
+5. `income-tab` — Income tab
+6. `stats-tab` — Stats tab
 
-### Implementation
-
-**1. New hook: `useMergeBudgetCategoryGroup`** in `useBudgetCategories.ts`
-- Takes `{ sourceName, targetName }`.
-- Updates `transactions`, `income`, `recurring_transactions` where `category = sourceName` → `targetName`.
-- Updates `budget_categories` rows: for each source sub-category, if a matching sub already exists under target, delete the source row; otherwise update `name` to `targetName`.
-- Invalidates `budget_categories`, `transactions`, `income`, `recurring_transactions` queries.
-
-**2. New hook: `useMergeBudgetSubCategory`** in `useBudgetCategories.ts`
-- Takes `{ categoryName, sourceSubName, targetSubName }`.
-- Updates `sub_category` in `transactions`, `income`, `recurring_transactions` where `category = categoryName` and `sub_category = sourceSubName`.
-- Deletes the source `budget_categories` row.
-- Invalidates relevant queries.
-
-**3. New dialog: `MergeCategoryDialog.tsx`**
-- A dialog with two modes (category group merge / sub-category merge), determined by props.
-- For group merge: a searchable select dropdown listing all other category group names as the merge target.
-- For sub-category merge: a dropdown listing sibling sub-categories as the target.
-- Shows a confirmation message: "All transactions in [source] will be moved to [target]. This cannot be undone."
-- Confirm button triggers the appropriate merge hook.
-
-**4. UI integration in `Categories.tsx`**
-- Add a "Merge" icon button (e.g. `Merge` or `GitMerge` from lucide-react) next to each category group header and each sub-category row.
-- Clicking opens the `MergeCategoryDialog` with the source pre-filled.
-- Button is hidden if there's only one category group (or one sub-category in the group) since there's nothing to merge into.
-
-### Files changed
-- `src/hooks/useBudgetCategories.ts` — add `useMergeBudgetCategoryGroup` and `useMergeBudgetSubCategory`
-- `src/components/MergeCategoryDialog.tsx` — new dialog component
-- `src/pages/Categories.tsx` — add merge buttons wired to the dialog
-
+- `src/pages/Index.tsx` — Added `data-tour` attributes, renders `<DemoBanner>` for demo users, renders `<OnboardingTour>` for real users only.
