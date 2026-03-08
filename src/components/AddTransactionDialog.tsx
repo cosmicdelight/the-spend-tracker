@@ -91,12 +91,14 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const resetAll = () => {
     setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId(""); setNotes("");
     setCategory(""); setSubCategory(""); setCurrency("SGD");
+    setDate(new Date().toISOString().split("T")[0]);
     setIncomeCategory(""); setIncomeSubCategory(""); setIncomeDescription(""); setIncomeNotes("");
     setErrors([]);
   };
 
   const handleOpen = (o: boolean) => {
     setOpen(o);
+    if (o && initialDate) setDate(initialDate);
     if (!o) resetAll();
   };
 
