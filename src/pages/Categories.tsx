@@ -306,8 +306,24 @@ export default function Categories() {
                                 className="h-7 w-7 text-muted-foreground"
                                 onClick={() => startEditSub(sub)}
                               >
-                                <Pencil className="h-3 w-3" />
+                              <Pencil className="h-3 w-3" />
                               </Button>
+                              {subItems.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-muted-foreground"
+                                  onClick={() => {
+                                    setMergeMode("sub");
+                                    setMergeSource(sub.sub_category_name!);
+                                    setMergeCategoryName(groupName);
+                                    setMergeTargets(subItems.filter(s => s.id !== sub.id).map(s => s.sub_category_name!));
+                                    setMergeOpen(true);
+                                  }}
+                                >
+                                  <GitMerge className="h-3 w-3" />
+                                </Button>
+                              )
                               <DeleteConfirmButton
                                 label={`"${sub.sub_category_name}"`}
                                 onConfirm={() =>
