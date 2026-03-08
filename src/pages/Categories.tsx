@@ -42,6 +42,13 @@ export default function Categories() {
   const [addingSubTo, setAddingSubTo] = useState<string | null>(null);
   const [newSubForGroup, setNewSubForGroup] = useState("");
 
+  // Merge state
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeMode, setMergeMode] = useState<"group" | "sub">("group");
+  const [mergeSource, setMergeSource] = useState("");
+  const [mergeCategoryName, setMergeCategoryName] = useState("");
+  const [mergeTargets, setMergeTargets] = useState<string[]>([]);
+
   if (loading) return <div className="flex min-h-screen items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
 
