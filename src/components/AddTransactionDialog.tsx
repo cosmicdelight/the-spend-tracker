@@ -182,7 +182,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {!isControlled && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
 
