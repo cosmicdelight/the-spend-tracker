@@ -323,7 +323,7 @@ export default function Categories() {
                                 >
                                   <GitMerge className="h-3 w-3" />
                                 </Button>
-                              )
+                              )}
                               <DeleteConfirmButton
                                 label={`"${sub.sub_category_name}"`}
                                 onConfirm={() =>
