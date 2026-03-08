@@ -83,26 +83,89 @@ export function useRenameBudgetCategoryGroup() {
   return useMutation({
     mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
       if (!user) throw new Error("User must be signed in");
-      // Rename the category group
       const { error } = await supabase
         .from("budget_categories")
         .update({ name: newName })
         .eq("user_id", user.id)
         .eq("name", oldName);
       if (error) throw error;
-      // Update existing transactions to use the new category name
       const { error: txError } = await supabase
         .from("transactions")
         .update({ category: newName })
         .eq("user_id", user.id)
         .eq("category", oldName);
       if (txError) throw txError;
-      // Update sub_category references in transactions where sub_category matched old parent
-      // (sub_category is separate, no change needed there)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["budget_categories"] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
+    },
+  });
+}
+
+export function useMergeBudgetCategoryGroup() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ sourceName, targetName }: { sourceName: string; targetName: string }) => {
+      if (!user) throw new Error("User must be signed in");
+
+      // Update transactions, income, recurring_transactions category from source → target
+      const { error: e1 } = await supabase.from("transactions").update({ category: targetName }).eq("user_id", user.id).eq("category", sourceName);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("income").update({ category: targetName }).eq("user_id", user.id).eq("category", sourceName);
+      if (e2) throw e2;
+      const { error: e3 } = await supabase.from("recurring_transactions").update({ category: targetName }).eq("user_id", user.id).eq("category", sourceName);
+      if (e3) throw e3;
+
+      // Get source and target budget_categories rows
+      const { data: sourceCats } = await supabase.from("budget_categories").select("*").eq("user_id", user.id).eq("name", sourceName);
+      const { data: targetCats } = await supabase.from("budget_categories").select("*").eq("user_id", user.id).eq("name", targetName);
+      const targetSubs = new Set((targetCats || []).map(c => c.sub_category_name));
+
+      for (const sc of (sourceCats || [])) {
+        if (!sc.sub_category_name || targetSubs.has(sc.sub_category_name)) {
+          // Duplicate or no sub — delete
+          await supabase.from("budget_categories").delete().eq("id", sc.id);
+        } else {
+          // Move sub to target group
+          await supabase.from("budget_categories").update({ name: targetName }).eq("id", sc.id);
+        }
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budget_categories"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["income"] });
+      qc.invalidateQueries({ queryKey: ["recurring_transactions"] });
+    },
+  });
+}
+
+export function useMergeBudgetSubCategory() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ categoryName, sourceSubName, targetSubName }: { categoryName: string; sourceSubName: string; targetSubName: string }) => {
+      if (!user) throw new Error("User must be signed in");
+
+      // Update sub_category in transactions, income, recurring_transactions
+      const { error: e1 } = await supabase.from("transactions").update({ sub_category: targetSubName }).eq("user_id", user.id).eq("category", categoryName).eq("sub_category", sourceSubName);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("income").update({ sub_category: targetSubName }).eq("user_id", user.id).eq("category", categoryName).eq("sub_category", sourceSubName);
+      if (e2) throw e2;
+      const { error: e3 } = await supabase.from("recurring_transactions").update({ sub_category: targetSubName }).eq("user_id", user.id).eq("category", categoryName).eq("sub_category", sourceSubName);
+      if (e3) throw e3;
+
+      // Delete source budget_categories row
+      const { error: e4 } = await supabase.from("budget_categories").delete().eq("user_id", user.id).eq("name", categoryName).eq("sub_category_name", sourceSubName);
+      if (e4) throw e4;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budget_categories"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["income"] });
+      qc.invalidateQueries({ queryKey: ["recurring_transactions"] });
     },
   });
 }
