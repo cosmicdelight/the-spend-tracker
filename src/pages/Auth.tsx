@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,10 @@ import { TOUR_STORAGE_KEY } from "@/components/OnboardingTour";
 
 export default function Auth() {
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(() => {
+    return searchParams.get("mode") === "signup" ? "signup" : "signin";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
