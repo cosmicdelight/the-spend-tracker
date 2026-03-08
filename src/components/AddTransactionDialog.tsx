@@ -43,7 +43,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   // Expense fields
   const [amount, setAmount] = useState("");
   const [personalAmount, setPersonalAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(initialDate || new Date().toISOString().split("T")[0]);
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [paymentMode, setPaymentMode] = useState("credit_card");
