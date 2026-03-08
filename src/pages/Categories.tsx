@@ -368,6 +368,15 @@ export default function Categories() {
           <p className="text-center text-sm text-muted-foreground py-8">No categories yet. Add one above!</p>
         )}
       </main>
+
+      <MergeCategoryDialog
+        open={mergeOpen}
+        onOpenChange={setMergeOpen}
+        mode={mergeMode}
+        sourceName={mergeSource}
+        categoryName={mergeCategoryName}
+        targets={mergeTargets}
+      />
     </div>
   );
 }
