@@ -25,16 +25,25 @@ interface Props {
   dashboardTrigger?: boolean;
   /** Force the dialog to open on a specific type */
   defaultType?: "expense" | "income";
+  /** Pre-fill the date field (YYYY-MM-DD) */
+  initialDate?: string;
+  /** Controlled open state from parent */
+  externalOpen?: boolean;
+  /** Callback when controlled open state changes */
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
-export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, defaultType }: Props) {
-  const [open, setOpen] = useState(false);
+export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, defaultType, initialDate, externalOpen, onExternalOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = isControlled ? (o: boolean) => onExternalOpenChange?.(o) : setInternalOpen;
   const [type, setType] = useState<"expense" | "income">(defaultType ?? "expense");
 
   // Expense fields
   const [amount, setAmount] = useState("");
   const [personalAmount, setPersonalAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(initialDate || new Date().toISOString().split("T")[0]);
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [paymentMode, setPaymentMode] = useState("credit_card");
@@ -82,12 +91,14 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const resetAll = () => {
     setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId(""); setNotes("");
     setCategory(""); setSubCategory(""); setCurrency("SGD");
+    setDate(new Date().toISOString().split("T")[0]);
     setIncomeCategory(""); setIncomeSubCategory(""); setIncomeDescription(""); setIncomeNotes("");
     setErrors([]);
   };
 
   const handleOpen = (o: boolean) => {
     setOpen(o);
+    if (o && initialDate) setDate(initialDate);
     if (!o) resetAll();
   };
 
@@ -171,7 +182,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {!isControlled && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
 

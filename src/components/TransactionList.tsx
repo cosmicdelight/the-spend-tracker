@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Transaction } from "@/hooks/useTransactions";
@@ -8,6 +8,7 @@ import type { CreditCard } from "@/hooks/useCreditCards";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { format, parseISO } from "date-fns";
 import EditTransactionDialog from "./EditTransactionDialog";
+import AddTransactionDialog from "./AddTransactionDialog";
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -24,6 +25,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [search, setSearch] = useState("");
+  const [addTxDate, setAddTxDate] = useState<string | null>(null);
 
   const isSearching = search.trim().length > 0;
 
@@ -129,7 +131,14 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
           <div className="space-y-4">
             {grouped.map(([date, txs]) => (
               <div key={date}>
-                <p className="text-xs font-semibold text-muted-foreground mb-1.5">{format(parseISO(date), "EEEE, MMM d")}</p>
+                <button
+                  type="button"
+                  onClick={() => setAddTxDate(date)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5 cursor-pointer hover:text-foreground transition-colors group"
+                >
+                  {format(parseISO(date), "EEEE, MMM d")}
+                  <Plus className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
                 <div className="space-y-2">
                   {txs.map((tx) => {
                     const isSplit = Number(tx.personal_amount) !== Number(tx.amount);
@@ -157,6 +166,13 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
         </CardContent>
       </Card>
       <EditTransactionDialog transaction={editingTx} open={!!editingTx} onOpenChange={(o) => !o && setEditingTx(null)} fieldPrefs={fieldPrefs} />
+      <AddTransactionDialog
+        fieldPrefs={fieldPrefs}
+        initialDate={addTxDate ?? undefined}
+        externalOpen={!!addTxDate}
+        onExternalOpenChange={(o) => { if (!o) setAddTxDate(null); }}
+        defaultType="expense"
+      />
     </>
   );
 }

@@ -1,26 +1,26 @@
 
+## New User Onboarding: Demo Account + In-App Tour (with CSV Import Step)
 
-## Tap Date Header to Add Transaction with That Date
+### Status: COMPLETE ✅
 
-### What it does
-Tapping a date header (e.g. "Wednesday, Mar 5") in the transaction list opens the Add Transaction dialog with that date pre-filled, making it quick to add a forgotten expense on a past date.
+### What was built
 
-### Changes
+**Part 1 — Demo Account**
+- `src/pages/Auth.tsx` — "Try Demo" button (using `DEMO_EMAIL`/`DEMO_PASSWORD` from seedDemoData.ts). Sets `localStorage["onboarding-tour-seen"]` so demo users skip the tour.
+- `src/components/DemoBanner.tsx` — Dismissible amber banner shown when `user.email === DEMO_EMAIL`.
+- `src/lib/seedDemoData.ts` — Exports `DEMO_EMAIL = "demo@spendtracker.app"` and `DEMO_PASSWORD = "DemoPass123!"`.
+- `supabase/functions/seed-demo-account/index.ts` — Edge function for re-seeding. Protected by service role key.
+- Demo user seeded directly in DB: `demo@spendtracker.app` / `DemoPass123!` with 38 transactions, 6 income entries, 3 recurring, 2 credit cards, categories.
 
-**1. `src/components/AddTransactionDialog.tsx`**
-- Add an optional `initialDate?: string` prop (YYYY-MM-DD format)
-- Add optional `externalOpen?: boolean` and `onExternalOpenChange?: (open: boolean) => void` props to allow controlled open state from parent
-- When opening with `initialDate`, set the date field to that value instead of today
-- Reset to today's date in `resetAll()`
+**Part 2 — In-App Onboarding Tour**
+- `src/components/OnboardingTour.tsx` — 6-step spotlight tour with spotlight cutout, tooltip positioning, tab navigation via `onSetTab` prop, `localStorage["onboarding-tour-seen"]` persistence.
 
-**2. `src/components/TransactionList.tsx`**
-- Add state for `addTxDate` (string | null) to track which date header was tapped
-- Make the date header (`<p>` element on line 132) clickable with cursor-pointer styling and a subtle hover effect
-- On click, set `addTxDate` to that date string
-- Render `AddTransactionDialog` in controlled mode, passing `initialDate={addTxDate}` and managing open/close via the new state
-- Add a small `+` icon next to the date to hint at the interaction
+**Tour steps:**
+1. `dashboard-tab` — Dashboard overview
+2. `quick-add-button` — Log expense
+3. `import-csv-button` — Import CSV
+4. `expenses-tab` — Expenses tab
+5. `income-tab` — Income tab
+6. `stats-tab` — Stats tab
 
-**3. Files changed**
-- `src/components/AddTransactionDialog.tsx` — add `initialDate`, `externalOpen`, `onExternalOpenChange` props
-- `src/components/TransactionList.tsx` — clickable date headers, render controlled AddTransactionDialog
-
+- `src/pages/Index.tsx` — Added `data-tour` attributes, renders `<DemoBanner>` for demo users, renders `<OnboardingTour>` for real users only.
