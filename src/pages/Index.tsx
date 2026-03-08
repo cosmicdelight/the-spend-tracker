@@ -80,6 +80,9 @@ export default function Index() {
         <>
             {/* Summary row */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <p className="col-span-2 sm:col-span-3 text-xs font-medium text-muted-foreground">
+                {now.toLocaleString("default", { month: "long", year: "numeric" })}
+              </p>
               <div className="rounded-xl border bg-card p-4">
                 <p className="text-xs text-muted-foreground text-center">Total Charged</p>
                 <p className="mt-1 text-xl font-heading font-bold text-center">${totalCharged.toFixed(2)}</p>
