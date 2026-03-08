@@ -97,7 +97,17 @@ export function useRenameIncomeCategoryGroup() {
         .eq("user_id", user.id)
         .eq("name", oldName);
       if (error) throw error;
+      // Update existing income entries to use the new category name
+      const { error: incError } = await supabase
+        .from("income")
+        .update({ category: newName })
+        .eq("user_id", user.id)
+        .eq("category", oldName);
+      if (incError) throw incError;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["income_categories"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["income_categories"] });
+      qc.invalidateQueries({ queryKey: ["income"] });
+    },
   });
 }
