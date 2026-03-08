@@ -25,6 +25,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [search, setSearch] = useState("");
+  const [addTxDate, setAddTxDate] = useState<string | null>(null);
 
   const isSearching = search.trim().length > 0;
 
