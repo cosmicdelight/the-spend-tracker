@@ -12,10 +12,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ChevronDown, ChevronRight, Pencil, Plus, Save, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, GitMerge, Pencil, Plus, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import MergeCategoryDialog from "@/components/MergeCategoryDialog";
 
 export default function Categories() {
   const { user, loading } = useAuth();
