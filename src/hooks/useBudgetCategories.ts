@@ -83,13 +83,26 @@ export function useRenameBudgetCategoryGroup() {
   return useMutation({
     mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
       if (!user) throw new Error("User must be signed in");
+      // Rename the category group
       const { error } = await supabase
         .from("budget_categories")
         .update({ name: newName })
         .eq("user_id", user.id)
         .eq("name", oldName);
       if (error) throw error;
+      // Update existing transactions to use the new category name
+      const { error: txError } = await supabase
+        .from("transactions")
+        .update({ category: newName })
+        .eq("user_id", user.id)
+        .eq("category", oldName);
+      if (txError) throw txError;
+      // Update sub_category references in transactions where sub_category matched old parent
+      // (sub_category is separate, no change needed there)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budget_categories"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budget_categories"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+    },
   });
 }
