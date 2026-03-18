@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -146,7 +147,7 @@ export default function AddIncomeDialog() {
           </div>
           <div className="space-y-1.5">
             <Label>Notes (optional)</Label>
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional details" />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional details" className="min-h-[60px]" />
           </div>
           {errors.length > 0 && (
             <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 space-y-1">
