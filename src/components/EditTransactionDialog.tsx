@@ -229,7 +229,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
           {fieldPrefs.notes && (
             <div className="space-y-1.5">
               <Label>Notes (optional)</Label>
-              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" />
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" className="min-h-[60px]" />
             </div>
           )}
           <div className="flex flex-wrap gap-2">

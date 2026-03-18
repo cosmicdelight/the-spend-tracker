@@ -373,7 +373,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
               </div>
               <div className="space-y-1.5">
                 <Label>Notes (optional)</Label>
-                <Input value={incomeNotes} onChange={(e) => setIncomeNotes(e.target.value)} placeholder="Additional details" />
+                <Textarea value={incomeNotes} onChange={(e) => setIncomeNotes(e.target.value)} placeholder="Additional details" className="min-h-[60px]" />
               </div>
             </>
           )}
