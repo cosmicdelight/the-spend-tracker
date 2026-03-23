@@ -46,7 +46,6 @@ export default function IncomeList({ income }: Props) {
   };
 
   const goForward = () => {
-    if (isCurrentMonth) return;
     if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear((y) => y + 1); }
     else setSelectedMonth((m) => m + 1);
   };
