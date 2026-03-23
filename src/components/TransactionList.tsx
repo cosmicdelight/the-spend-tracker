@@ -165,12 +165,19 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
           </div>
         </CardContent>
       </Card>
-      <EditTransactionDialog transaction={editingTx} open={!!editingTx} onOpenChange={(o) => !o && setEditingTx(null)} fieldPrefs={fieldPrefs} />
+      <EditTransactionDialog
+        transaction={editingTx}
+        open={!!editingTx}
+        onOpenChange={(o) => !o && setEditingTx(null)}
+        fieldPrefs={fieldPrefs}
+        onDuplicate={(data) => setDuplicateData(data)}
+      />
       <AddTransactionDialog
         fieldPrefs={fieldPrefs}
         initialDate={addTxDate ?? undefined}
-        externalOpen={!!addTxDate}
-        onExternalOpenChange={(o) => { if (!o) setAddTxDate(null); }}
+        initialData={duplicateData}
+        externalOpen={!!addTxDate || !!duplicateData}
+        onExternalOpenChange={(o) => { if (!o) { setAddTxDate(null); setDuplicateData(undefined); } }}
         defaultType="expense"
       />
     </>
