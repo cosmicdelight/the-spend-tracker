@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Navigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Sparkles } from "lucide-react";
+import { CreditCard, Download, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PasswordInput from "@/components/PasswordInput";
 import PasswordRequirements from "@/components/PasswordRequirements";
