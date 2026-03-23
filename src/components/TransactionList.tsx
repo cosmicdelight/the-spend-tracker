@@ -63,7 +63,6 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   };
 
   const goForward = () => {
-    if (isCurrentMonth) return;
     if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear((y) => y + 1); }
     else setSelectedMonth((m) => m + 1);
   };
@@ -92,11 +91,11 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                 disabled={isSearching}
                 className="rounded-md border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40"
               >
-                {Array.from({ length: now.getFullYear() - 2020 + 1 }, (_, i) => 2020 + i).map((y) => (
+                {Array.from({ length: now.getFullYear() - 2020 + 2 }, (_, i) => 2020 + i).map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isCurrentMonth || isSearching} onClick={goForward}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isSearching} onClick={goForward}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <button
