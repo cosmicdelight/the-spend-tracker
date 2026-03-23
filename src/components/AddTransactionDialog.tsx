@@ -61,6 +61,11 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
 
   const [errors, setErrors] = useState<string[]>([]);
 
+  // Sync date when initialDate changes (e.g. tapping a different date header)
+  useEffect(() => {
+    if (initialDate) setDate(initialDate);
+  }, [initialDate]);
+
   const addTx = useAddTransaction();
   const addIncome = useAddIncome();
   const descriptionSuggestions = useDescriptionSuggestions();
