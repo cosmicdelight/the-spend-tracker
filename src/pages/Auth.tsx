@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Navigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Sparkles } from "lucide-react";
+import { CreditCard, Download, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PasswordInput from "@/components/PasswordInput";
 import PasswordRequirements from "@/components/PasswordRequirements";
@@ -24,6 +24,31 @@ export default function Auth() {
   const [submitting, setSubmitting] = useState(false);
   const { signUp, signIn } = useAuth();
   const { toast } = useToast();
+
+  // PWA install prompt
+  const deferredPromptRef = useRef<any>(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      deferredPromptRef.current = e;
+      setCanInstall(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPromptRef.current) {
+      deferredPromptRef.current.prompt();
+      await deferredPromptRef.current.userChoice;
+      deferredPromptRef.current = null;
+      setCanInstall(false);
+    }
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
   if (user) return <Navigate to="/" replace />;
@@ -158,6 +183,26 @@ export default function Auth() {
               <Sparkles className="h-4 w-4 text-primary" />
               Try Demo
             </Button>
+          )}
+          {!isStandalone && (canInstall || isIOS) && (
+            canInstall ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="mt-2 w-full gap-2 text-muted-foreground"
+                onClick={handleInstall}
+              >
+                <Download className="h-4 w-4" />
+                Install App
+              </Button>
+            ) : (
+              <Link to="/install" className="block mt-2">
+                <Button type="button" variant="ghost" className="w-full gap-2 text-muted-foreground">
+                  <Download className="h-4 w-4" />
+                  Install App
+                </Button>
+              </Link>
+            )
           )}
         </CardContent>
       </Card>
