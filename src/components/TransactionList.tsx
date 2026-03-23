@@ -95,7 +95,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isCurrentMonth || isSearching} onClick={goForward}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isSearching} onClick={goForward}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <button
