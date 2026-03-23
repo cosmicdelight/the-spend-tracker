@@ -1,4 +1,4 @@
-import { useState } from "react"; 
+import { useState, useEffect } from "react"; 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +60,11 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const [incomeNotes, setIncomeNotes] = useState("");
 
   const [errors, setErrors] = useState<string[]>([]);
+
+  // Sync date when initialDate changes (e.g. tapping a different date header)
+  useEffect(() => {
+    if (initialDate) setDate(initialDate);
+  }, [initialDate]);
 
   const addTx = useAddTransaction();
   const addIncome = useAddIncome();
