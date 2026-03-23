@@ -8,7 +8,7 @@ import type { CreditCard } from "@/hooks/useCreditCards";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { format, parseISO } from "date-fns";
 import EditTransactionDialog from "./EditTransactionDialog";
-import AddTransactionDialog from "./AddTransactionDialog";
+import AddTransactionDialog, { type DuplicateTransactionData } from "./AddTransactionDialog";
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
