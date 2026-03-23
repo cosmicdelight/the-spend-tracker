@@ -23,6 +23,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fieldPrefs?: TransactionFieldPrefs;
+  onDuplicate?: (data: DuplicateTransactionData) => void;
 }
 
 const defaultPrefs: TransactionFieldPrefs = { currency: true, creditCard: true, subCategory: true, notes: true };
