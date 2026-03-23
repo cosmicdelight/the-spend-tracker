@@ -26,6 +26,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [search, setSearch] = useState("");
   const [addTxDate, setAddTxDate] = useState<string | null>(null);
+  const [duplicateData, setDuplicateData] = useState<DuplicateTransactionData | undefined>(undefined);
 
   const isSearching = search.trim().length > 0;
 
