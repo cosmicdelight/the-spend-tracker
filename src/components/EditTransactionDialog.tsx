@@ -116,26 +116,30 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
 
   const handleDuplicate = () => {
     if (!transaction) return;
-    const payload = {
-      amount: transaction.amount,
-      personal_amount: transaction.personal_amount,
-      date: new Date().toISOString().split("T")[0],
+    const cur = transaction.original_currency || "SGD";
+    const dupAmount = cur !== "SGD" && transaction.original_amount > 0
+      ? String(transaction.original_amount)
+      : String(transaction.amount);
+    const dupPersonal = cur !== "SGD" && transaction.original_amount > 0
+      ? (() => {
+          const ratio = transaction.amount > 0 ? transaction.personal_amount / transaction.amount : 1;
+          return ratio < 1 ? String(Math.round(transaction.original_amount * ratio * 100) / 100) : "";
+        })()
+      : (transaction.personal_amount !== transaction.amount ? String(transaction.personal_amount) : "");
+
+    const data: DuplicateTransactionData = {
+      amount: dupAmount,
+      personalAmount: dupPersonal,
+      currency: cur,
       category: transaction.category,
-      payment_mode: transaction.payment_mode,
-      credit_card_id: transaction.credit_card_id,
-      description: transaction.description,
-      notes: transaction.notes,
-      sub_category: transaction.sub_category,
-      original_currency: transaction.original_currency,
-      original_amount: transaction.original_amount,
+      subCategory: transaction.sub_category || "",
+      paymentMode: transaction.payment_mode,
+      creditCardId: transaction.credit_card_id || "",
+      description: transaction.description || "",
+      notes: transaction.notes || "",
     };
-    addTx.mutate(payload, {
-      onSuccess: () => {
-        toast({ title: "Transaction duplicated" });
-        onOpenChange(false);
-      },
-      onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
-    });
+    onOpenChange(false);
+    onDuplicate?.(data);
   };
 
   return (
