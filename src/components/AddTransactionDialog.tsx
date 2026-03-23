@@ -80,6 +80,22 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
     if (initialDate) setDate(initialDate);
   }, [initialDate]);
 
+  // Pre-fill all fields when duplicating a transaction
+  useEffect(() => {
+    if (initialData) {
+      setAmount(initialData.amount);
+      setPersonalAmount(initialData.personalAmount);
+      setCurrency(initialData.currency);
+      setCategory(initialData.category);
+      setSubCategory(initialData.subCategory);
+      setPaymentMode(initialData.paymentMode);
+      setCreditCardId(initialData.creditCardId);
+      setDescription(initialData.description);
+      setNotes(initialData.notes);
+      setDate(new Date().toISOString().split("T")[0]);
+    }
+  }, [initialData]);
+
   const addTx = useAddTransaction();
   const addIncome = useAddIncome();
   const descriptionSuggestions = useDescriptionSuggestions();
