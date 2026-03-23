@@ -48,7 +48,7 @@ interface Props {
   onExternalOpenChange?: (open: boolean) => void;
 }
 
-export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, defaultType, initialDate, externalOpen, onExternalOpenChange }: Props) {
+export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, defaultType, initialDate, initialData, externalOpen, onExternalOpenChange }: Props) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = externalOpen !== undefined;
   const open = isControlled ? externalOpen : internalOpen;
