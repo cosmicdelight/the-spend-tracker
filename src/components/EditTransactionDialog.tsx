@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
-import { useAddTransaction, useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
+import { useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
 import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
