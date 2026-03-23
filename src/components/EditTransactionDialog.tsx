@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Copy, Trash2 } from "lucide-react";
+import type { DuplicateTransactionData } from "./AddTransactionDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
-import { useAddTransaction, useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
+import { useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
 import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
@@ -22,11 +23,12 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fieldPrefs?: TransactionFieldPrefs;
+  onDuplicate?: (data: DuplicateTransactionData) => void;
 }
 
 const defaultPrefs: TransactionFieldPrefs = { currency: true, creditCard: true, subCategory: true, notes: true };
 
-export default function EditTransactionDialog({ transaction, open, onOpenChange, fieldPrefs = defaultPrefs }: Props) {
+export default function EditTransactionDialog({ transaction, open, onOpenChange, fieldPrefs = defaultPrefs, onDuplicate }: Props) {
   const [amount, setAmount] = useState("");
   const [personalAmount, setPersonalAmount] = useState("");
   const [date, setDate] = useState("");
@@ -38,7 +40,6 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const [notes, setNotes] = useState("");
   const [currency, setCurrency] = useState("SGD");
 
-  const addTx = useAddTransaction();
   const updateTx = useUpdateTransaction();
   const descriptionSuggestions = useDescriptionSuggestions();
   const deleteTx = useDeleteTransaction();
@@ -114,26 +115,30 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
 
   const handleDuplicate = () => {
     if (!transaction) return;
-    const payload = {
-      amount: transaction.amount,
-      personal_amount: transaction.personal_amount,
-      date: new Date().toISOString().split("T")[0],
+    const cur = transaction.original_currency || "SGD";
+    const dupAmount = cur !== "SGD" && transaction.original_amount > 0
+      ? String(transaction.original_amount)
+      : String(transaction.amount);
+    const dupPersonal = cur !== "SGD" && transaction.original_amount > 0
+      ? (() => {
+          const ratio = transaction.amount > 0 ? transaction.personal_amount / transaction.amount : 1;
+          return ratio < 1 ? String(Math.round(transaction.original_amount * ratio * 100) / 100) : "";
+        })()
+      : (transaction.personal_amount !== transaction.amount ? String(transaction.personal_amount) : "");
+
+    const data: DuplicateTransactionData = {
+      amount: dupAmount,
+      personalAmount: dupPersonal,
+      currency: cur,
       category: transaction.category,
-      payment_mode: transaction.payment_mode,
-      credit_card_id: transaction.credit_card_id,
-      description: transaction.description,
-      notes: transaction.notes,
-      sub_category: transaction.sub_category,
-      original_currency: transaction.original_currency,
-      original_amount: transaction.original_amount,
+      subCategory: transaction.sub_category || "",
+      paymentMode: transaction.payment_mode,
+      creditCardId: transaction.credit_card_id || "",
+      description: transaction.description || "",
+      notes: transaction.notes || "",
     };
-    addTx.mutate(payload, {
-      onSuccess: () => {
-        toast({ title: "Transaction duplicated" });
-        onOpenChange(false);
-      },
-      onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
-    });
+    onOpenChange(false);
+    onDuplicate?.(data);
   };
 
   return (
@@ -262,9 +267,8 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               type="button"
               variant="outline"
               onClick={handleDuplicate}
-              disabled={addTx.isPending}
             >
-              <Copy className="h-4 w-4 mr-1" /> {addTx.isPending ? "Duplicating..." : "Duplicate"}
+              <Copy className="h-4 w-4 mr-1" /> Duplicate
             </Button>
             <Button type="submit" className="flex-1" disabled={updateTx.isPending}>
               {updateTx.isPending ? "Saving..." : "Save Changes"}

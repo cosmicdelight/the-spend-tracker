@@ -20,6 +20,18 @@ import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { Link } from "react-router-dom";
 
+export interface DuplicateTransactionData {
+  amount: string;
+  personalAmount: string;
+  currency: string;
+  category: string;
+  subCategory: string;
+  paymentMode: string;
+  creditCardId: string;
+  description: string;
+  notes: string;
+}
+
 interface Props {
   fieldPrefs: TransactionFieldPrefs;
   /** If provided, shows a plain trigger button styled for the dashboard */
@@ -28,13 +40,15 @@ interface Props {
   defaultType?: "expense" | "income";
   /** Pre-fill the date field (YYYY-MM-DD) */
   initialDate?: string;
+  /** Pre-fill all fields from a duplicated transaction */
+  initialData?: DuplicateTransactionData;
   /** Controlled open state from parent */
   externalOpen?: boolean;
   /** Callback when controlled open state changes */
   onExternalOpenChange?: (open: boolean) => void;
 }
 
-export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, defaultType, initialDate, externalOpen, onExternalOpenChange }: Props) {
+export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, defaultType, initialDate, initialData, externalOpen, onExternalOpenChange }: Props) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = externalOpen !== undefined;
   const open = isControlled ? externalOpen : internalOpen;
@@ -65,6 +79,22 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   useEffect(() => {
     if (initialDate) setDate(initialDate);
   }, [initialDate]);
+
+  // Pre-fill all fields when duplicating a transaction
+  useEffect(() => {
+    if (initialData) {
+      setAmount(initialData.amount);
+      setPersonalAmount(initialData.personalAmount);
+      setCurrency(initialData.currency);
+      setCategory(initialData.category);
+      setSubCategory(initialData.subCategory);
+      setPaymentMode(initialData.paymentMode);
+      setCreditCardId(initialData.creditCardId);
+      setDescription(initialData.description);
+      setNotes(initialData.notes);
+      setDate(new Date().toISOString().split("T")[0]);
+    }
+  }, [initialData]);
 
   const addTx = useAddTransaction();
   const addIncome = useAddIncome();

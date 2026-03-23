@@ -8,7 +8,7 @@ import type { CreditCard } from "@/hooks/useCreditCards";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { format, parseISO } from "date-fns";
 import EditTransactionDialog from "./EditTransactionDialog";
-import AddTransactionDialog from "./AddTransactionDialog";
+import AddTransactionDialog, { type DuplicateTransactionData } from "./AddTransactionDialog";
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -26,6 +26,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [search, setSearch] = useState("");
   const [addTxDate, setAddTxDate] = useState<string | null>(null);
+  const [duplicateData, setDuplicateData] = useState<DuplicateTransactionData | undefined>(undefined);
 
   const isSearching = search.trim().length > 0;
 
@@ -164,12 +165,19 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
           </div>
         </CardContent>
       </Card>
-      <EditTransactionDialog transaction={editingTx} open={!!editingTx} onOpenChange={(o) => !o && setEditingTx(null)} fieldPrefs={fieldPrefs} />
+      <EditTransactionDialog
+        transaction={editingTx}
+        open={!!editingTx}
+        onOpenChange={(o) => !o && setEditingTx(null)}
+        fieldPrefs={fieldPrefs}
+        onDuplicate={(data) => setDuplicateData(data)}
+      />
       <AddTransactionDialog
         fieldPrefs={fieldPrefs}
         initialDate={addTxDate ?? undefined}
-        externalOpen={!!addTxDate}
-        onExternalOpenChange={(o) => { if (!o) setAddTxDate(null); }}
+        initialData={duplicateData}
+        externalOpen={!!addTxDate || !!duplicateData}
+        onExternalOpenChange={(o) => { if (!o) { setAddTxDate(null); setDuplicateData(undefined); } }}
         defaultType="expense"
       />
     </>
