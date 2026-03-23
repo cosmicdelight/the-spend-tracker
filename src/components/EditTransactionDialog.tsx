@@ -28,7 +28,7 @@ interface Props {
 
 const defaultPrefs: TransactionFieldPrefs = { currency: true, creditCard: true, subCategory: true, notes: true };
 
-export default function EditTransactionDialog({ transaction, open, onOpenChange, fieldPrefs = defaultPrefs }: Props) {
+export default function EditTransactionDialog({ transaction, open, onOpenChange, fieldPrefs = defaultPrefs, onDuplicate }: Props) {
   const [amount, setAmount] = useState("");
   const [personalAmount, setPersonalAmount] = useState("");
   const [date, setDate] = useState("");
