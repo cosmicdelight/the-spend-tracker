@@ -83,7 +83,7 @@ export default function IncomeList({ income }: Props) {
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isCurrentMonth} onClick={goForward}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goForward}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <button
