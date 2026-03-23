@@ -20,6 +20,18 @@ import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { Link } from "react-router-dom";
 
+export interface DuplicateTransactionData {
+  amount: string;
+  personalAmount: string;
+  currency: string;
+  category: string;
+  subCategory: string;
+  paymentMode: string;
+  creditCardId: string;
+  description: string;
+  notes: string;
+}
+
 interface Props {
   fieldPrefs: TransactionFieldPrefs;
   /** If provided, shows a plain trigger button styled for the dashboard */
@@ -28,6 +40,8 @@ interface Props {
   defaultType?: "expense" | "income";
   /** Pre-fill the date field (YYYY-MM-DD) */
   initialDate?: string;
+  /** Pre-fill all fields from a duplicated transaction */
+  initialData?: DuplicateTransactionData;
   /** Controlled open state from parent */
   externalOpen?: boolean;
   /** Callback when controlled open state changes */
