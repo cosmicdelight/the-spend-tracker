@@ -267,9 +267,8 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               type="button"
               variant="outline"
               onClick={handleDuplicate}
-              disabled={addTx.isPending}
             >
-              <Copy className="h-4 w-4 mr-1" /> {addTx.isPending ? "Duplicating..." : "Duplicate"}
+              <Copy className="h-4 w-4 mr-1" /> Duplicate
             </Button>
             <Button type="submit" className="flex-1" disabled={updateTx.isPending}>
               {updateTx.isPending ? "Saving..." : "Save Changes"}
