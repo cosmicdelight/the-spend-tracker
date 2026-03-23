@@ -184,6 +184,26 @@ export default function Auth() {
               Try Demo
             </Button>
           )}
+          {!isStandalone && (canInstall || isIOS) && (
+            canInstall ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="mt-2 w-full gap-2 text-muted-foreground"
+                onClick={handleInstall}
+              >
+                <Download className="h-4 w-4" />
+                Install App
+              </Button>
+            ) : (
+              <Link to="/install" className="block mt-2">
+                <Button type="button" variant="ghost" className="w-full gap-2 text-muted-foreground">
+                  <Download className="h-4 w-4" />
+                  Install App
+                </Button>
+              </Link>
+            )
+          )}
         </CardContent>
       </Card>
     </div>
