@@ -79,7 +79,7 @@ export default function IncomeList({ income }: Props) {
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
                 className="rounded-md border bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                {Array.from({ length: now.getFullYear() - 2020 + 1 }, (_, i) => 2020 + i).map((y) => (
+                {Array.from({ length: now.getFullYear() - 2020 + 2 }, (_, i) => 2020 + i).map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
