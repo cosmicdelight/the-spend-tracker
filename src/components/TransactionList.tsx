@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Search, X, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Transaction } from "@/hooks/useTransactions";
@@ -134,10 +134,9 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                 <button
                   type="button"
                   onClick={() => setAddTxDate(date)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5 cursor-pointer hover:text-foreground transition-colors group"
+                  className="text-xs font-semibold text-muted-foreground mb-1.5 cursor-pointer hover:text-foreground transition-colors"
                 >
                   {format(parseISO(date), "EEEE, MMM d")}
-                  <Plus className="h-3 w-3 text-muted-foreground" />
                 </button>
                 <div className="space-y-2">
                   {txs.map((tx) => {
