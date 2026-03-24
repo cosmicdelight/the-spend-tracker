@@ -109,9 +109,32 @@ Deno.serve(async (req) => {
 
   // 3. Seed categories
   const budgetCategories = [
-    "Groceries","Dining","Transport","Entertainment","Health",
-    "Shopping","Travel","Utilities",
-  ].map((name) => ({ user_id: userId, name, sub_category_name: null }));
+    { name: "Groceries", sub_category_name: null },
+    { name: "Dining", sub_category_name: null },
+    { name: "Dining", sub_category_name: "Restaurants" },
+    { name: "Dining", sub_category_name: "Fast Food" },
+    { name: "Dining", sub_category_name: "Cafes" },
+    { name: "Transport", sub_category_name: null },
+    { name: "Transport", sub_category_name: "Gas" },
+    { name: "Transport", sub_category_name: "Rideshare" },
+    { name: "Entertainment", sub_category_name: null },
+    { name: "Entertainment", sub_category_name: "Streaming" },
+    { name: "Entertainment", sub_category_name: "Activities" },
+    { name: "Health", sub_category_name: null },
+    { name: "Health", sub_category_name: "Gym" },
+    { name: "Health", sub_category_name: "Medical" },
+    { name: "Health", sub_category_name: "Pharmacy" },
+    { name: "Shopping", sub_category_name: null },
+    { name: "Shopping", sub_category_name: "Electronics" },
+    { name: "Shopping", sub_category_name: "Clothing" },
+    { name: "Shopping", sub_category_name: "Home" },
+    { name: "Travel", sub_category_name: null },
+    { name: "Travel", sub_category_name: "Flights" },
+    { name: "Travel", sub_category_name: "Accommodation" },
+    { name: "Utilities", sub_category_name: null },
+    { name: "Utilities", sub_category_name: "Internet" },
+    { name: "Utilities", sub_category_name: "Electric" },
+  ].map((c) => ({ ...c, user_id: userId }));
 
   const incomeCategories = [
     { name: "Salary & Employment", sub_category_name: "Base" },
