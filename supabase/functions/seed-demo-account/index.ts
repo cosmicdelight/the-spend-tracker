@@ -271,7 +271,6 @@ Deno.serve(async (req) => {
       notes: null,
     },
     {
-    {
       user_id: userId,
       description: "Comcast Internet",
       category: "Utilities",
