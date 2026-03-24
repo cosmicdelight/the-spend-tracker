@@ -209,8 +209,7 @@ Deno.serve(async (req) => {
     { date: date(-2, 28), description: "Zara",          category: "Shopping",      sub_category: "Clothing",      amount: 119.00, personal_amount: 119.00, payment_mode: "credit_card", credit_card_id: cc2 },
   ];
 
-  const transactions = rawTx.map((t, i) => ({
-    id: `tx${String(i + 1).padStart(6, "0")}-0000-0000-0000-000000000000`,
+  const transactions = rawTx.map((t) => ({
     user_id: userId,
     original_amount: t.amount,
     original_currency: "USD",
