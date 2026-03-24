@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { APP_BUILD_TIME } from "@/lib/appVersion";
+import { APP_BUILD_ID } from "@/lib/appVersion";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -24,6 +24,10 @@ const PwaUpdateBanner = () => {
 
   useEffect(() => {
     const checkLatestVersion = async () => {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
       try {
         const response = await fetch(`/version.json?t=${Date.now()}`, {
           cache: "no-store",
@@ -34,21 +38,31 @@ const PwaUpdateBanner = () => {
           return;
         }
 
-        const payload = (await response.json()) as { buildTime?: string };
-        if (payload.buildTime && payload.buildTime !== APP_BUILD_TIME) {
-          setHasVersionMismatch(true);
-        }
+        const payload = (await response.json()) as { buildId?: string };
+        setHasVersionMismatch(Boolean(payload.buildId && payload.buildId !== APP_BUILD_ID));
       } catch {
         // Silent fallback: service-worker detection still handles normal update prompts.
       }
     };
 
     void checkLatestVersion();
+    const checkIfVisible = () => {
+      if (document.visibilityState === "visible") {
+        void checkLatestVersion();
+      }
+    };
+
     const timer = window.setInterval(() => {
       void checkLatestVersion();
     }, 60000);
+    document.addEventListener("visibilitychange", checkIfVisible);
+    window.addEventListener("focus", checkIfVisible);
 
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", checkIfVisible);
+      window.removeEventListener("focus", checkIfVisible);
+    };
   }, []);
 
   const shouldShowRefresh = useMemo(() => needRefresh || hasVersionMismatch, [needRefresh, hasVersionMismatch]);
@@ -70,7 +84,12 @@ const PwaUpdateBanner = () => {
           <Button
             className="gap-2 sm:shrink-0"
             onClick={() => {
-              void updateServiceWorker(true);
+              if (needRefresh) {
+                void updateServiceWorker(true);
+                return;
+              }
+
+              window.location.reload();
             }}
           >
             <RefreshCw className="h-4 w-4" />

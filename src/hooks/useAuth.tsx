@@ -44,8 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
         applySession(data.session);
-      } catch (error) {
-        if (import.meta.env.DEV) console.error("Failed to restore auth session", error);
+      } catch {
         applySession(null);
       }
     };

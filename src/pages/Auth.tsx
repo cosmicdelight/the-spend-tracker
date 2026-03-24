@@ -12,6 +12,13 @@ import PasswordRequirements from "@/components/PasswordRequirements";
 import { isPasswordValid } from "@/lib/passwordValidation";
 import { TOUR_STORAGE_KEY } from "@/components/OnboardingTour";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+type NavigatorWithStandalone = Navigator & { standalone?: boolean };
+
 export default function Auth() {
   const { user, loading } = useAuth();
   const [searchParams] = useSearchParams();
@@ -26,15 +33,17 @@ export default function Auth() {
   const { toast } = useToast();
 
   // PWA install prompt
-  const deferredPromptRef = useRef<any>(null);
+  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
   const [canInstall, setCanInstall] = useState(false);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    Boolean((navigator as NavigatorWithStandalone).standalone);
 
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
-      deferredPromptRef.current = e;
+      deferredPromptRef.current = e as BeforeInstallPromptEvent;
       setCanInstall(true);
     };
     window.addEventListener("beforeinstallprompt", handler);

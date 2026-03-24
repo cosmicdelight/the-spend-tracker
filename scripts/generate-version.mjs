@@ -3,11 +3,13 @@ import { dirname, resolve } from "node:path";
 
 const packageVersion = process.env.npm_package_version || "0.0.0";
 const buildTime = new Date().toISOString();
+const buildId = process.env.BUILD_ID || buildTime;
 
 const outputPath = resolve(process.cwd(), "public/version.json");
 const payload = JSON.stringify(
   {
     version: packageVersion,
+    buildId,
     buildTime,
   },
   null,

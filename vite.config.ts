@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
@@ -10,6 +11,16 @@ const FALLBACK_SUPABASE_PUBLISHABLE_KEY =
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  const versionFilePath = path.resolve(process.cwd(), "public/version.json");
+  let versionMeta: { version?: string; buildId?: string; buildTime?: string } = {};
+  if (fs.existsSync(versionFilePath)) {
+    try {
+      versionMeta = JSON.parse(fs.readFileSync(versionFilePath, "utf-8"));
+    } catch {
+      versionMeta = {};
+    }
+  }
+
   const env = loadEnv(mode, process.cwd(), "");
   const supabaseUrl =
     env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
@@ -29,8 +40,9 @@ export default defineConfig(({ mode }) => {
       ...(demoPassword
         ? { "import.meta.env.VITE_DEMO_PASSWORD": JSON.stringify(demoPassword) }
         : {}),
-      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "0.0.0"),
-      __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+      __APP_VERSION__: JSON.stringify(versionMeta.version || process.env.npm_package_version || "0.0.0"),
+      __APP_BUILD_ID__: JSON.stringify(versionMeta.buildId || "dev"),
+      __APP_BUILD_TIME__: JSON.stringify(versionMeta.buildTime || new Date().toISOString()),
     },
     optimizeDeps: {
       force: false,
