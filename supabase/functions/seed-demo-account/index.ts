@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
 
   const recurring = [
     {
-    id: "rec00001-0000-0000-0000-000000000001",
+    {
       user_id: userId,
       description: "Netflix",
       category: "Entertainment",
