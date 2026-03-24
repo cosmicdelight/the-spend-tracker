@@ -129,7 +129,7 @@ export function buildDemoSeedPayload(userId: string) {
       user_id: userId,
       description: "Planet Fitness",
       category: "Health",
-      sub_category: null,
+      sub_category: "Gym",
       amount: 24.99,
       personal_amount: 24.99,
       payment_mode: "credit_card",
