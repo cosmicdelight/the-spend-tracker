@@ -226,8 +226,7 @@ Deno.serve(async (req) => {
     { date: date(-1, 15), description: "Q4 performance bonus", category: "Salary & Employment", sub_category: "Bonus",    amount: 1500,   original_amount: 1500 },
     { date: date(-2, 20), description: "VOOG dividends",       category: "Investments",         sub_category: "Dividends",amount: 142.30, original_amount: 142.30 },
     { date: date(-1, 20), description: "VOOG dividends",       category: "Investments",         sub_category: "Dividends",amount: 148.75, original_amount: 148.75 },
-  ].map((inc, i) => ({
-    id: `inc${String(i + 1).padStart(5, "0")}-0000-0000-0000-000000000000`,
+  ].map((inc) => ({
     user_id: userId,
     original_currency: "USD",
     notes: null,
