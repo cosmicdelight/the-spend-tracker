@@ -455,16 +455,16 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
                   <div className="mt-1 mb-2 ml-6 space-y-3">
                     {hasSubs && (
                       <div className="rounded-lg border bg-muted/30 p-3">
-                        <div className="flex items-center gap-4">
-                          <div className="h-36 w-36 shrink-0">
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
+                          <div className="h-32 w-32 shrink-0">
                             <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
                                 <Pie
                                   data={entry.subs}
                                   cx="50%"
                                   cy="50%"
-                                  innerRadius={30}
-                                  outerRadius={55}
+                                  innerRadius={25}
+                                  outerRadius={50}
                                   paddingAngle={3}
                                   dataKey="value"
                                   strokeWidth={0}
@@ -477,15 +477,15 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
                               </PieChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="space-y-1 text-sm">
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm sm:flex-col sm:gap-x-0 sm:gap-y-1">
                             {entry.subs.map((sub, j) => (
-                              <div key={sub.name} className="flex items-center gap-2">
+                              <div key={sub.name} className="flex items-center gap-1.5">
                                 <span
-                                  className="inline-block h-2.5 w-2.5 rounded-full"
+                                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                                   style={{ backgroundColor: COLORS[(i + j + 1) % COLORS.length] }}
                                 />
-                                <span className="text-muted-foreground">{sub.name}</span>
-                                <span className="font-medium">${sub.value.toFixed(2)}</span>
+                                <span className="text-muted-foreground whitespace-nowrap">{sub.name}</span>
+                                <span className="font-medium whitespace-nowrap">${sub.value.toFixed(2)}</span>
                               </div>
                             ))}
                           </div>
