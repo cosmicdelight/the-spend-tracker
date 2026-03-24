@@ -253,7 +253,6 @@ Deno.serve(async (req) => {
       notes: null,
     },
     {
-    {
       user_id: userId,
       description: "Planet Fitness",
       category: "Health",
