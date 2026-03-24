@@ -290,9 +290,16 @@ Deno.serve(async (req) => {
     },
   ];
 
-  // 5. Insert everything
-  const [cardsRes, txRes, incRes, recRes] = await Promise.all([
-    admin.from("credit_cards").insert(cards),
+  // 5. Insert everything (cards first due to FK constraints)
+  const cardsRes = await admin.from("credit_cards").insert(cards);
+  if (cardsRes.error) {
+    return new Response(JSON.stringify({ error: [cardsRes.error.message] }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const [txRes, incRes, recRes] = await Promise.all([
     admin.from("transactions").insert(transactions),
     admin.from("income").insert(income),
     admin.from("recurring_transactions").insert(recurring),
