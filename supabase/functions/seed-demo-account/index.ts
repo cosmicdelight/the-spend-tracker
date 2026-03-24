@@ -237,11 +237,11 @@ Deno.serve(async (req) => {
 
   const recurring = [
     {
-      id: "rec00001-0000-0000-0000-000000000001",
+    id: "rec00001-0000-0000-0000-000000000001",
       user_id: userId,
       description: "Netflix",
       category: "Entertainment",
-      sub_category: null,
+      sub_category: "Streaming",
       amount: 15.99,
       personal_amount: 15.99,
       payment_mode: "credit_card",
