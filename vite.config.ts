@@ -29,6 +29,8 @@ export default defineConfig(({ mode }) => {
       ...(demoPassword
         ? { "import.meta.env.VITE_DEMO_PASSWORD": JSON.stringify(demoPassword) }
         : {}),
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "0.0.0"),
+      __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
     optimizeDeps: {
       force: false,
@@ -43,9 +45,9 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       mode === "development" && componentTagger(),
-      enablePwa &&
-        VitePWA({
-          registerType: "autoUpdate",
+      VitePWA({
+          disable: !enablePwa,
+          registerType: "prompt",
           // Work around intermittent Workbox/Terser renderChunk early-exit in CI/local builds.
           minify: false,
           workbox: {

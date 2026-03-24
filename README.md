@@ -72,3 +72,23 @@ Use **Try Demo** on the login screen to explore without signing up.
 - `src/components/` — Transaction list, charts, dialogs, CSV import, onboarding tour
 - `src/hooks/` — Auth, transactions, income, budget categories, credit cards
 - `supabase/functions/` — `demo-login`, `seed-demo-account`, `process-recurring-transactions`
+
+---
+
+## App updates and caching
+
+- SpendTracker uses a service worker when `VITE_ENABLE_PWA=true`.
+- When a new deployment is available, the app shows an in-app update prompt so users can refresh in one tap.
+- The app also checks `version.json` periodically as a host-agnostic fallback, so update prompts still appear if host cache headers are not fully configurable.
+- Static hashed assets are cached long-term, while `index.html` and the service worker are configured for revalidation via `public/_headers` on hosts that support it.
+
+### Release checklist
+
+- Deploy and load the currently installed app on a device/browser where the PWA was already used.
+- Publish a second change and verify that the in-app "Update available" prompt appears.
+- Tap refresh and confirm the latest build label is shown on `/install`.
+
+### Fallback guidance
+
+- If a user reports stale content after deployment, ask them to open `/install` and compare the build label.
+- If labels do not match after tapping refresh, use one-time site data clear as a recovery step.

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Smartphone, Share, PlusSquare, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { APP_BUILD_LABEL } from "@/lib/appVersion";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -111,6 +112,7 @@ const Install = () => {
           <Button variant="ghost" onClick={() => navigate("/")} className="w-full text-muted-foreground">
             Back to App
           </Button>
+          <p className="text-center text-xs text-muted-foreground">Build {APP_BUILD_LABEL}</p>
         </CardContent>
       </Card>
     </div>

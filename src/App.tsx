@@ -11,6 +11,7 @@ import IncomeCategories from "./pages/IncomeCategories";
 import Cards from "./pages/Cards";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+import PwaUpdateBanner from "./components/PwaUpdateBanner";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
+        <PwaUpdateBanner />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
