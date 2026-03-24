@@ -254,7 +254,7 @@ Deno.serve(async (req) => {
       notes: null,
     },
     {
-    id: "rec00002-0000-0000-0000-000000000002",
+    {
       user_id: userId,
       description: "Planet Fitness",
       category: "Health",
