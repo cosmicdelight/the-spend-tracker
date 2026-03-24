@@ -275,11 +275,11 @@ Deno.serve(async (req) => {
       notes: null,
     },
     {
-      id: "rec00003-0000-0000-0000-000000000003",
+    id: "rec00003-0000-0000-0000-000000000003",
       user_id: userId,
       description: "Comcast Internet",
       category: "Utilities",
-      sub_category: null,
+      sub_category: "Internet",
       amount: 89.99,
       personal_amount: 89.99,
       payment_mode: "credit_card",
