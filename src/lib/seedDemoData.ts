@@ -148,7 +148,7 @@ export function buildDemoSeedPayload(userId: string) {
       user_id: userId,
       description: "Comcast Internet",
       category: "Utilities",
-      sub_category: null,
+      sub_category: "Internet",
       amount: 89.99,
       personal_amount: 89.99,
       payment_mode: "credit_card",
