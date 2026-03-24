@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
     admin.from("recurring_transactions").insert(recurring),
   ]);
 
-  const errors = [cardsRes.error, txRes.error, incRes.error, recRes.error].filter(Boolean);
+  const errors = [txRes.error, incRes.error, recRes.error].filter(Boolean);
   if (errors.length) {
     return new Response(JSON.stringify({ error: errors.map((e) => e!.message) }), {
       status: 500,
