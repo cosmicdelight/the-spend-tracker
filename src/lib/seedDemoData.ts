@@ -110,7 +110,7 @@ export function buildDemoSeedPayload(userId: string) {
       user_id: userId,
       description: "Netflix",
       category: "Entertainment",
-      sub_category: null,
+      sub_category: "Streaming",
       amount: 15.99,
       personal_amount: 15.99,
       payment_mode: "credit_card",
