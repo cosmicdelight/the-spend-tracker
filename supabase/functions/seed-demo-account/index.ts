@@ -109,9 +109,32 @@ Deno.serve(async (req) => {
 
   // 3. Seed categories
   const budgetCategories = [
-    "Groceries","Dining","Transport","Entertainment","Health",
-    "Shopping","Travel","Utilities",
-  ].map((name) => ({ user_id: userId, name, sub_category_name: null }));
+    { name: "Groceries", sub_category_name: null },
+    { name: "Dining", sub_category_name: null },
+    { name: "Dining", sub_category_name: "Restaurants" },
+    { name: "Dining", sub_category_name: "Fast Food" },
+    { name: "Dining", sub_category_name: "Cafes" },
+    { name: "Transport", sub_category_name: null },
+    { name: "Transport", sub_category_name: "Gas" },
+    { name: "Transport", sub_category_name: "Rideshare" },
+    { name: "Entertainment", sub_category_name: null },
+    { name: "Entertainment", sub_category_name: "Streaming" },
+    { name: "Entertainment", sub_category_name: "Activities" },
+    { name: "Health", sub_category_name: null },
+    { name: "Health", sub_category_name: "Gym" },
+    { name: "Health", sub_category_name: "Medical" },
+    { name: "Health", sub_category_name: "Pharmacy" },
+    { name: "Shopping", sub_category_name: null },
+    { name: "Shopping", sub_category_name: "Electronics" },
+    { name: "Shopping", sub_category_name: "Clothing" },
+    { name: "Shopping", sub_category_name: "Home" },
+    { name: "Travel", sub_category_name: null },
+    { name: "Travel", sub_category_name: "Flights" },
+    { name: "Travel", sub_category_name: "Accommodation" },
+    { name: "Utilities", sub_category_name: null },
+    { name: "Utilities", sub_category_name: "Internet" },
+    { name: "Utilities", sub_category_name: "Electric" },
+  ].map((c) => ({ ...c, user_id: userId }));
 
   const incomeCategories = [
     { name: "Salary & Employment", sub_category_name: "Base" },
@@ -143,48 +166,50 @@ Deno.serve(async (req) => {
   ];
 
   const rawTx = [
-    { date: date(0, 2),  description: "Whole Foods",   category: "Groceries",     amount: 87.34,  personal_amount: 87.34,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(0, 3),  description: "Netflix",        category: "Entertainment", amount: 15.99,  personal_amount: 15.99,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(0, 4),  description: "Shell Gas",      category: "Transport",     amount: 62.00,  personal_amount: 62.00,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(0, 5),  description: "Chipotle",       category: "Dining",        amount: 18.75,  personal_amount: 18.75,  payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(0, 6),  description: "Amazon",         category: "Shopping",      amount: 134.99, personal_amount: 134.99, payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(0, 7),  description: "Uber",           category: "Transport",     amount: 22.50,  personal_amount: 11.25,  payment_mode: "credit_card", credit_card_id: cc1, notes: "Split with Alex" },
-    { date: date(0, 8),  description: "Spotify",        category: "Entertainment", amount: 9.99,   personal_amount: 9.99,   payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(0, 9),  description: "CVS Pharmacy",   category: "Health",        amount: 31.20,  personal_amount: 31.20,  payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(0, 10), description: "Trader Joe's",   category: "Groceries",     amount: 72.48,  personal_amount: 72.48,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(0, 11), description: "Dinner out",     category: "Dining",        amount: 95.00,  personal_amount: 47.50,  payment_mode: "credit_card", credit_card_id: cc2, notes: "Split with Jamie" },
-    { date: date(0, 12), description: "Planet Fitness", category: "Health",        amount: 24.99,  personal_amount: 24.99,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(0, 14), description: "Airbnb",         category: "Travel",        amount: 320.00, personal_amount: 160.00, payment_mode: "credit_card", credit_card_id: cc2, notes: "Split weekend trip" },
-    { date: date(0, 15), description: "Apple Store",    category: "Shopping",      amount: 89.00,  personal_amount: 89.00,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-1, 3),  description: "Whole Foods",   category: "Groceries",     amount: 91.22,  personal_amount: 91.22,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-1, 5),  description: "Electricity",   category: "Utilities",     amount: 78.00,  personal_amount: 78.00,  payment_mode: "bank_transfer" },
-    { date: date(-1, 7),  description: "Delta Airlines",category: "Travel",        amount: 450.00, personal_amount: 225.00, payment_mode: "credit_card", credit_card_id: cc2, notes: "Split with partner" },
-    { date: date(-1, 9),  description: "Starbucks",     category: "Dining",        amount: 6.75,   personal_amount: 6.75,   payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-1, 11), description: "Comcast",       category: "Utilities",     amount: 89.99,  personal_amount: 89.99,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-1, 13), description: "Target",        category: "Shopping",      amount: 112.44, personal_amount: 112.44, payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(-1, 15), description: "Massage Envy",  category: "Health",        amount: 79.00,  personal_amount: 79.00,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-1, 17), description: "Shell Gas",     category: "Transport",     amount: 58.30,  personal_amount: 58.30,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-1, 19), description: "Sushi dinner",  category: "Dining",        amount: 140.00, personal_amount: 70.00,  payment_mode: "credit_card", credit_card_id: cc2, notes: "Split with friend" },
-    { date: date(-1, 21), description: "Costco",        category: "Groceries",     amount: 187.55, personal_amount: 187.55, payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(-1, 23), description: "Lyft",          category: "Transport",     amount: 17.80,  personal_amount: 17.80,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-1, 25), description: "IKEA",          category: "Shopping",      amount: 245.00, personal_amount: 245.00, payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(-2, 4),  description: "Whole Foods",   category: "Groceries",     amount: 83.10,  personal_amount: 83.10,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-2, 6),  description: "Hulu",          category: "Entertainment", amount: 17.99,  personal_amount: 17.99,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-2, 8),  description: "Shell Gas",     category: "Transport",     amount: 55.40,  personal_amount: 55.40,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-2, 10), description: "Dentist",       category: "Health",        amount: 200.00, personal_amount: 200.00, payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(-2, 12), description: "Chipotle",      category: "Dining",        amount: 14.50,  personal_amount: 14.50,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-2, 14), description: "Internet",      category: "Utilities",     amount: 59.99,  personal_amount: 59.99,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-2, 16), description: "Amazon",        category: "Shopping",      amount: 67.20,  personal_amount: 67.20,  payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(-2, 18), description: "Weekend trip",  category: "Travel",        amount: 280.00, personal_amount: 140.00, payment_mode: "credit_card", credit_card_id: cc2, notes: "Split with group" },
-    { date: date(-2, 20), description: "Trader Joe's",  category: "Groceries",     amount: 68.90,  personal_amount: 68.90,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-2, 22), description: "Bowling",       category: "Entertainment", amount: 45.00,  personal_amount: 22.50,  payment_mode: "cash",        notes: "Split with friends" },
-    { date: date(-2, 24), description: "Pharmacy",      category: "Health",        amount: 28.60,  personal_amount: 28.60,  payment_mode: "credit_card", credit_card_id: cc1 },
-    { date: date(-2, 26), description: "Uber Eats",     category: "Dining",        amount: 38.99,  personal_amount: 38.99,  payment_mode: "credit_card", credit_card_id: cc2 },
-    { date: date(-2, 28), description: "Zara",          category: "Shopping",      amount: 119.00, personal_amount: 119.00, payment_mode: "credit_card", credit_card_id: cc2 },
+    // This month
+    { date: date(0, 2),  description: "Whole Foods",   category: "Groceries",     sub_category: null,            amount: 87.34,  personal_amount: 87.34,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(0, 3),  description: "Netflix",        category: "Entertainment", sub_category: "Streaming",     amount: 15.99,  personal_amount: 15.99,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(0, 4),  description: "Shell Gas",      category: "Transport",     sub_category: "Gas",           amount: 62.00,  personal_amount: 62.00,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(0, 5),  description: "Chipotle",       category: "Dining",        sub_category: "Fast Food",     amount: 18.75,  personal_amount: 18.75,  payment_mode: "credit_card", credit_card_id: cc2 },
+    { date: date(0, 6),  description: "Amazon",         category: "Shopping",      sub_category: "Electronics",   amount: 134.99, personal_amount: 134.99, payment_mode: "credit_card", credit_card_id: cc2 },
+    { date: date(0, 7),  description: "Uber",           category: "Transport",     sub_category: "Rideshare",     amount: 22.50,  personal_amount: 11.25,  payment_mode: "credit_card", credit_card_id: cc1, notes: "Split with Alex" },
+    { date: date(0, 8),  description: "Spotify",        category: "Entertainment", sub_category: "Streaming",     amount: 9.99,   personal_amount: 9.99,   payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(0, 9),  description: "CVS Pharmacy",   category: "Health",        sub_category: "Pharmacy",      amount: 31.20,  personal_amount: 31.20,  payment_mode: "credit_card", credit_card_id: cc2 },
+    { date: date(0, 10), description: "Trader Joe's",   category: "Groceries",     sub_category: null,            amount: 72.48,  personal_amount: 72.48,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(0, 11), description: "Dinner out",     category: "Dining",        sub_category: "Restaurants",   amount: 95.00,  personal_amount: 47.50,  payment_mode: "credit_card", credit_card_id: cc2, notes: "Split with Jamie" },
+    { date: date(0, 12), description: "Planet Fitness", category: "Health",        sub_category: "Gym",           amount: 24.99,  personal_amount: 24.99,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(0, 14), description: "Airbnb",         category: "Travel",        sub_category: "Accommodation", amount: 320.00, personal_amount: 160.00, payment_mode: "credit_card", credit_card_id: cc2, notes: "Split weekend trip" },
+    { date: date(0, 15), description: "Apple Store",    category: "Shopping",      sub_category: "Electronics",   amount: 89.00,  personal_amount: 89.00,  payment_mode: "credit_card", credit_card_id: cc1 },
+    // Last month
+    { date: date(-1, 3),  description: "Whole Foods",   category: "Groceries",     sub_category: null,            amount: 91.22,  personal_amount: 91.22,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-1, 5),  description: "Electricity",   category: "Utilities",     sub_category: "Electric",      amount: 78.00,  personal_amount: 78.00,  payment_mode: "bank_transfer" },
+    { date: date(-1, 7),  description: "Delta Airlines",category: "Travel",        sub_category: "Flights",       amount: 450.00, personal_amount: 225.00, payment_mode: "credit_card", credit_card_id: cc2, notes: "Split with partner" },
+    { date: date(-1, 9),  description: "Starbucks",     category: "Dining",        sub_category: "Cafes",         amount: 6.75,   personal_amount: 6.75,   payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-1, 11), description: "Comcast",       category: "Utilities",     sub_category: "Internet",      amount: 89.99,  personal_amount: 89.99,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-1, 13), description: "Target",        category: "Shopping",      sub_category: "Home",          amount: 112.44, personal_amount: 112.44, payment_mode: "credit_card", credit_card_id: cc2 },
+    { date: date(-1, 15), description: "Massage Envy",  category: "Health",        sub_category: "Medical",       amount: 79.00,  personal_amount: 79.00,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-1, 17), description: "Shell Gas",     category: "Transport",     sub_category: "Gas",           amount: 58.30,  personal_amount: 58.30,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-1, 19), description: "Sushi dinner",  category: "Dining",        sub_category: "Restaurants",   amount: 140.00, personal_amount: 70.00,  payment_mode: "credit_card", credit_card_id: cc2, notes: "Split with friend" },
+    { date: date(-1, 21), description: "Costco",        category: "Groceries",     sub_category: null,            amount: 187.55, personal_amount: 187.55, payment_mode: "credit_card", credit_card_id: cc2 },
+    { date: date(-1, 23), description: "Lyft",          category: "Transport",     sub_category: "Rideshare",     amount: 17.80,  personal_amount: 17.80,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-1, 25), description: "IKEA",          category: "Shopping",      sub_category: "Home",          amount: 245.00, personal_amount: 245.00, payment_mode: "credit_card", credit_card_id: cc2 },
+    // Two months ago
+    { date: date(-2, 4),  description: "Whole Foods",   category: "Groceries",     sub_category: null,            amount: 83.10,  personal_amount: 83.10,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-2, 6),  description: "Hulu",          category: "Entertainment", sub_category: "Streaming",     amount: 17.99,  personal_amount: 17.99,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-2, 8),  description: "Shell Gas",     category: "Transport",     sub_category: "Gas",           amount: 55.40,  personal_amount: 55.40,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-2, 10), description: "Dentist",       category: "Health",        sub_category: "Medical",       amount: 200.00, personal_amount: 200.00, payment_mode: "credit_card", credit_card_id: cc2 },
+    { date: date(-2, 12), description: "Chipotle",      category: "Dining",        sub_category: "Fast Food",     amount: 14.50,  personal_amount: 14.50,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-2, 14), description: "Internet",      category: "Utilities",     sub_category: "Internet",      amount: 59.99,  personal_amount: 59.99,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-2, 16), description: "Amazon",        category: "Shopping",      sub_category: "Electronics",   amount: 67.20,  personal_amount: 67.20,  payment_mode: "credit_card", credit_card_id: cc2 },
+    { date: date(-2, 18), description: "Weekend trip",  category: "Travel",        sub_category: "Accommodation", amount: 280.00, personal_amount: 140.00, payment_mode: "credit_card", credit_card_id: cc2, notes: "Split with group" },
+    { date: date(-2, 20), description: "Trader Joe's",  category: "Groceries",     sub_category: null,            amount: 68.90,  personal_amount: 68.90,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-2, 22), description: "Bowling",       category: "Entertainment", sub_category: "Activities",    amount: 45.00,  personal_amount: 22.50,  payment_mode: "cash",        notes: "Split with friends" },
+    { date: date(-2, 24), description: "Pharmacy",      category: "Health",        sub_category: "Pharmacy",      amount: 28.60,  personal_amount: 28.60,  payment_mode: "credit_card", credit_card_id: cc1 },
+    { date: date(-2, 26), description: "Uber Eats",     category: "Dining",        sub_category: "Fast Food",     amount: 38.99,  personal_amount: 38.99,  payment_mode: "credit_card", credit_card_id: cc2 },
+    { date: date(-2, 28), description: "Zara",          category: "Shopping",      sub_category: "Clothing",      amount: 119.00, personal_amount: 119.00, payment_mode: "credit_card", credit_card_id: cc2 },
   ];
 
-  const transactions = rawTx.map((t, i) => ({
-    id: `tx${String(i + 1).padStart(6, "0")}-0000-0000-0000-000000000000`,
+  const transactions = rawTx.map((t) => ({
     user_id: userId,
     original_amount: t.amount,
     original_currency: "USD",
@@ -201,8 +226,7 @@ Deno.serve(async (req) => {
     { date: date(-1, 15), description: "Q4 performance bonus", category: "Salary & Employment", sub_category: "Bonus",    amount: 1500,   original_amount: 1500 },
     { date: date(-2, 20), description: "VOOG dividends",       category: "Investments",         sub_category: "Dividends",amount: 142.30, original_amount: 142.30 },
     { date: date(-1, 20), description: "VOOG dividends",       category: "Investments",         sub_category: "Dividends",amount: 148.75, original_amount: 148.75 },
-  ].map((inc, i) => ({
-    id: `inc${String(i + 1).padStart(5, "0")}-0000-0000-0000-000000000000`,
+  ].map((inc) => ({
     user_id: userId,
     original_currency: "USD",
     notes: null,
@@ -211,11 +235,10 @@ Deno.serve(async (req) => {
 
   const recurring = [
     {
-      id: "rec00001-0000-0000-0000-000000000001",
       user_id: userId,
       description: "Netflix",
       category: "Entertainment",
-      sub_category: null,
+      sub_category: "Streaming",
       amount: 15.99,
       personal_amount: 15.99,
       payment_mode: "credit_card",
@@ -230,11 +253,10 @@ Deno.serve(async (req) => {
       notes: null,
     },
     {
-      id: "rec00002-0000-0000-0000-000000000002",
       user_id: userId,
       description: "Planet Fitness",
       category: "Health",
-      sub_category: null,
+      sub_category: "Gym",
       amount: 24.99,
       personal_amount: 24.99,
       payment_mode: "credit_card",
@@ -249,11 +271,10 @@ Deno.serve(async (req) => {
       notes: null,
     },
     {
-      id: "rec00003-0000-0000-0000-000000000003",
       user_id: userId,
       description: "Comcast Internet",
       category: "Utilities",
-      sub_category: null,
+      sub_category: "Internet",
       amount: 89.99,
       personal_amount: 89.99,
       payment_mode: "credit_card",
@@ -269,15 +290,22 @@ Deno.serve(async (req) => {
     },
   ];
 
-  // 5. Insert everything
-  const [cardsRes, txRes, incRes, recRes] = await Promise.all([
-    admin.from("credit_cards").insert(cards),
+  // 5. Insert everything (cards first due to FK constraints)
+  const cardsRes = await admin.from("credit_cards").insert(cards);
+  if (cardsRes.error) {
+    return new Response(JSON.stringify({ error: [cardsRes.error.message] }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const [txRes, incRes, recRes] = await Promise.all([
     admin.from("transactions").insert(transactions),
     admin.from("income").insert(income),
     admin.from("recurring_transactions").insert(recurring),
   ]);
 
-  const errors = [cardsRes.error, txRes.error, incRes.error, recRes.error].filter(Boolean);
+  const errors = [txRes.error, incRes.error, recRes.error].filter(Boolean);
   if (errors.length) {
     return new Response(JSON.stringify({ error: errors.map((e) => e!.message) }), {
       status: 500,
