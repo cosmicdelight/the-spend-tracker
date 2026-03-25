@@ -477,7 +477,7 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
                               </PieChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm sm:flex-col sm:gap-x-0 sm:gap-y-1">
+                          <div className="flex flex-col gap-y-1 text-sm">
                             {entry.subs.map((sub, j) => (
                               <div key={sub.name} className="flex items-center gap-1.5">
                                 <span
