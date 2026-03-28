@@ -75,6 +75,8 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const [incomeDescription, setIncomeDescription] = useState("");
   const [incomeNotes, setIncomeNotes] = useState("");
 
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+
   const [errors, setErrors] = useState<string[]>([]);
 
   // Sync date when initialDate changes (e.g. tapping a different date header)
