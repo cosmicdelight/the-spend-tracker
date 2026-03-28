@@ -154,7 +154,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
     const newErrors: string[] = [];
 
     if (type === "expense") {
-      if (amtNum <= 0) newErrors.push("Amount must be greater than 0.");
+      if (amtNum < 0) newErrors.push("Amount must be 0 or greater.");
       if (!category) newErrors.push("Please select a category.");
       if (!description.trim()) newErrors.push("Please enter a description.");
       if (fieldPrefs.creditCard && paymentMode === "credit_card" && !creditCardId)
@@ -196,7 +196,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
         }
       );
     } else {
-      if (incomeAmtNum <= 0) newErrors.push("Amount must be greater than 0.");
+      if (incomeAmtNum < 0) newErrors.push("Amount must be 0 or greater.");
       if (!incomeCategory.trim()) newErrors.push("Please select a category.");
       if (newErrors.length > 0) { setErrors(newErrors); return; }
       setErrors([]);
