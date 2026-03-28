@@ -100,6 +100,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
     }
   }, [initialData]);
 
+  const uploadAttachment = useUploadAttachment();
   const addTx = useAddTransaction();
   const addIncome = useAddIncome();
   const descriptionSuggestions = useDescriptionSuggestions();
