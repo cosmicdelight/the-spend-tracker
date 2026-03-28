@@ -244,6 +244,47 @@ export type Database = {
           },
         ]
       }
+      transaction_attachments: {
+        Row: {
+          content_type: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          content_type?: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_attachments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
