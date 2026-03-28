@@ -10,11 +10,13 @@ import { Plus, Settings } from "lucide-react";
 import { useAddTransaction, useCategoryFromDescription, useDescriptionSuggestions } from "@/hooks/useTransactions";
 import { useAddIncome } from "@/hooks/useIncome";
 import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
+import StagedAttachments from "@/components/StagedAttachments";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
+import { useUploadAttachment } from "@/hooks/useTransactionAttachments";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
@@ -73,6 +75,8 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const [incomeDescription, setIncomeDescription] = useState("");
   const [incomeNotes, setIncomeNotes] = useState("");
 
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+
   const [errors, setErrors] = useState<string[]>([]);
 
   // Sync date when initialDate changes (e.g. tapping a different date header)
@@ -96,6 +100,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
     }
   }, [initialData]);
 
+  const uploadAttachment = useUploadAttachment();
   const addTx = useAddTransaction();
   const addIncome = useAddIncome();
   const descriptionSuggestions = useDescriptionSuggestions();
@@ -129,6 +134,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
     setCategory(""); setSubCategory(""); setCurrency("SGD");
     setDate(new Date().toISOString().split("T")[0]);
     setIncomeCategory(""); setIncomeSubCategory(""); setIncomeDescription(""); setIncomeNotes("");
+    setStagedFiles([]);
     setErrors([]);
   };
 
@@ -171,7 +177,17 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           original_amount: amtNum,
         },
         {
-          onSuccess: () => {
+          onSuccess: async (transactionId) => {
+            // Upload staged files
+            if (stagedFiles.length > 0 && transactionId) {
+              for (const file of stagedFiles) {
+                try {
+                  await uploadAttachment.mutateAsync({ transactionId, file });
+                } catch (err) {
+                  toast({ title: "Attachment upload failed", description: getErrorMessage(err), variant: "destructive" });
+                }
+              }
+            }
             toast({ title: "Expense added" });
             setOpen(false);
             resetAll();
@@ -367,6 +383,9 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
                   <Label>Notes (optional)</Label>
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" className="min-h-[60px]" />
                 </div>
+              )}
+              {fieldPrefs.attachments && (
+                <StagedAttachments files={stagedFiles} onChange={setStagedFiles} />
               )}
             </>
           )}

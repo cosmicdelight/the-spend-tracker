@@ -42,8 +42,9 @@ export function useAddTransaction() {
   return useMutation({
     mutationFn: async (tx: Omit<Transaction, "id" | "created_at">) => {
       if (!user) throw new Error("User must be signed in to add transactions");
-      const { error } = await supabase.from("transactions").insert({ ...tx, user_id: user.id });
+      const { data, error } = await supabase.from("transactions").insert({ ...tx, user_id: user.id }).select("id").single();
       if (error) throw error;
+      return data.id as string;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["transactions"] }),
   });
