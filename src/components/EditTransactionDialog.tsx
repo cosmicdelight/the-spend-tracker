@@ -239,6 +239,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" className="min-h-[60px]" />
             </div>
           )}
+          <TransactionAttachments transactionId={transaction?.id ?? null} />
           <div className="flex flex-wrap gap-2">
             {!confirmDelete ? (
               <Button type="button" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
