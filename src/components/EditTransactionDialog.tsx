@@ -86,7 +86,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!transaction) return;
-    if (amtNum <= 0 || !category || !description.trim()) return;
+    if (amtNum < 0 || !category || !description.trim()) return;
     if (fieldPrefs.creditCard && paymentMode === "credit_card" && !creditCardId) return;
 
     updateTx.mutate(

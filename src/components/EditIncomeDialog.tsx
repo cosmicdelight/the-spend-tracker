@@ -67,7 +67,7 @@ export default function EditIncomeDialog({ entry, open, onOpenChange }: Props) {
     e.preventDefault();
     if (!entry) return;
     const newErrors: string[] = [];
-    if (amtNum <= 0) newErrors.push("Amount must be greater than 0.");
+    if (amtNum < 0) newErrors.push("Amount must be 0 or greater.");
     if (!category.trim()) newErrors.push("Please select a category.");
     if (newErrors.length > 0) { setErrors(newErrors); return; }
     setErrors([]);
