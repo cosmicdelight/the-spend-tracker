@@ -384,6 +384,9 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" className="min-h-[60px]" />
                 </div>
               )}
+              {fieldPrefs.attachments && (
+                <StagedAttachments files={stagedFiles} onChange={setStagedFiles} />
+              )}
             </>
           )}
 
