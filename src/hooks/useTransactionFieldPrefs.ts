@@ -5,6 +5,7 @@ export interface TransactionFieldPrefs {
   creditCard: boolean;
   subCategory: boolean;
   notes: boolean;
+  attachments: boolean;
 }
 
 const STORAGE_KEY = "transaction-field-prefs";
@@ -14,6 +15,7 @@ const defaults: TransactionFieldPrefs = {
   creditCard: true,
   subCategory: true,
   notes: true,
+  attachments: true,
 };
 
 function load(): TransactionFieldPrefs {

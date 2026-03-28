@@ -15,6 +15,7 @@ const fields: { key: keyof TransactionFieldPrefs; label: string; description: st
   { key: "creditCard", label: "Credit Card", description: "Card selection for credit card payments" },
   { key: "subCategory", label: "Sub-category", description: "Sub-categories within categories" },
   { key: "notes", label: "Notes", description: "Additional notes field" },
+  { key: "attachments", label: "Attachments", description: "File attachments (PDF, JPG, PNG)" },
 ];
 
 export default function TransactionFieldSettings({ prefs, onToggle }: Props) {
