@@ -24,8 +24,8 @@ function formatSize(bytes: number): string {
 }
 
 function FileIcon({ contentType }: { contentType: string }) {
-  if (contentType === "application/pdf") return <FileText className="h-4 w-4 shrink-0 text-red-500" />;
-  return <Image className="h-4 w-4 shrink-0 text-blue-500" />;
+  if (contentType === "application/pdf") return <FileText className="h-4 w-4 shrink-0 text-destructive" />;
+  return <Image className="h-4 w-4 shrink-0 text-primary" />;
 }
 
 export default function TransactionAttachments({ transactionId }: Props) {
