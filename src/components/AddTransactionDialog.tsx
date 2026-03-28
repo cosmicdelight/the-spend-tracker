@@ -177,7 +177,17 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           original_amount: amtNum,
         },
         {
-          onSuccess: () => {
+          onSuccess: async (transactionId) => {
+            // Upload staged files
+            if (stagedFiles.length > 0 && transactionId) {
+              for (const file of stagedFiles) {
+                try {
+                  await uploadAttachment.mutateAsync({ transactionId, file });
+                } catch (err) {
+                  toast({ title: "Attachment upload failed", description: getErrorMessage(err), variant: "destructive" });
+                }
+              }
+            }
             toast({ title: "Expense added" });
             setOpen(false);
             resetAll();
