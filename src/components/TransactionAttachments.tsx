@@ -75,8 +75,8 @@ export default function TransactionAttachments({ transactionId }: Props) {
   if (!transactionId) return null;
 
   return (
-    <div className="space-y-1.5 pt-2">
-      <Label>Attachments (optional)</Label>
+    <div className="space-y-1.5">
+      <Label className="block">Attachments (optional)</Label>
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading…</p>
