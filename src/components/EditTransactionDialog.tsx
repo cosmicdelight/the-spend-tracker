@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import SearchableSelect from "@/components/SearchableSelect";
 import { useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
 import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
+import TransactionAttachments from "@/components/TransactionAttachments";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
