@@ -124,7 +124,7 @@ export function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: 
       errors.push(`Row ${rowNum}: invalid personal_amount`);
       continue;
     }
-    if (amount < 0) {
+    if (amount < 0 || personalAmount < 0) {
       errors.push(`Row ${rowNum}: amount must be 0 or greater`);
       continue;
     }
