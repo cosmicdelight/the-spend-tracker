@@ -86,8 +86,14 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!transaction) return;
-    if (amtNum < 0 || !category || !description.trim()) return;
-    if (fieldPrefs.creditCard && paymentMode === "credit_card" && !creditCardId) return;
+    if (amtNum < 0 || !category || !description.trim()) {
+      toast({ title: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+    if (fieldPrefs.creditCard && paymentMode === "credit_card" && !creditCardId) {
+      toast({ title: "Please select a credit card", variant: "destructive" });
+      return;
+    }
 
     updateTx.mutate(
       {
