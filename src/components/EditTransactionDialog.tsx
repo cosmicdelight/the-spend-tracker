@@ -73,7 +73,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
       setDescription(transaction.description || "");
       setNotes(transaction.notes || "");
     }
-  }, [transaction]);
+  }, [transaction, open]);
 
   const hasSubs = fieldPrefs.subCategory && (categories?.some((c) => c.name === category && c.sub_category_name) ?? false);
 
