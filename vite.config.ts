@@ -63,6 +63,9 @@ export default defineConfig(({ mode }) => {
           // Work around intermittent Workbox/Terser renderChunk early-exit in CI/local builds.
           minify: false,
           workbox: {
+            cleanupOutdatedCaches: true,
+            clientsClaim: true,
+            skipWaiting: true,
             navigateFallbackDenylist: [/^\/~oauth/],
             globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
             runtimeCaching: [
