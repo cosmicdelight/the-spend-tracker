@@ -12,18 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
-
-function generateDates(start: string, frequency: "weekly" | "monthly", count: number): string[] {
-  const dates: string[] = [];
-  const base = new Date(start + "T00:00:00");
-  for (let i = 0; i < count; i++) {
-    const d = new Date(base);
-    if (frequency === "weekly") d.setDate(base.getDate() + 7 * i);
-    else d.setMonth(base.getMonth() + i);
-    dates.push(d.toISOString().split("T")[0]);
-  }
-  return dates;
-}
+import { generateRecurringDates } from "@/lib/recurringDates";
 
 export default function AddRecurringIncomeDialog() {
   const [open, setOpen] = useState(false);
@@ -56,7 +45,7 @@ export default function AddRecurringIncomeDialog() {
 
     setSubmitting(true);
     try {
-      const dates = generateDates(startDate, frequency, count);
+      const dates = generateRecurringDates(startDate, frequency, count);
       const rows = dates.map((date) => ({
         user_id: user.id,
         amount: amt,
@@ -118,7 +107,7 @@ export default function AddRecurringIncomeDialog() {
               {(() => {
                 const c = parseInt(occurrences);
                 if (isNaN(c) || c < 1) return "All entries will be created up front.";
-                const dates = generateDates(startDate, frequency, Math.min(c, 60));
+                const dates = generateRecurringDates(startDate, frequency, Math.min(c, 60));
                 return `Creates ${c} income entries, ${frequency}, from ${dates[0]} to ${dates[dates.length - 1]}.`;
               })()}
             </p>
