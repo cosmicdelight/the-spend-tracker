@@ -13,6 +13,7 @@ import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { generateRecurringDates } from "@/lib/recurringDates";
+import SearchableSelect from "@/components/SearchableSelect";
 
 export default function AddRecurringIncomeDialog() {
   const [open, setOpen] = useState(false);
