@@ -4,14 +4,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useTransactions, useDeleteTransaction } from "@/hooks/useTransactions";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
-import { useRecurringTransactions, useDeleteRecurringTransaction, useCreateFromRecurring } from "@/hooks/useRecurringTransactions";
 import { useTransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { useIncome } from "@/hooks/useIncome";
 import AddTransactionDialog from "@/components/AddTransactionDialog";
 import ImportTransactionsDialog from "@/components/ImportTransactionsDialog";
 import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
 import AddRecurringIncomeDialog from "@/components/AddRecurringIncomeDialog";
-import RecurringTransactionList from "@/components/RecurringTransactionList";
 import CreditCardProgress from "@/components/CreditCardProgress";
 import BudgetOverview from "@/components/BudgetOverview";
 import TransactionList from "@/components/TransactionList";
@@ -34,9 +32,6 @@ export default function Index() {
   const { data: transactions = [] } = useTransactions();
   const { data: categories = [] } = useBudgetCategories();
   const deleteTx = useDeleteTransaction();
-  const { data: recurring = [] } = useRecurringTransactions();
-  const deleteRec = useDeleteRecurringTransaction();
-  const createFromRec = useCreateFromRecurring();
   const { prefs: fieldPrefs, toggle: toggleField } = useTransactionFieldPrefs();
   const { data: income = [] } = useIncome();
   const [tab, setTab] = useState<"dashboard" | "transactions" | "income" | "budget">("dashboard");
@@ -49,9 +44,10 @@ export default function Index() {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
+  const todayStr = now.toISOString().split("T")[0];
   const monthlyTxs = transactions.filter((t) => {
     const d = new Date(t.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.date <= todayStr;
   });
   const totalCharged = monthlyTxs.reduce((s, t) => s + Number(t.amount), 0);
   const totalPersonal = monthlyTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
@@ -115,11 +111,6 @@ export default function Index() {
               </section>
           }
 
-            {/* Recurring Transactions */}
-            <RecurringTransactionList
-            recurring={recurring}
-            onDelete={(id) => deleteRec.mutate(id)}
-            onCreateNow={(rec) => createFromRec.mutate(rec)} />
         </>
         }
 
