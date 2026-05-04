@@ -45,7 +45,7 @@ export default function AddRecurringIncomeDialog() {
 
     setSubmitting(true);
     try {
-      const dates = generateDates(startDate, frequency, count);
+      const dates = generateRecurringDates(startDate, frequency, count);
       const rows = dates.map((date) => ({
         user_id: user.id,
         amount: amt,
@@ -107,7 +107,7 @@ export default function AddRecurringIncomeDialog() {
               {(() => {
                 const c = parseInt(occurrences);
                 if (isNaN(c) || c < 1) return "All entries will be created up front.";
-                const dates = generateDates(startDate, frequency, Math.min(c, 60));
+                const dates = generateRecurringDates(startDate, frequency, Math.min(c, 60));
                 return `Creates ${c} income entries, ${frequency}, from ${dates[0]} to ${dates[dates.length - 1]}.`;
               })()}
             </p>
