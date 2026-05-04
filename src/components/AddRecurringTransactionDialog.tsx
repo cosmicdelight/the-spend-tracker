@@ -14,18 +14,7 @@ import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
-
-function generateDates(start: string, frequency: "weekly" | "monthly", count: number): string[] {
-  const dates: string[] = [];
-  const base = new Date(start + "T00:00:00");
-  for (let i = 0; i < count; i++) {
-    const d = new Date(base);
-    if (frequency === "weekly") d.setDate(base.getDate() + 7 * i);
-    else d.setMonth(base.getMonth() + i);
-    dates.push(d.toISOString().split("T")[0]);
-  }
-  return dates;
-}
+import { generateRecurringDates } from "@/lib/recurringDates";
 
 export default function AddRecurringTransactionDialog() {
   const [open, setOpen] = useState(false);
