@@ -15,6 +15,7 @@ import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { generateRecurringDates } from "@/lib/recurringDates";
+import SearchableSelect from "@/components/SearchableSelect";
 
 export default function AddRecurringTransactionDialog() {
   const [open, setOpen] = useState(false);
