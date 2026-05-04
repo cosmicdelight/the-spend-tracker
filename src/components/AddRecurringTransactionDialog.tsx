@@ -154,14 +154,12 @@ export default function AddRecurringTransactionDialog() {
           )}
           <div className="space-y-1.5">
             <Label>Category</Label>
-            <Select value={category} onValueChange={(v) => { setCategory(v); setSubCategory(""); }} required>
-              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-              <SelectContent>
-                {[...new Set(categories?.map((c) => c.name))].map((name) => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              options={[...new Set(categories?.map((c) => c.name))].map((name) => ({ value: name, label: name }))}
+              value={category}
+              onValueChange={(v) => { setCategory(v); setSubCategory(""); }}
+              placeholder="Select category"
+            />
           </div>
           {hasSubs && (
             <div className="space-y-1.5">
