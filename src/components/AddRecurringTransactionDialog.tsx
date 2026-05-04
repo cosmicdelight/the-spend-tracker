@@ -5,16 +5,27 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Repeat } from "lucide-react";
-import { useAddRecurringTransaction } from "@/hooks/useRecurringTransactions";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 
-const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+function generateDates(start: string, frequency: "weekly" | "monthly", count: number): string[] {
+  const dates: string[] = [];
+  const base = new Date(start + "T00:00:00");
+  for (let i = 0; i < count; i++) {
+    const d = new Date(base);
+    if (frequency === "weekly") d.setDate(base.getDate() + 7 * i);
+    else d.setMonth(base.getMonth() + i);
+    dates.push(d.toISOString().split("T")[0]);
+  }
+  return dates;
+}
 
 export default function AddRecurringTransactionDialog() {
   const [open, setOpen] = useState(false);
@@ -26,13 +37,13 @@ export default function AddRecurringTransactionDialog() {
   const [creditCardId, setCreditCardId] = useState("");
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
-  const [frequency, setFrequency] = useState("monthly");
-  const [dayOfWeek, setDayOfWeek] = useState("1");
-  const [dayOfMonth, setDayOfMonth] = useState("1");
-  const [autoGenerate, setAutoGenerate] = useState(false);
-  const [nextDueDate, setNextDueDate] = useState(new Date().toISOString().split("T")[0]);
+  const [frequency, setFrequency] = useState<"weekly" | "monthly">("monthly");
+  const [occurrences, setOccurrences] = useState("12");
+  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [submitting, setSubmitting] = useState(false);
 
-  const addRec = useAddRecurringTransaction();
+  const qc = useQueryClient();
+  const { user } = useAuth();
   const { data: cards } = useCreditCards();
   const { data: categories } = useBudgetCategories();
   const { data: paymentModes = [] } = usePaymentModes();
@@ -40,41 +51,47 @@ export default function AddRecurringTransactionDialog() {
 
   const hasSubs = categories?.some((c) => c.name === category && c.sub_category_name) ?? false;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     const amt = parseFloat(amount);
     const personal = personalAmount ? parseFloat(personalAmount) : amt;
-    if (isNaN(amt) || amt <= 0 || !category || !description.trim()) return;
-    if (paymentMode === "credit_card" && !creditCardId) return;
+    const count = parseInt(occurrences);
+    if (isNaN(amt) || amt < 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
+    if (!category) { toast({ title: "Please select a category", variant: "destructive" }); return; }
+    if (!description.trim()) { toast({ title: "Please enter a description", variant: "destructive" }); return; }
+    if (paymentMode === "credit_card" && !creditCardId) { toast({ title: "Please select a credit card", variant: "destructive" }); return; }
+    if (isNaN(count) || count < 1 || count > 60) { toast({ title: "Occurrences must be between 1 and 60", variant: "destructive" }); return; }
 
-    addRec.mutate(
-      {
-        transaction_type: "expense",
+    setSubmitting(true);
+    try {
+      const dates = generateDates(startDate, frequency, count);
+      const rows = dates.map((date) => ({
+        user_id: user.id,
         amount: amt,
         personal_amount: personal,
+        original_amount: amt,
+        original_currency: "SGD",
         category,
         sub_category: subCategory || null,
         payment_mode: paymentMode,
         credit_card_id: paymentMode === "credit_card" && creditCardId ? creditCardId : null,
         description: description || null,
         notes: notes || null,
-        frequency,
-        day_of_week: frequency === "weekly" ? parseInt(dayOfWeek) : null,
-        day_of_month: frequency === "monthly" ? parseInt(dayOfMonth) : null,
-        is_active: true,
-        auto_generate: autoGenerate,
-        next_due_date: nextDueDate,
-      },
-      {
-        onSuccess: () => {
-          toast({ title: "Recurring transaction added" });
-          setOpen(false);
-          setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId("");
-          setNotes(""); setCategory(""); setSubCategory("");
-        },
-        onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
-      }
-    );
+        date,
+      }));
+      const { error } = await supabase.from("transactions").insert(rows);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      toast({ title: `Created ${count} transactions` });
+      setOpen(false);
+      setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId("");
+      setNotes(""); setCategory(""); setSubCategory(""); setOccurrences("12");
+    } catch (err) {
+      toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -99,7 +116,7 @@ export default function AddRecurringTransactionDialog() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Frequency</Label>
-              <Select value={frequency} onValueChange={setFrequency}>
+              <Select value={frequency} onValueChange={(v) => setFrequency(v as "weekly" | "monthly")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="weekly">Weekly</SelectItem>
@@ -108,43 +125,22 @@ export default function AddRecurringTransactionDialog() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              {frequency === "weekly" ? (
-                <>
-                  <Label>Day of Week</Label>
-                  <Select value={dayOfWeek} onValueChange={setDayOfWeek}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {DAYS_OF_WEEK.map((d, i) => <SelectItem key={i} value={String(i)}>{d}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </>
-              ) : (
-                <>
-                  <Label>Day of Month</Label>
-                  <Select value={dayOfMonth} onValueChange={setDayOfMonth}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 28 }, (_, i) => (
-                        <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </>
-              )}
+              <Label>Occurrences</Label>
+              <Input type="number" min="1" max="60" value={occurrences} onChange={(e) => setOccurrences(e.target.value)} required />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Next Due Date</Label>
-            <Input type="date" value={nextDueDate} onChange={(e) => setNextDueDate(e.target.value)} required />
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div>
-              <Label className="text-sm font-medium">Auto-generate</Label>
-              <p className="text-xs text-muted-foreground">Automatically create transactions on schedule</p>
-            </div>
-            <Switch checked={autoGenerate} onCheckedChange={setAutoGenerate} />
+            <Label>Start Date</Label>
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+            <p className="text-xs text-muted-foreground">
+              {(() => {
+                const c = parseInt(occurrences);
+                if (isNaN(c) || c < 1) return "All transactions will be created up front.";
+                const dates = generateDates(startDate, frequency, Math.min(c, 60));
+                return `Creates ${c} transactions, ${frequency}, from ${dates[0]} to ${dates[dates.length - 1]}.`;
+              })()}
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -200,8 +196,8 @@ export default function AddRecurringTransactionDialog() {
             <Label>Notes (optional)</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" className="min-h-[60px]" />
           </div>
-          <Button type="submit" className="w-full" disabled={addRec.isPending}>
-            {addRec.isPending ? "Adding..." : "Add Recurring Transaction"}
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? "Creating..." : "Create Transactions"}
           </Button>
         </form>
       </DialogContent>
