@@ -111,11 +111,6 @@ export default function Index() {
               </section>
           }
 
-            {/* Recurring Transactions */}
-            <RecurringTransactionList
-            recurring={recurring}
-            onDelete={(id) => deleteRec.mutate(id)}
-            onCreateNow={(rec) => createFromRec.mutate(rec)} />
         </>
         }
 
