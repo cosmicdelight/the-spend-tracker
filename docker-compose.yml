@@ -12,7 +12,6 @@ services:
         # If testing against local Supabase, use the start-local.sh script.
         - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
         - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
-        - VITE_DEMO_PASSWORD=${VITE_DEMO_PASSWORD}
     ports:
       - "8080:80"
     environment:
