@@ -30,22 +30,17 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Allow: service role key OR a special no-auth "sync password only" mode
+  // Only allow the service role key
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace("Bearer ", "");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const demoPassword = Deno.env.get("DEMO_PASSWORD");
-  const seedHeader = req.headers.get("x-seed-admin");
-  const isServiceRole = serviceRoleKey && token === serviceRoleKey;
-  const isSeedRequest = demoPassword && seedHeader === demoPassword;
-  const syncOnlySecret = Deno.env.get("SYNC_ONLY_SECRET");
-  const isSyncOnly = syncOnlySecret && req.headers.get("x-sync-only") === syncOnlySecret && req.method === "POST";
-  if (!isServiceRole && !isSeedRequest && !isSyncOnly) {
+  if (!serviceRoleKey || token !== serviceRoleKey) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  const isSyncOnly = false;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const actualServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

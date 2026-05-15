@@ -28,7 +28,6 @@ export default defineConfig(({ mode }) => {
     env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     FALLBACK_SUPABASE_PUBLISHABLE_KEY;
-  const demoPassword = env.VITE_DEMO_PASSWORD || process.env.VITE_DEMO_PASSWORD;
   const enablePwa =
     (env.VITE_ENABLE_PWA || process.env.VITE_ENABLE_PWA || "false").toLowerCase() === "true";
 
