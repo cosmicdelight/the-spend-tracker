@@ -136,13 +136,15 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                 <button
                   type="button"
                   onClick={() => setAddTxDate(date)}
-                  className="mb-1.5 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                  className={`mb-1.5 flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-xs font-semibold transition-colors ${
+                    today
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  {format(parseISO(date), "EEEE, MMM d")}
+                  <span>{format(parseISO(date), "EEEE, MMM d")}</span>
                   {today && (
-                    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
-                      Today
-                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Today</span>
                   )}
                 </button>
                 <div className="space-y-2">

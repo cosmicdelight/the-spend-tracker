@@ -105,14 +105,18 @@ export default function IncomeList({ income }: Props) {
               const today = isToday(parseISO(date));
               return (
               <div key={date}>
-                <p className="mb-1.5 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                  {format(parseISO(date), "EEEE, MMM d")}
+                <div
+                  className={`mb-1.5 flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-xs font-semibold ${
+                    today
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <span>{format(parseISO(date), "EEEE, MMM d")}</span>
                   {today && (
-                    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
-                      Today
-                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Today</span>
                   )}
-                </p>
+                </div>
                 <div className="space-y-2">
                   {entries.map((entry) => (
                     <div
