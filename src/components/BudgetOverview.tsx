@@ -338,8 +338,7 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
           <button
             type="button"
             onClick={goForward}
-            disabled={isAtCurrent}
-            className={`rounded-md p-1 transition-colors ${isAtCurrent ? "text-muted-foreground/30 cursor-not-allowed" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            className="rounded-md p-1 transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <ChevronRightIcon className="h-4 w-4" />
           </button>
