@@ -36,9 +36,6 @@ export default defineConfig(({ mode }) => {
       // These are public values (URL + anon key), and fallback prevents blank-screen boot failures.
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
       "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey),
-      ...(demoPassword
-        ? { "import.meta.env.VITE_DEMO_PASSWORD": JSON.stringify(demoPassword) }
-        : {}),
       __APP_VERSION__: JSON.stringify(versionMeta.version || process.env.npm_package_version || "0.0.0"),
       __APP_BUILD_ID__: JSON.stringify(versionMeta.buildId || "dev"),
       __APP_BUILD_TIME__: JSON.stringify(versionMeta.buildTime || new Date().toISOString()),
