@@ -126,15 +126,15 @@ export default function AddRecurringIncomeDialog() {
           {hasSubs && (
             <div className="space-y-1.5">
               <Label>Sub-category</Label>
-              <Select value={subCategory} onValueChange={setSubCategory}>
-                <SelectTrigger><SelectValue placeholder="Select sub-category" /></SelectTrigger>
-                <SelectContent>
-                  {categories
-                    ?.filter((c) => c.name === category && c.sub_category_name)
-                    .sort((a, b) => a.sub_category_name!.localeCompare(b.sub_category_name!))
-                    .map((c) => <SelectItem key={c.id} value={c.sub_category_name!}>{c.sub_category_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={categories
+                  ?.filter((c) => c.name === category && c.sub_category_name)
+                  .sort((a, b) => a.sub_category_name!.localeCompare(b.sub_category_name!))
+                  .map((c) => ({ value: c.sub_category_name!, label: c.sub_category_name! })) ?? []}
+                value={subCategory}
+                onValueChange={setSubCategory}
+                placeholder="Select sub-category"
+              />
             </div>
           )}
           <div className="space-y-1.5">
