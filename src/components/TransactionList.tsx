@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import type { Transaction } from "@/hooks/useTransactions";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isToday } from "date-fns";
 import EditTransactionDialog from "./EditTransactionDialog";
 import AddTransactionDialog, { type DuplicateTransactionData } from "./AddTransactionDialog";
 
@@ -129,14 +129,21 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
             </p>
           )}
           <div className="space-y-4">
-            {grouped.map(([date, txs]) => (
+            {grouped.map(([date, txs]) => {
+              const today = isToday(parseISO(date));
+              return (
               <div key={date}>
                 <button
                   type="button"
                   onClick={() => setAddTxDate(date)}
-                  className="text-xs font-semibold text-muted-foreground mb-1.5 cursor-pointer hover:text-foreground transition-colors"
+                  className="mb-1.5 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
                 >
                   {format(parseISO(date), "EEEE, MMM d")}
+                  {today && (
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
+                      Today
+                    </span>
+                  )}
                 </button>
                 <div className="space-y-2">
                   {txs.map((tx) => {
@@ -160,7 +167,8 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                   })}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </CardContent>
       </Card>
