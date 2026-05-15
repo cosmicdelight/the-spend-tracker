@@ -149,7 +149,8 @@ export default function IncomeList({ income }: Props) {
                   ))}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </CardContent>
       </Card>
