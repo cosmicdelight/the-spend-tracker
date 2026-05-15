@@ -83,8 +83,8 @@ export default function Index() {
                 <p className="text-xs text-muted-foreground text-center">Total Charged</p>
                 <p className="mt-1 text-xl font-heading font-bold text-center">${totalCharged.toFixed(2)}</p>
               </div>
-              <div className="rounded-xl border bg-card p-4">
-                <p className="text-xs text-muted-foreground text-center">Personal Spend</p>
+              <div className="rounded-xl border border-primary bg-primary p-4 text-primary-foreground shadow-sm">
+                <p className="text-xs text-center opacity-90">Personal Spend</p>
                 <p className="mt-1 text-xl font-heading font-bold text-center">${totalPersonal.toFixed(2)}</p>
               </div>
               <div className="col-span-2 sm:col-span-1 rounded-xl border bg-card p-4">
