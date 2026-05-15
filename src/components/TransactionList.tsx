@@ -167,7 +167,8 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                   })}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </CardContent>
       </Card>

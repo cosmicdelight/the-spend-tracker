@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isToday } from "date-fns";
 import type { IncomeEntry } from "@/hooks/useIncome";
 import EditIncomeDialog from "./EditIncomeDialog";
 
@@ -101,10 +101,17 @@ export default function IncomeList({ income }: Props) {
             <p className="text-sm text-muted-foreground">No income this month.</p>
           )}
           <div className="space-y-4">
-            {grouped.map(([date, entries]) => (
+            {grouped.map(([date, entries]) => {
+              const today = isToday(parseISO(date));
+              return (
               <div key={date}>
-                <p className="text-xs font-semibold text-muted-foreground mb-1.5">
+                <p className="mb-1.5 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                   {format(parseISO(date), "EEEE, MMM d")}
+                  {today && (
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
+                      Today
+                    </span>
+                  )}
                 </p>
                 <div className="space-y-2">
                   {entries.map((entry) => (
