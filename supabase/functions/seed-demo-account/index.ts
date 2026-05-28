@@ -211,6 +211,7 @@ Deno.serve(async (req) => {
     sub_category: null,
     notes: null,
     credit_card_id: null,
+    expense_date: t.date,
     ...t,
   }));
 

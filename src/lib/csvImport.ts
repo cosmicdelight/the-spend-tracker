@@ -4,10 +4,12 @@
  */
 
 export const EXPENSE_HEADERS = ["date", "amount", "personal_amount", "category", "sub_category", "payment_mode", "description", "notes"] as const;
+export const EXPENSE_OPTIONAL_HEADERS = ["expense_date"] as const;
 export const INCOME_HEADERS = ["date", "amount", "category", "sub_category", "description", "notes"] as const;
 
 export interface ParsedExpense {
   date: string;
+  expense_date: string;
   amount: number;
   personal_amount: number;
   category: string;
@@ -128,8 +130,18 @@ export function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: 
       errors.push(`Row ${rowNum}: amount must be 0 or greater`);
       continue;
     }
+    const expenseDateRaw = getRaw("expense_date");
+    let expenseDate = date;
+    if (expenseDateRaw) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDateRaw) || isNaN(Date.parse(expenseDateRaw))) {
+        errors.push(`Row ${rowNum}: invalid expense_date "${expenseDateRaw}" — expected YYYY-MM-DD`);
+        continue;
+      }
+      expenseDate = expenseDateRaw;
+    }
     rows.push({
       date,
+      expense_date: expenseDate,
       amount,
       personal_amount: personalAmount,
       category,
