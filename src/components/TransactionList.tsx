@@ -184,13 +184,27 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                             <span>·</span>
                             <span className="capitalize">{tx.payment_mode.replace("_", " ")}</span>
                           </div>
-                          {isSplit && <span className="text-xs text-muted-foreground shrink-0">Yours: ${Number(tx.personal_amount).toFixed(2)}</span>}
-                        </div>
-                        {hasDifferentChargeDate && (
-                          <p className="mt-1 text-[11px] text-muted-foreground italic">
-                            Charged {format(parseISO(tx.date), "MMM d, yyyy")}
-                          </p>
-                        )}
+                          {isSplit && (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-xs text-muted-foreground">Yours: ${Number(tx.personal_amount).toFixed(2)}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateTx.mutate({ id: tx.id, settled_up: !tx.settled_up });
+                                }}
+                                title={tx.settled_up ? "Mark as unsettled" : "Mark as settled"}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
+                                  tx.settled_up
+                                    ? "bg-muted text-muted-foreground hover:bg-muted/70"
+                                    : "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25"
+                                }`}
+                              >
+                                {tx.settled_up ? <Check className="h-3 w-3" /> : null}
+                                {tx.settled_up ? "Settled" : "Owed"}
+                              </button>
+                            </div>
+                          )}
                       </div>
                     );
                   })}
