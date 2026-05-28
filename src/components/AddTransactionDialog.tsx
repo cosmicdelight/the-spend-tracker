@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAddTransaction, useCategoryFromDescription, useDescriptionSuggestions } from "@/hooks/useTransactions";
 import { useAddIncome } from "@/hooks/useIncome";
 import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
@@ -317,16 +318,25 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           {/* Expense date (optional, expense only) */}
           {type === "expense" && (
             <div className="space-y-1.5">
-              <Label>Expense Date (optional)</Label>
+              <div className="flex items-center gap-1.5">
+                <Label>Expense Date (optional)</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Expense date help">
+                      <HelpCircle className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    Defaults to the transaction date. Set this if the spend belongs to a different month (e.g. concert tickets bought in advance). Used for budget & statistics; the transaction date drives credit card tracking.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Input
                 type="date"
                 value={expenseDate}
                 onChange={(e) => setExpenseDate(e.target.value)}
                 placeholder={date}
               />
-              <p className="text-xs text-muted-foreground">
-                Defaults to the transaction date. Set this if the spend belongs to a different month (e.g. concert tickets bought in advance). Used for budget & statistics; the transaction date drives credit card tracking.
-              </p>
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, Trash2, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { DuplicateTransactionData } from "./AddTransactionDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -188,16 +189,25 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           </div>
           <div className="space-y-1.5">
-            <Label>Expense Date (optional)</Label>
+            <div className="flex items-center gap-1.5">
+              <Label>Expense Date (optional)</Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Expense date help">
+                    <HelpCircle className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  Defaults to the transaction date. Set this if the spend belongs to a different month. Used for budget &amp; statistics; the transaction date drives credit card tracking.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Input
               type="date"
               value={expenseDate}
               onChange={(e) => setExpenseDate(e.target.value)}
               placeholder={date}
             />
-            <p className="text-xs text-muted-foreground">
-              Defaults to the transaction date. Set this if the spend belongs to a different month. Used for budget &amp; statistics; the transaction date drives credit card tracking.
-            </p>
           </div>
           <div className="space-y-1.5">
             <Label>Payment Mode</Label>
