@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, Check, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Transaction } from "@/hooks/useTransactions";
+import { useUpdateTransaction, type Transaction } from "@/hooks/useTransactions";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { format, parseISO, isToday } from "date-fns";
@@ -27,22 +27,30 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [search, setSearch] = useState("");
   const [addTxDate, setAddTxDate] = useState<string | null>(null);
   const [duplicateData, setDuplicateData] = useState<DuplicateTransactionData | undefined>(undefined);
+  const [unsettledOnly, setUnsettledOnly] = useState(false);
+  const updateTx = useUpdateTransaction();
 
   const isSearching = search.trim().length > 0;
 
   const filtered = useMemo(() => {
+    let base: Transaction[];
     if (isSearching) {
       const q = search.trim().toLowerCase();
-      return transactions.filter((t) =>
+      base = transactions.filter((t) =>
         (t.description ?? "").toLowerCase().includes(q) ||
         t.category.toLowerCase().includes(q)
       );
+    } else {
+      base = transactions.filter((t) => {
+        const d = new Date(t.expense_date || t.date);
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+      });
     }
-    return transactions.filter((t) => {
-      const d = new Date(t.expense_date || t.date);
-      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-    });
-  }, [transactions, selectedMonth, selectedYear, search, isSearching]);
+    if (unsettledOnly) {
+      base = base.filter((t) => Number(t.personal_amount) < Number(t.amount) && !t.settled_up);
+    }
+    return base;
+  }, [transactions, selectedMonth, selectedYear, search, isSearching, unsettledOnly]);
 
   // Group by expense_date (falls back to date)
   const grouped = useMemo(() => {
@@ -107,19 +115,32 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
               </button>
             </div>
           </div>
-          <div className="relative mt-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by description or category…"
-              className="pl-8 pr-8 h-9 text-sm"
-            />
-            {isSearching && (
-              <button type="button" onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
-            )}
+          <div className="mt-1 flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by description or category…"
+                className="pl-8 pr-8 h-9 text-sm"
+              />
+              {isSearching && (
+                <button type="button" onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant={unsettledOnly ? "default" : "outline"}
+              size="sm"
+              className="h-9 shrink-0"
+              onClick={() => setUnsettledOnly((v) => !v)}
+              title="Show only unsettled split expenses"
+            >
+              <Users className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Unsettled</span>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -163,7 +184,27 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                             <span>·</span>
                             <span className="capitalize">{tx.payment_mode.replace("_", " ")}</span>
                           </div>
-                          {isSplit && <span className="text-xs text-muted-foreground shrink-0">Yours: ${Number(tx.personal_amount).toFixed(2)}</span>}
+                          {isSplit && (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-xs text-muted-foreground">Yours: ${Number(tx.personal_amount).toFixed(2)}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateTx.mutate({ id: tx.id, settled_up: !tx.settled_up });
+                                }}
+                                title={tx.settled_up ? "Mark as unsettled" : "Mark as settled"}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
+                                  tx.settled_up
+                                    ? "bg-muted text-muted-foreground hover:bg-muted/70"
+                                    : "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25"
+                                }`}
+                              >
+                                {tx.settled_up ? <Check className="h-3 w-3" /> : null}
+                                {tx.settled_up ? "Settled" : "Owed"}
+                              </button>
+                            </div>
+                          )}
                         </div>
                         {hasDifferentChargeDate && (
                           <p className="mt-1 text-[11px] text-muted-foreground italic">

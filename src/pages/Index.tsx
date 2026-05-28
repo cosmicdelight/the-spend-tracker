@@ -52,6 +52,10 @@ export default function Index() {
   });
   const totalCharged = monthlyTxs.reduce((s, t) => s + Number(t.amount), 0);
   const totalPersonal = monthlyTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
+  const totalOwed = monthlyTxs.reduce(
+    (s, t) => (t.settled_up ? s : s + (Number(t.amount) - Number(t.personal_amount))),
+    0,
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -90,7 +94,7 @@ export default function Index() {
               </div>
               <div className="col-span-2 sm:col-span-1 rounded-xl border bg-card p-4">
                 <p className="text-xs text-muted-foreground text-center">Others Owe You</p>
-                <p className="mt-1 text-xl font-heading font-bold text-center">${(totalCharged - totalPersonal).toFixed(2)}</p>
+                <p className="mt-1 text-xl font-heading font-bold text-center">${totalOwed.toFixed(2)}</p>
               </div>
             </div>
 

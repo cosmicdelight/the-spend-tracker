@@ -70,6 +70,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [currency, setCurrency] = useState("SGD");
+  const [settledUp, setSettledUp] = useState(false);
 
   // Income-only fields
   const [incomeCategory, setIncomeCategory] = useState("");
@@ -138,6 +139,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
     setExpenseDate("");
     setIncomeCategory(""); setIncomeSubCategory(""); setIncomeDescription(""); setIncomeNotes("");
     setStagedFiles([]);
+    setSettledUp(false);
     setErrors([]);
   };
 
@@ -179,6 +181,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
           original_currency: activeCurrency,
           original_amount: amtNum,
+          settled_up: sgdPersonal < sgdAmount ? settledUp : false,
         },
         {
           onSuccess: async (transactionId) => {
@@ -307,6 +310,22 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
               {type === "expense" && personalAmount ? ` (personal: SGD ${sgdPersonal.toFixed(2)})` : ""}
               {ratesLoading && " (loading rates...)"}
             </p>
+          )}
+
+          {/* Settled-up checkbox (only when this is a split) */}
+          {type === "expense" && personalNum > 0 && personalNum < amtNum && (
+            <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settledUp}
+                onChange={(e) => setSettledUp(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-input accent-primary cursor-pointer"
+              />
+              <div className="min-w-0">
+                <span className="text-sm font-medium">Settled up</span>
+                <p className="text-xs text-muted-foreground">Friends have paid back their share.</p>
+              </div>
+            </label>
           )}
 
           {/* Date (shared) */}

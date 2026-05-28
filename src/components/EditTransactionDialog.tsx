@@ -42,6 +42,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [currency, setCurrency] = useState("SGD");
+  const [settledUp, setSettledUp] = useState(false);
 
   const updateTx = useUpdateTransaction();
   const descriptionSuggestions = useDescriptionSuggestions();
@@ -75,6 +76,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
       setCreditCardId(transaction.credit_card_id || "");
       setDescription(transaction.description || "");
       setNotes(transaction.notes || "");
+      setSettledUp(!!transaction.settled_up);
     }
   }, [transaction, open]);
 
@@ -113,6 +115,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
         sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
         original_currency: activeCurrency,
         original_amount: amtNum,
+        settled_up: sgdPersonal < sgdAmount ? settledUp : false,
       },
       {
         onSuccess: () => {
@@ -183,6 +186,20 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               ≈ SGD {sgdAmount.toFixed(2)}{personalAmount ? ` (personal: SGD ${sgdPersonal.toFixed(2)})` : ""}
               {ratesLoading && " (loading rates...)"}
             </p>
+          )}
+          {personalNum > 0 && personalNum < amtNum && (
+            <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settledUp}
+                onChange={(e) => setSettledUp(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-input accent-primary cursor-pointer"
+              />
+              <div className="min-w-0">
+                <span className="text-sm font-medium">Settled up</span>
+                <p className="text-xs text-muted-foreground">Friends have paid back their share.</p>
+              </div>
+            </label>
           )}
           <div className="space-y-1.5">
             <Label>Transaction Date</Label>
