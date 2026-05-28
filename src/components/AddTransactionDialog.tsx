@@ -139,6 +139,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
     setExpenseDate("");
     setIncomeCategory(""); setIncomeSubCategory(""); setIncomeDescription(""); setIncomeNotes("");
     setStagedFiles([]);
+    setSettledUp(false);
     setErrors([]);
   };
 
