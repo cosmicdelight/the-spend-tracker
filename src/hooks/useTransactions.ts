@@ -9,6 +9,7 @@ export interface Transaction {
   amount: number;
   personal_amount: number;
   date: string;
+  expense_date: string;
   category: string;
   payment_mode: string;
   description: string | null;
