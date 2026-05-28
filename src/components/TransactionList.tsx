@@ -115,19 +115,32 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
               </button>
             </div>
           </div>
-          <div className="relative mt-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by description or category…"
-              className="pl-8 pr-8 h-9 text-sm"
-            />
-            {isSearching && (
-              <button type="button" onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
-            )}
+          <div className="mt-1 flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by description or category…"
+                className="pl-8 pr-8 h-9 text-sm"
+              />
+              {isSearching && (
+                <button type="button" onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant={unsettledOnly ? "default" : "outline"}
+              size="sm"
+              className="h-9 shrink-0"
+              onClick={() => setUnsettledOnly((v) => !v)}
+              title="Show only unsettled split expenses"
+            >
+              <Users className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Unsettled</span>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
