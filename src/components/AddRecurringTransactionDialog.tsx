@@ -69,6 +69,7 @@ export default function AddRecurringTransactionDialog() {
         description: description || null,
         notes: notes || null,
         date,
+        expense_date: date,
       }));
       const { error } = await supabase.from("transactions").insert(rows);
       if (error) throw error;
