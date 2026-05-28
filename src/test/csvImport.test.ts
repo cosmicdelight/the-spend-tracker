@@ -45,6 +45,7 @@ describe("parseExpenseCSV", () => {
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]).toEqual({
       date: "2024-01-15",
+      expense_date: "2024-01-15",
       amount: 100.5,
       personal_amount: 50.25,
       category: "Groceries",
