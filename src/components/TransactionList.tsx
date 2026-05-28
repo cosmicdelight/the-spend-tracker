@@ -33,18 +33,24 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const isSearching = search.trim().length > 0;
 
   const filtered = useMemo(() => {
+    let base: Transaction[];
     if (isSearching) {
       const q = search.trim().toLowerCase();
-      return transactions.filter((t) =>
+      base = transactions.filter((t) =>
         (t.description ?? "").toLowerCase().includes(q) ||
         t.category.toLowerCase().includes(q)
       );
+    } else {
+      base = transactions.filter((t) => {
+        const d = new Date(t.expense_date || t.date);
+        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+      });
     }
-    return transactions.filter((t) => {
-      const d = new Date(t.expense_date || t.date);
-      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-    });
-  }, [transactions, selectedMonth, selectedYear, search, isSearching]);
+    if (unsettledOnly) {
+      base = base.filter((t) => Number(t.personal_amount) < Number(t.amount) && !t.settled_up);
+    }
+    return base;
+  }, [transactions, selectedMonth, selectedYear, search, isSearching, unsettledOnly]);
 
   // Group by expense_date (falls back to date)
   const grouped = useMemo(() => {
