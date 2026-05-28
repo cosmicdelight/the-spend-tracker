@@ -187,6 +187,20 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               {ratesLoading && " (loading rates...)"}
             </p>
           )}
+          {personalNum > 0 && personalNum < amtNum && (
+            <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settledUp}
+                onChange={(e) => setSettledUp(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-input accent-primary cursor-pointer"
+              />
+              <div className="min-w-0">
+                <span className="text-sm font-medium">Settled up</span>
+                <p className="text-xs text-muted-foreground">Friends have paid back their share.</p>
+              </div>
+            </label>
+          )}
           <div className="space-y-1.5">
             <Label>Transaction Date</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
