@@ -115,6 +115,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
         sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
         original_currency: activeCurrency,
         original_amount: amtNum,
+        settled_up: sgdPersonal < sgdAmount ? settledUp : false,
       },
       {
         onSuccess: () => {
