@@ -27,7 +27,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [search, setSearch] = useState("");
   const [addTxDate, setAddTxDate] = useState<string | null>(null);
   const [duplicateData, setDuplicateData] = useState<DuplicateTransactionData | undefined>(undefined);
-  const [unsettledOnly, setUnsettledOnly] = useState(false);
+  const [settledFilter, setSettledFilter] = useState<'all' | 'unsettled' | 'settled'>('all');
   const updateTx = useUpdateTransaction();
 
   const isSearching = search.trim().length > 0;
@@ -46,8 +46,10 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
         return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
       });
     }
-    if (unsettledOnly) {
+    if (settledFilter === 'unsettled') {
       base = base.filter((t) => Number(t.personal_amount) < Number(t.amount) && !t.settled_up);
+    } else if (settledFilter === 'settled') {
+      base = base.filter((t) => Number(t.personal_amount) < Number(t.amount) && t.settled_up);
     }
     return base;
   }, [transactions, selectedMonth, selectedYear, search, isSearching, unsettledOnly]);
