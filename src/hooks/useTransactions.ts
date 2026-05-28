@@ -17,6 +17,7 @@ export interface Transaction {
   sub_category: string | null;
   original_currency: string;
   original_amount: number;
+  settled_up: boolean;
   created_at: string;
 }
 
