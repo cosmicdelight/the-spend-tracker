@@ -132,7 +132,7 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
   const filteredTxs = useMemo(
     () =>
       transactions.filter((t) => {
-        const d = new Date(t.date);
+        const d = new Date(t.expense_date || t.date);
         if (view === "month") {
           return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
         }

@@ -33,6 +33,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const [amount, setAmount] = useState("");
   const [personalAmount, setPersonalAmount] = useState("");
   const [date, setDate] = useState("");
+  const [expenseDate, setExpenseDate] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [paymentMode, setPaymentMode] = useState("credit_card");
@@ -66,6 +67,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
         setPersonalAmount(String(transaction.personal_amount));
       }
       setDate(transaction.date);
+      setExpenseDate(transaction.expense_date && transaction.expense_date !== transaction.date ? transaction.expense_date : "");
       setCategory(transaction.category);
       setSubCategory(transaction.sub_category || "");
       setPaymentMode(transaction.payment_mode);
@@ -101,6 +103,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
         amount: sgdAmount,
         personal_amount: sgdPersonal,
         date,
+        expense_date: expenseDate || date,
         category,
         payment_mode: paymentMode,
         credit_card_id: fieldPrefs.creditCard && paymentMode === "credit_card" && creditCardId ? creditCardId : null,
@@ -181,8 +184,20 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
             </p>
           )}
           <div className="space-y-1.5">
-            <Label>Date</Label>
+            <Label>Transaction Date</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Expense Date (optional)</Label>
+            <Input
+              type="date"
+              value={expenseDate}
+              onChange={(e) => setExpenseDate(e.target.value)}
+              placeholder={date}
+            />
+            <p className="text-xs text-muted-foreground">
+              Defaults to the transaction date. Set this if the spend belongs to a different month. Used for budget &amp; statistics; the transaction date drives credit card tracking.
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label>Payment Mode</Label>

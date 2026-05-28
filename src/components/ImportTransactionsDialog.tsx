@@ -362,8 +362,8 @@ export default function ImportTransactionsDialog() {
   const downloadTemplate = () => {
     let header: string, sample: string, filename: string;
     if (importType === "expense") {
-      header = "date,amount,personal_amount,category,sub_category,payment_mode,description,notes";
-      sample = "2026-01-15,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends,Split with John\n2026-02-03,12.50,12.50,Transport,,cash,Grab ride,";
+      header = "date,expense_date,amount,personal_amount,category,sub_category,payment_mode,description,notes";
+      sample = "2026-01-15,,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends,Split with John\n2026-02-03,,12.50,12.50,Transport,,cash,Grab ride,\n2026-03-10,2026-05-20,180.00,180.00,Entertainment,Concerts,credit_card,Concert tickets (bought in March for May show),";
       filename = "expenses_template.csv";
     } else {
       header = "date,amount,category,sub_category,description,notes";
@@ -443,7 +443,8 @@ export default function ImportTransactionsDialog() {
       if (importType === "expense" && parsedExpenses.length > 0) {
         const remapped = applyResolutions(parsedExpenses);
         const payload = remapped.map((r) => ({
-          user_id: user.id, date: r.date, amount: r.amount, personal_amount: r.personal_amount,
+          user_id: user.id, date: r.date, expense_date: r.expense_date || r.date,
+          amount: r.amount, personal_amount: r.personal_amount,
           category: r.category, sub_category: r.sub_category,
           payment_mode: normalizePaymentMode(r.payment_mode),
           description: r.description, notes: r.notes, credit_card_id: null,

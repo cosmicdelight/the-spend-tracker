@@ -46,8 +46,9 @@ export default function Index() {
   const currentYear = now.getFullYear();
   const todayStr = now.toISOString().split("T")[0];
   const monthlyTxs = transactions.filter((t) => {
-    const d = new Date(t.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.date <= todayStr;
+    const key = t.expense_date || t.date;
+    const d = new Date(key);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear && key <= todayStr;
   });
   const totalCharged = monthlyTxs.reduce((s, t) => s + Number(t.amount), 0);
   const totalPersonal = monthlyTxs.reduce((s, t) => s + Number(t.personal_amount), 0);

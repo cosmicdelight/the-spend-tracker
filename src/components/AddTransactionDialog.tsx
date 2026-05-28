@@ -61,6 +61,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const [amount, setAmount] = useState("");
   const [personalAmount, setPersonalAmount] = useState("");
   const [date, setDate] = useState(initialDate || new Date().toISOString().split("T")[0]);
+  const [expenseDate, setExpenseDate] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [paymentMode, setPaymentMode] = useState("credit_card");
@@ -133,6 +134,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
     setAmount(""); setPersonalAmount(""); setDescription(""); setCreditCardId(""); setNotes("");
     setCategory(""); setSubCategory(""); setCurrency("SGD");
     setDate(new Date().toISOString().split("T")[0]);
+    setExpenseDate("");
     setIncomeCategory(""); setIncomeSubCategory(""); setIncomeDescription(""); setIncomeNotes("");
     setStagedFiles([]);
     setErrors([]);
@@ -167,6 +169,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           amount: sgdAmount,
           personal_amount: sgdPersonal,
           date,
+          expense_date: expenseDate || date,
           category,
           payment_mode: paymentMode,
           credit_card_id: fieldPrefs.creditCard && paymentMode === "credit_card" && creditCardId ? creditCardId : null,
@@ -307,9 +310,25 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
 
           {/* Date (shared) */}
           <div className="space-y-1.5">
-            <Label>Date</Label>
+            <Label>{type === "expense" ? "Transaction Date" : "Date"}</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           </div>
+
+          {/* Expense date (optional, expense only) */}
+          {type === "expense" && (
+            <div className="space-y-1.5">
+              <Label>Expense Date (optional)</Label>
+              <Input
+                type="date"
+                value={expenseDate}
+                onChange={(e) => setExpenseDate(e.target.value)}
+                placeholder={date}
+              />
+              <p className="text-xs text-muted-foreground">
+                Defaults to the transaction date. Set this if the spend belongs to a different month (e.g. concert tickets bought in advance). Used for budget & statistics; the transaction date drives credit card tracking.
+              </p>
+            </div>
+          )}
 
           {/* ── EXPENSE FIELDS ── */}
           {type === "expense" && (

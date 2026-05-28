@@ -39,16 +39,16 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
       );
     }
     return transactions.filter((t) => {
-      const d = new Date(t.date);
+      const d = new Date(t.expense_date || t.date);
       return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
     });
   }, [transactions, selectedMonth, selectedYear, search, isSearching]);
 
-  // Group by date
+  // Group by expense_date (falls back to date)
   const grouped = useMemo(() => {
     const map = new Map<string, Transaction[]>();
     for (const tx of filtered) {
-      const key = tx.date;
+      const key = tx.expense_date || tx.date;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(tx);
     }
@@ -150,6 +150,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                 <div className="space-y-2">
                   {txs.map((tx) => {
                     const isSplit = Number(tx.personal_amount) !== Number(tx.amount);
+                    const hasDifferentChargeDate = tx.expense_date && tx.expense_date !== tx.date;
                     return (
                       <div key={tx.id} className="rounded-lg border bg-card p-3 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setEditingTx(tx)}>
                         <div className="flex items-center justify-between">
@@ -164,6 +165,11 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                           </div>
                           {isSplit && <span className="text-xs text-muted-foreground shrink-0">Yours: ${Number(tx.personal_amount).toFixed(2)}</span>}
                         </div>
+                        {hasDifferentChargeDate && (
+                          <p className="mt-1 text-[11px] text-muted-foreground italic">
+                            Charged {format(parseISO(tx.date), "MMM d, yyyy")}
+                          </p>
+                        )}
                       </div>
                     );
                   })}
