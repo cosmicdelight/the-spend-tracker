@@ -27,7 +27,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [search, setSearch] = useState("");
   const [addTxDate, setAddTxDate] = useState<string | null>(null);
   const [duplicateData, setDuplicateData] = useState<DuplicateTransactionData | undefined>(undefined);
-  const [unsettledOnly, setUnsettledOnly] = useState(false);
+  const [settledFilter, setSettledFilter] = useState<'all' | 'unsettled' | 'settled'>('all');
   const updateTx = useUpdateTransaction();
 
   const isSearching = search.trim().length > 0;
@@ -46,11 +46,13 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
         return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
       });
     }
-    if (unsettledOnly) {
+    if (settledFilter === 'unsettled') {
       base = base.filter((t) => Number(t.personal_amount) < Number(t.amount) && !t.settled_up);
+    } else if (settledFilter === 'settled') {
+      base = base.filter((t) => Number(t.personal_amount) < Number(t.amount) && t.settled_up);
     }
     return base;
-  }, [transactions, selectedMonth, selectedYear, search, isSearching, unsettledOnly]);
+  }, [transactions, selectedMonth, selectedYear, search, isSearching, settledFilter]);
 
   // Group by expense_date (falls back to date)
   const grouped = useMemo(() => {
@@ -132,14 +134,25 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
             </div>
             <Button
               type="button"
-              variant={unsettledOnly ? "default" : "outline"}
+              variant={settledFilter === 'unsettled' ? "default" : "outline"}
               size="sm"
               className="h-9 shrink-0"
-              onClick={() => setUnsettledOnly((v) => !v)}
+              onClick={() => setSettledFilter((v) => v === 'unsettled' ? 'all' : 'unsettled')}
               title="Show only unsettled split expenses"
             >
               <Users className="h-3.5 w-3.5 sm:mr-1.5" />
               <span className="hidden sm:inline">Unsettled</span>
+            </Button>
+            <Button
+              type="button"
+              variant={settledFilter === 'settled' ? "default" : "outline"}
+              size="sm"
+              className="h-9 shrink-0"
+              onClick={() => setSettledFilter((v) => v === 'settled' ? 'all' : 'settled')}
+              title="Show only settled split expenses"
+            >
+              <Check className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Settled</span>
             </Button>
           </div>
         </CardHeader>
