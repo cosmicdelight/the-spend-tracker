@@ -300,6 +300,7 @@ export type Database = {
           original_currency: string
           payment_mode: string
           personal_amount: number
+          settled_up: boolean
           sub_category: string | null
           user_id: string
         }
@@ -317,6 +318,7 @@ export type Database = {
           original_currency?: string
           payment_mode?: string
           personal_amount?: number
+          settled_up?: boolean
           sub_category?: string | null
           user_id: string
         }
@@ -334,6 +336,7 @@ export type Database = {
           original_currency?: string
           payment_mode?: string
           personal_amount?: number
+          settled_up?: boolean
           sub_category?: string | null
           user_id?: string
         }

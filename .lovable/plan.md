@@ -1,41 +1,45 @@
-# Add "Expense Date" to Transactions
+## Add "Settled Up" tracking for split expenses
 
-## Goal
+Track whether friends have paid back their share of split expenses, with an indicator in the list and a quick filter for unsettled items.
 
-Separate **when the card was charged** from **when the activity actually happens**. The existing `date` field keeps representing the charge/transaction date (used for credit card spend tracking). A new `expense_date` field represents when the spend "belongs" for budgeting and statistics.
+### Scope rule
+The field only exists/appears when the transaction is a split — i.e., `personal_amount < amount` (you covered more than your share). For non-split transactions, the field is hidden and irrelevant.
 
-Example: buying a concert ticket today for a show 2 months later → `date` = today (counts toward this period's card target), `expense_date` = concert month (counts toward that month's budget).
+### Database
+- Add `settled_up boolean NOT NULL DEFAULT false` to `public.transactions`.
+- Backfill: leave existing rows as `false` (user can mark them later).
+- No new index needed (filtering is client-side over already-loaded transactions, consistent with current patterns).
 
-## Behavior
+### Add / Edit Transaction dialogs
+- In `AddTransactionDialog.tsx` and `EditTransactionDialog.tsx`: when the split section is active and "Your share" < total amount, render a `Checkbox` labeled **"Settled up"** with helper sub-text *"Friends have paid back their share."*
+- If the split is removed or share equals total, the value is forced back to `false` on save.
+- Default for new split transactions: `false` (unsettled).
 
-- **Optional field.** When left blank, it defaults to the transaction date — existing flows are unchanged for users who don't care.
-- **Backfill:** all existing transactions get `expense_date = date`.
-- **Credit card trackers:** keep using `date` (no change).
-- **Budget, dashboard metrics, statistics charts, and Transactions list grouping:** switch to `expense_date`.
-- **Transactions list rows:** grouped/displayed under `expense_date`. When `expense_date ≠ date`, the row shows a small "Charged: <date>" subtitle so the original transaction date stays visible.
-- **CSV import:** add an optional `expense_date` column; falls back to `date` when missing/empty.
-- **Recurring transactions:** generated rows set `expense_date = date` (same as today's behavior — users can edit later if needed).
+### Transaction list (`TransactionList.tsx`)
+- **Indicator per row**: for split transactions, show a small badge next to the "Yours: $X" line:
+  - Unsettled → amber/warning badge **"Owed"**
+  - Settled → muted check badge **"Settled"**
+  - Clicking the badge toggles `settled_up` directly (optimistic update via `useUpdateTransaction`), so the user can mark things paid without opening the edit dialog.
+- **Filter control**: add a small toggle button in the card header row (next to the month selector area) labeled **"Unsettled only"**. When active:
+  - Filters the list to transactions where `personal_amount < amount AND settled_up = false`.
+  - Visually highlighted (e.g., `variant="default"` when on, `outline` when off).
+  - Works alongside the existing month selector and search.
 
-## Changes
+### Dashboard "Others Owe You" metric
+- Update the metric in `Index.tsx` so settled-up splits are excluded from the "Others Owe You" total. This keeps the number accurate to what's actually still outstanding.
 
-### Database (migration)
-- `ALTER TABLE transactions ADD COLUMN expense_date date`.
-- Backfill: `UPDATE transactions SET expense_date = date WHERE expense_date IS NULL`.
-- `ALTER COLUMN expense_date SET NOT NULL` and `SET DEFAULT CURRENT_DATE`.
-- Index on `(user_id, expense_date)` to keep month filters fast.
-- Update recurring-transaction generation (edge function) to set `expense_date = date` on insert.
+### Types
+- Add `settled_up: boolean` to the `Transaction` interface in `src/hooks/useTransactions.ts`.
+- `src/integrations/supabase/types.ts` regenerates automatically after the migration.
 
-### UI
-- **AddTransactionDialog / EditTransactionDialog:** new optional "Expense date" date picker, placed under the existing Date field, with helper text "Defaults to transaction date. Use this if the spend belongs to a different month (e.g. concert tickets bought in advance)." Empty value → submit as `date`.
-- **TransactionList:** group by `expense_date`; month/year selector filters by `expense_date`; when `expense_date ≠ date`, render a small muted "Charged <Mon d>" line under the description.
-- **BudgetOverview, Dashboard metric cards (Charged/Personal/Others Owe), SpendingTrendsChart, Statistics donuts/trends:** filter and bucket by `expense_date` instead of `date`.
-- **ImportTransactionsDialog / csvImport.ts:** accept optional `expense_date` column; default to `date` when missing.
+### Files to edit
+- New migration (add column + grants already in place)
+- `src/hooks/useTransactions.ts`
+- `src/components/AddTransactionDialog.tsx`
+- `src/components/EditTransactionDialog.tsx`
+- `src/components/TransactionList.tsx`
+- `src/pages/Index.tsx`
 
-### Types & hooks
-- Extend `Transaction` interface in `useTransactions.ts` with `expense_date: string`.
-- Mutations (`useAddTransaction`, `useUpdateTransaction`) pass through `expense_date`.
-
-## Notes
-
-- Credit-card period logic in `creditCardPeriod.ts` and `CreditCardProgress.tsx` continues to use `date` — explicitly verified, no change needed.
-- The dashboard "Charged this month" card semantically tracks card activity, but per your answer it will move to `expense_date`. Flagging this so you can confirm during review — if you'd rather keep that one card on `date`, it's a one-line tweak.
+### Out of scope
+- No separate "settlements ledger" or per-friend tracking — this is a single boolean per transaction, matching the existing app's lightweight model.
+- CSV import column for `settled_up` — can add later if needed.
