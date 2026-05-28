@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, Check, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Transaction } from "@/hooks/useTransactions";
+import { useUpdateTransaction, type Transaction } from "@/hooks/useTransactions";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { format, parseISO, isToday } from "date-fns";
