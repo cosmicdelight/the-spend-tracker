@@ -180,6 +180,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
           original_currency: activeCurrency,
           original_amount: amtNum,
+          settled_up: sgdPersonal < sgdAmount ? settledUp : false,
         },
         {
           onSuccess: async (transactionId) => {
