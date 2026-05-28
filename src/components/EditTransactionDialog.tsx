@@ -76,6 +76,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
       setCreditCardId(transaction.credit_card_id || "");
       setDescription(transaction.description || "");
       setNotes(transaction.notes || "");
+      setSettledUp(!!transaction.settled_up);
     }
   }, [transaction, open]);
 
