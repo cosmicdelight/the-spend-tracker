@@ -52,6 +52,10 @@ export default function Index() {
   });
   const totalCharged = monthlyTxs.reduce((s, t) => s + Number(t.amount), 0);
   const totalPersonal = monthlyTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
+  const totalOwed = monthlyTxs.reduce(
+    (s, t) => (t.settled_up ? s : s + (Number(t.amount) - Number(t.personal_amount))),
+    0,
+  );
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
