@@ -70,6 +70,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [currency, setCurrency] = useState("SGD");
+  const [settledUp, setSettledUp] = useState(false);
 
   // Income-only fields
   const [incomeCategory, setIncomeCategory] = useState("");
