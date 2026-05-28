@@ -42,6 +42,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [currency, setCurrency] = useState("SGD");
+  const [settledUp, setSettledUp] = useState(false);
 
   const updateTx = useUpdateTransaction();
   const descriptionSuggestions = useDescriptionSuggestions();
