@@ -205,6 +205,12 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                               </button>
                             </div>
                           )}
+                        </div>
+                        {hasDifferentChargeDate && (
+                          <p className="mt-1 text-[11px] text-muted-foreground italic">
+                            Charged {format(parseISO(tx.date), "MMM d, yyyy")}
+                          </p>
+                        )}
                       </div>
                     );
                   })}
