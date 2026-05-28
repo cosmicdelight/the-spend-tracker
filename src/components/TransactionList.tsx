@@ -27,6 +27,8 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [search, setSearch] = useState("");
   const [addTxDate, setAddTxDate] = useState<string | null>(null);
   const [duplicateData, setDuplicateData] = useState<DuplicateTransactionData | undefined>(undefined);
+  const [unsettledOnly, setUnsettledOnly] = useState(false);
+  const updateTx = useUpdateTransaction();
 
   const isSearching = search.trim().length > 0;
 
