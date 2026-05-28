@@ -312,6 +312,22 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
             </p>
           )}
 
+          {/* Settled-up checkbox (only when this is a split) */}
+          {type === "expense" && personalNum > 0 && personalNum < amtNum && (
+            <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settledUp}
+                onChange={(e) => setSettledUp(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-input accent-primary cursor-pointer"
+              />
+              <div className="min-w-0">
+                <span className="text-sm font-medium">Settled up</span>
+                <p className="text-xs text-muted-foreground">Friends have paid back their share.</p>
+              </div>
+            </label>
+          )}
+
           {/* Date (shared) */}
           <div className="space-y-1.5">
             <Label>{type === "expense" ? "Transaction Date" : "Date"}</Label>
