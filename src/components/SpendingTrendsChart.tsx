@@ -61,7 +61,7 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
     }
 
     for (const tx of transactions) {
-      const d = new Date(tx.date);
+      const d = new Date(tx.expense_date || tx.date);
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       const bucket = periodCatMap.get(key);
       if (!bucket) continue;
