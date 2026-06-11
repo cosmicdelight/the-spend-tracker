@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import SearchableSelect from "@/components/SearchableSelect";
 import { useUpdateTransaction, useDeleteTransaction, useDescriptionSuggestions, type Transaction } from "@/hooks/useTransactions";
+import { useTransactionAttachments } from "@/hooks/useTransactionAttachments";
 import DescriptionAutocomplete from "@/components/DescriptionAutocomplete";
 import TransactionAttachments from "@/components/TransactionAttachments";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -28,7 +29,7 @@ interface Props {
   onDuplicate?: (data: DuplicateTransactionData) => void;
 }
 
-const defaultPrefs: TransactionFieldPrefs = { currency: true, creditCard: true, subCategory: true, notes: true, attachments: true };
+const defaultPrefs: TransactionFieldPrefs = { currency: true, creditCard: true, subCategory: true, notes: true, attachments: true, dailyTotals: true };
 
 export default function EditTransactionDialog({ transaction, open, onOpenChange, fieldPrefs = defaultPrefs, onDuplicate }: Props) {
   const [amount, setAmount] = useState("");
@@ -53,6 +54,8 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const { data: paymentModes = [] } = usePaymentModes();
   const { convertToSGD, currencies, loading: ratesLoading } = useCurrencyConversion();
   const { toast } = useToast();
+  // Existing uploads stay visible/manageable even when the attachments field is disabled in settings
+  const { data: existingAttachments = [] } = useTransactionAttachments(transaction?.id ?? null);
 
   useEffect(() => {
     if (transaction) {
@@ -287,7 +290,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any additional notes" className="min-h-[60px]" />
             </div>
           )}
-          {fieldPrefs.attachments && <TransactionAttachments transactionId={transaction?.id ?? null} />}
+          {(fieldPrefs.attachments || existingAttachments.length > 0) && <TransactionAttachments transactionId={transaction?.id ?? null} />}
           <div className="flex flex-wrap gap-2">
             {!confirmDelete ? (
               <Button type="button" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setConfirmDelete(true)}>
