@@ -30,7 +30,7 @@ export default function TransactionFieldSettings({ prefs, onToggle }: Props) {
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Transaction Form Fields</DialogTitle>
+          <DialogTitle>Transaction Settings</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">Toggle fields to show or hide in the Add/Edit Transaction forms.</p>
         <div className="space-y-4 mt-2">
@@ -43,6 +43,14 @@ export default function TransactionFieldSettings({ prefs, onToggle }: Props) {
               <Switch checked={prefs[key]} onCheckedChange={() => onToggle(key)} />
             </div>
           ))}
+        </div>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Display</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <Label className="text-sm font-medium">Daily totals</Label>
+            <p className="text-xs text-muted-foreground">Show total spent under each date</p>
+          </div>
+          <Switch checked={prefs.dailyTotals} onCheckedChange={() => onToggle("dailyTotals")} />
         </div>
       </DialogContent>
     </Dialog>

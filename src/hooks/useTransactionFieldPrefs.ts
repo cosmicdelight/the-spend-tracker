@@ -6,6 +6,7 @@ export interface TransactionFieldPrefs {
   subCategory: boolean;
   notes: boolean;
   attachments: boolean;
+  dailyTotals: boolean;
 }
 
 const STORAGE_KEY = "transaction-field-prefs";
@@ -16,6 +17,7 @@ const defaults: TransactionFieldPrefs = {
   subCategory: true,
   notes: true,
   attachments: true,
+  dailyTotals: true,
 };
 
 function load(): TransactionFieldPrefs {

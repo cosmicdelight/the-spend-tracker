@@ -165,6 +165,8 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
           <div className="space-y-4">
             {grouped.map(([date, txs]) => {
               const today = isToday(parseISO(date));
+              const dayTotal = txs.reduce((s, tx) => s + Number(tx.amount), 0);
+              const dayPersonal = txs.reduce((s, tx) => s + Number(tx.personal_amount), 0);
               return (
               <div key={date}>
                 <button
@@ -177,9 +179,21 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                   }`}
                 >
                   <span>{format(parseISO(date), "EEEE, MMM d")}</span>
-                  {today && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Today</span>
-                  )}
+                  <span className="flex items-center gap-2 shrink-0">
+                    {today && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Today</span>
+                    )}
+                    {fieldPrefs.dailyTotals && (
+                      <span>
+                        ${dayTotal.toFixed(2)}
+                        {dayPersonal !== dayTotal && (
+                          <span className={`ml-1 font-normal ${today ? "opacity-80" : ""}`}>
+                            (${dayPersonal.toFixed(2)} yours)
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </span>
                 </button>
                 <div className="space-y-2">
                   {txs.map((tx) => {
