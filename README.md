@@ -78,8 +78,8 @@ Use **Try Demo** on the login screen to explore without signing up.
 ## App updates and caching
 
 - SpendTracker uses a service worker when `VITE_ENABLE_PWA=true`.
-- When a new deployment is available, the app shows an in-app update prompt so users can refresh in one tap.
-- The app also checks `version.json` periodically as a host-agnostic fallback, so update prompts still appear if host cache headers are not fully configurable.
+- When a new deployment is available, the service worker updates automatically and reloads the app (`registerType: "autoUpdate"`), so users always get the latest version without manual action.
+- The app also checks `version.json` periodically as a host-agnostic fallback, showing an update prompt if host cache headers are not fully configurable.
 - Static hashed assets are cached long-term, while `index.html` and the service worker are configured for revalidation via `public/_headers` on hosts that support it.
 
 ### Release checklist

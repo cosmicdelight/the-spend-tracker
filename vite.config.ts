@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => {
       mode === "development" && componentTagger(),
       VitePWA({
           disable: !enablePwa,
-          registerType: "prompt",
+          registerType: "autoUpdate",
           // Work around intermittent Workbox/Terser renderChunk early-exit in CI/local builds.
           minify: false,
           workbox: {
