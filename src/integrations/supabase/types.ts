@@ -311,7 +311,7 @@ export type Database = {
           credit_card_id?: string | null
           date?: string
           description?: string | null
-          expense_date?: string
+          expense_date: string
           id?: string
           notes?: string | null
           original_amount?: number
