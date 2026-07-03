@@ -180,7 +180,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <span>{format(parseISO(date), "EEEE, MMM d")}</span>
+                  <span>{format(parseISO(date), isSearching ? "EEEE, MMM d, yyyy" : "EEEE, MMM d")}</span>
                   <span className="flex items-center gap-2 shrink-0">
                     {today && (
                       <span className="text-[10px] font-bold uppercase tracking-wider">Today</span>
