@@ -38,7 +38,9 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
       const q = search.trim().toLowerCase();
       base = transactions.filter((t) =>
         (t.description ?? "").toLowerCase().includes(q) ||
-        t.category.toLowerCase().includes(q)
+        t.category.toLowerCase().includes(q) ||
+        (t.sub_category ?? "").toLowerCase().includes(q) ||
+        (t.notes ?? "").toLowerCase().includes(q)
       );
     } else {
       base = transactions.filter((t) => {
@@ -123,7 +125,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by description or category…"
+                placeholder="Search by description, category, sub-category, or notes…"
                 className="pl-8 pr-8 h-9 text-sm"
               />
               {isSearching && (
