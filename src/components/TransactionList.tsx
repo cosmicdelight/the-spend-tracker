@@ -125,7 +125,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by description or category…"
+                placeholder="Search by description, category, sub-category, or notes…"
                 className="pl-8 pr-8 h-9 text-sm"
               />
               {isSearching && (
