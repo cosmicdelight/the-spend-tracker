@@ -38,7 +38,9 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
       const q = search.trim().toLowerCase();
       base = transactions.filter((t) =>
         (t.description ?? "").toLowerCase().includes(q) ||
-        t.category.toLowerCase().includes(q)
+        t.category.toLowerCase().includes(q) ||
+        (t.sub_category ?? "").toLowerCase().includes(q) ||
+        (t.notes ?? "").toLowerCase().includes(q)
       );
     } else {
       base = transactions.filter((t) => {
