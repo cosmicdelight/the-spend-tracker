@@ -217,18 +217,10 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className="text-xs text-muted-foreground">Yours: ${Number(tx.personal_amount).toFixed(2)}</span>
                           {tx.settled_up ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateTx.mutate({ id: tx.id, settled_up: false });
-                              }}
-                              title="Mark as unsettled"
-                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors bg-muted text-muted-foreground hover:bg-muted/70"
-                            >
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-muted text-muted-foreground">
                               <Check className="h-3 w-3" />
                               Settled
-                            </button>
+                            </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-400">
                               Owed
