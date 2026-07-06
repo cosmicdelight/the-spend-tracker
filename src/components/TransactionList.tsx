@@ -216,22 +216,24 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                           {isSplit && (
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className="text-xs text-muted-foreground">Yours: ${Number(tx.personal_amount).toFixed(2)}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateTx.mutate({ id: tx.id, settled_up: !tx.settled_up });
-                                }}
-                                title={tx.settled_up ? "Mark as unsettled" : "Mark as settled"}
-                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
-                                  tx.settled_up
-                                    ? "bg-muted text-muted-foreground hover:bg-muted/70"
-                                    : "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25"
-                                }`}
-                              >
-                                {tx.settled_up ? <Check className="h-3 w-3" /> : null}
-                                {tx.settled_up ? "Settled" : "Owed"}
-                              </button>
+                          {tx.settled_up ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTx.mutate({ id: tx.id, settled_up: false });
+                              }}
+                              title="Mark as unsettled"
+                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors bg-muted text-muted-foreground hover:bg-muted/70"
+                            >
+                              <Check className="h-3 w-3" />
+                              Settled
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                              Owed
+                            </span>
+                          )}
                             </div>
                           )}
                         </div>
