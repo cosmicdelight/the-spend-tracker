@@ -30,7 +30,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [duplicateData, setDuplicateData] = useState<DuplicateTransactionData | undefined>(undefined);
   const [settledFilter, setSettledFilter] = useState<'all' | 'unsettled' | 'settled'>('all');
   const updateTx = useUpdateTransaction();
-  const attachmentIds = useTransactionAttachmentIds();
+  const { data: attachmentIds } = useTransactionAttachmentIds();
 
   const isSearching = search.trim().length > 0;
 
