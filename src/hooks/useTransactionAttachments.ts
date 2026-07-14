@@ -35,6 +35,23 @@ export function useTransactionAttachments(transactionId: string | null) {
   });
 }
 
+export function useTransactionAttachmentIds() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["transaction-attachment-ids", user?.id],
+    queryFn: async () => {
+      if (!user) return new Set<string>();
+      const { data, error } = await supabase
+        .from("transaction_attachments")
+        .select("transaction_id")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return new Set<string>((data ?? []).map((a) => a.transaction_id));
+    },
+    enabled: !!user,
+  });
+}
+
 export function useUploadAttachment() {
   const qc = useQueryClient();
   const { user } = useAuth();
