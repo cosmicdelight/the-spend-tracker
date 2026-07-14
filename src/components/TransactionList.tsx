@@ -206,7 +206,12 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                     return (
                       <div key={tx.id} className="rounded-lg border bg-card p-3 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setEditingTx(tx)}>
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm truncate min-w-0 flex-1 mr-2">{tx.description || tx.category}</span>
+                          <div className="font-medium text-sm truncate min-w-0 flex-1 mr-2 flex items-center gap-1.5">
+                            {attachmentIds?.has(tx.id) && (
+                              <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-label="Has attachments" />
+                            )}
+                            <span className="truncate">{tx.description || tx.category}</span>
+                          </div>
                           <span className="text-sm font-semibold shrink-0">${Number(tx.amount).toFixed(2)}</span>
                         </div>
                         <div className="mt-0.5 flex items-center justify-between">
