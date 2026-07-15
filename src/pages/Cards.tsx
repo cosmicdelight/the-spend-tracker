@@ -5,13 +5,13 @@ import { useCreditCards, useDeleteCreditCard, useReorderCreditCards, type Credit
 import { useTransactions } from "@/hooks/useTransactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard as CreditCardIcon, Pencil, GripVertical } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { getCurrentCardPeriod, filterTransactionsForCurrentPeriod } from "@/lib/creditCardPeriod";
+import { ArrowLeft, CreditCard as CreditCardIcon, Pencil, GripVertical, AlertTriangle } from "lucide-react";
+import { filterTransactionsForCurrentPeriod } from "@/lib/creditCardPeriod";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import AddCreditCardDialog from "@/components/AddCreditCardDialog";
 import EditCreditCardDialog from "@/components/EditCreditCardDialog";
 import DeleteConfirmButton from "@/components/DeleteConfirmButton";
+import CreditCardProgressBlock from "@/components/CreditCardProgressBlock";
 
 export default function Cards() {
   const { user, loading } = useAuth();
