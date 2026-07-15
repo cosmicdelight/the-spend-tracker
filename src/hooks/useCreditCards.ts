@@ -6,6 +6,7 @@ export interface CreditCard {
   id: string;
   name: string;
   spend_target: number;
+  spend_cap: number | null;
   time_period_months: number;
   start_date: string;
   sort_order: number;
@@ -30,7 +31,7 @@ export function useAddCreditCard() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (card: { name: string; spend_target: number; time_period_months: number; start_date: string }) => {
+    mutationFn: async (card: { name: string; spend_target: number; spend_cap: number | null; time_period_months: number; start_date: string }) => {
       if (!user) throw new Error("User must be signed in to add credit cards");
       const { data: existing } = await supabase.from("credit_cards").select("sort_order").eq("user_id", user.id).order("sort_order", { ascending: false }).limit(1);
       const nextOrder = (existing && existing.length > 0 ? existing[0].sort_order : 0) + 1;

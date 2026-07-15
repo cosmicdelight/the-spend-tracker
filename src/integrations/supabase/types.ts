@@ -44,6 +44,7 @@ export type Database = {
           id: string
           name: string
           sort_order: number
+          spend_cap: number | null
           spend_target: number
           start_date: string
           time_period_months: number
@@ -55,6 +56,7 @@ export type Database = {
           id?: string
           name: string
           sort_order?: number
+          spend_cap?: number | null
           spend_target?: number
           start_date?: string
           time_period_months?: number
@@ -66,6 +68,7 @@ export type Database = {
           id?: string
           name?: string
           sort_order?: number
+          spend_cap?: number | null
           spend_target?: number
           start_date?: string
           time_period_months?: number
