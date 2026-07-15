@@ -59,10 +59,7 @@ export default function Cards() {
                 {cards.map((card, index) => {
                   const periodTxs = filterTransactionsForCurrentPeriod(card, transactions);
                   const totalCharged = periodTxs.reduce((s, t) => s + Number(t.amount), 0);
-                  const personalSpend = periodTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
-                  const target = Number(card.spend_target);
-                  const pct = target > 0 ? Math.min((totalCharged / target) * 100, 100) : 0;
-                  const { daysLeft } = getCurrentCardPeriod(card);
+                  const overCap = card.spend_cap != null && Number(card.spend_cap) > 0 && totalCharged > Number(card.spend_cap);
 
                   return (
                     <Draggable key={card.id} draggableId={card.id} index={index}>
@@ -75,7 +72,10 @@ export default function Cards() {
                                   <GripVertical className="h-4 w-4" />
                                 </div>
                                 <CreditCardIcon className="h-4 w-4 text-primary" />
-                                <CardTitle className="text-base">{card.name}</CardTitle>
+                                <CardTitle className="text-base flex items-center gap-1.5">
+                                  {card.name}
+                                  {overCap && <AlertTriangle className="h-4 w-4 text-destructive" aria-label="Over cap" />}
+                                </CardTitle>
                               </div>
                               <div className="flex items-center gap-1">
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingCard(card)}>
@@ -85,15 +85,7 @@ export default function Cards() {
                               </div>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Charged</span>
-                                <span className="font-semibold">${totalCharged.toFixed(2)} / ${target.toFixed(2)}</span>
-                              </div>
-                              <Progress value={pct} className="h-2.5" />
-                              <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Personal: ${personalSpend.toFixed(2)}</span>
-                                <span>{daysLeft}d left</span>
-                              </div>
+                              <CreditCardProgressBlock card={card} transactions={transactions} />
                             </CardContent>
                           </Card>
                         </div>
