@@ -6,6 +6,7 @@ export interface CreditCard {
   id: string;
   name: string;
   spend_target: number;
+  spend_cap: number | null;
   time_period_months: number;
   start_date: string;
   sort_order: number;
