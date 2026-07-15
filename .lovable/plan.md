@@ -1,45 +1,55 @@
-## Add "Settled Up" tracking for split expenses
+## Goal
+Extend credit card tracking to support an optional **maximum spend cap** (bonus cap) alongside the existing minimum spend target. Each card can have either, both, or just one.
 
-Track whether friends have paid back their share of split expenses, with an indicator in the list and a quick filter for unsettled items.
+## Database
+Add one nullable column to `credit_cards`:
+- `spend_cap numeric NULL` — when set, the card has an upper bonus cap for the same rolling period as `spend_target`.
 
-### Scope rule
-The field only exists/appears when the transaction is a split — i.e., `personal_amount < amount` (you covered more than your share). For non-split transactions, the field is hidden and irrelevant.
+`spend_target` stays as-is (still non-null, still allowed to be 0 for cap-only cards).
 
-### Database
-- Add `settled_up boolean NOT NULL DEFAULT false` to `public.transactions`.
-- Backfill: leave existing rows as `false` (user can mark them later).
-- No new index needed (filtering is client-side over already-loaded transactions, consistent with current patterns).
+## Types & hooks
+- `CreditCard` interface gets `spend_cap: number | null`.
+- `useAddCreditCard` / `useUpdateCreditCard` accept `spend_cap`.
 
-### Add / Edit Transaction dialogs
-- In `AddTransactionDialog.tsx` and `EditTransactionDialog.tsx`: when the split section is active and "Your share" < total amount, render a `Checkbox` labeled **"Settled up"** with helper sub-text *"Friends have paid back their share."*
-- If the split is removed or share equals total, the value is forced back to `false` on save.
-- Default for new split transactions: `false` (unsettled).
+## Add/Edit dialogs (`AddCreditCardDialog`, `EditCreditCardDialog`)
+- Add a new optional field **"Maximum Spend Cap ($)"** (leave blank = no cap).
+- Relabel min field to make optionality clear (e.g. "Minimum Spend Target ($) — optional").
+- On submit, send `null` when the cap input is blank; otherwise a positive number. Basic validation: if both set, cap ≥ target.
 
-### Transaction list (`TransactionList.tsx`)
-- **Indicator per row**: for split transactions, show a small badge next to the "Yours: $X" line:
-  - Unsettled → amber/warning badge **"Owed"**
-  - Settled → muted check badge **"Settled"**
-  - Clicking the badge toggles `settled_up` directly (optimistic update via `useUpdateTransaction`), so the user can mark things paid without opening the edit dialog.
-- **Filter control**: add a small toggle button in the card header row (next to the month selector area) labeled **"Unsettled only"**. When active:
-  - Filters the list to transactions where `personal_amount < amount AND settled_up = false`.
-  - Visually highlighted (e.g., `variant="default"` when on, `outline` when off).
-  - Works alongside the existing month selector and search.
+## Progress UI (`CreditCardProgress` on dashboard + card row on `Cards` page)
+Behavior driven by which of `spend_target` / `spend_cap` are set:
 
-### Dashboard "Others Owe You" metric
-- Update the metric in `Index.tsx` so settled-up splits are excluded from the "Others Owe You" total. This keeps the number accurate to what's actually still outstanding.
+1. **Min only** (today's behavior): unchanged.
+2. **Cap only**: 
+   - Denominator is the cap. Bar shows charged / cap.
+   - Under cap → default color, subtitle shows remaining headroom (`$X under cap`).
+   - Over cap → bar fills to 100% in **destructive** color, subtitle shows `$Y over cap` in destructive text, warning icon next to card name.
+3. **Both min + cap**:
+   - Bar denominator = cap. Progress fill uses:
+     - warning color while below min (behind pace still applies against min),
+     - success/primary color between min and cap,
+     - destructive once over cap.
+   - Render a **target marker** (small vertical tick) on the bar at `min/cap` position so both thresholds are visible.
+   - Footer line shows both: `Min $target · Cap $cap` and status text (`On pace` / `Behind` / `Over cap by $Y`).
 
-### Types
-- Add `settled_up: boolean` to the `Transaction` interface in `src/hooks/useTransactions.ts`.
-- `src/integrations/supabase/types.ts` regenerates automatically after the migration.
+Over-cap treatment everywhere:
+- Progress bar in destructive color, capped visually at 100%.
+- Explicit "Over cap by $Y" label in destructive text.
+- Small `AlertTriangle` icon in the card header.
 
-### Files to edit
-- New migration (add column + grants already in place)
-- `src/hooks/useTransactions.ts`
-- `src/components/AddTransactionDialog.tsx`
-- `src/components/EditTransactionDialog.tsx`
-- `src/components/TransactionList.tsx`
-- `src/pages/Index.tsx`
+`daysLeft` / on-pace math continues to key off `spend_target` when present; when there is no min, pace indicator is hidden (same as current `target <= 0` branch).
 
-### Out of scope
-- No separate "settlements ledger" or per-friend tracking — this is a single boolean per transaction, matching the existing app's lightweight model.
-- CSV import column for `settled_up` — can add later if needed.
+## Progress component detail
+`Progress` from shadcn only supports a single value. For the "both" case, wrap it in a relative container and absolutely-position a 2px tick at `left: (target/cap)*100%` to mark the min threshold. Fill color is applied via a variant/className on `Progress` (extend `progress.tsx` minimally to accept an `indicatorClassName` if it doesn't already, or wrap it).
+
+## Files to touch
+- `supabase` migration: add `spend_cap` column.
+- `src/hooks/useCreditCards.ts` — type + mutations.
+- `src/components/AddCreditCardDialog.tsx`, `src/components/EditCreditCardDialog.tsx` — new field + validation.
+- `src/components/CreditCardProgress.tsx` — new render logic.
+- `src/pages/Cards.tsx` — mirror the same progress rendering (shares logic; extract a small helper if it stays clean).
+- `src/components/ui/progress.tsx` — allow `indicatorClassName` prop if needed.
+
+## Out of scope
+- No changes to transactions, recurring transactions, or period math in `creditCardPeriod.ts`.
+- No notifications/alerts when nearing/exceeding the cap (visual only).
