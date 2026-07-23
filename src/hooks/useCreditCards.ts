@@ -10,6 +10,7 @@ export interface CreditCard {
   time_period_months: number;
   start_date: string;
   sort_order: number;
+  hidden_from_dropdown: boolean;
   created_at: string;
   updated_at: string;
 }

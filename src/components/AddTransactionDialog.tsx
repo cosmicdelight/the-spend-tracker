@@ -377,7 +377,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
                   <Select value={creditCardId} onValueChange={setCreditCardId}>
                     <SelectTrigger><SelectValue placeholder="Select card" /></SelectTrigger>
                     <SelectContent>
-                      {cards?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      {cards?.filter((c) => !c.hidden_from_dropdown || c.id === creditCardId).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

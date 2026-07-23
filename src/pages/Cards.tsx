@@ -5,7 +5,7 @@ import { useCreditCards, useDeleteCreditCard, useReorderCreditCards, type Credit
 import { useTransactions } from "@/hooks/useTransactions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard as CreditCardIcon, Pencil, GripVertical, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CreditCard as CreditCardIcon, Pencil, GripVertical, AlertTriangle, EyeOff } from "lucide-react";
 import { filterTransactionsForCurrentPeriod } from "@/lib/creditCardPeriod";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import AddCreditCardDialog from "@/components/AddCreditCardDialog";
@@ -75,6 +75,7 @@ export default function Cards() {
                                 <CardTitle className="text-base flex items-center gap-1.5">
                                   {card.name}
                                   {overCap && <AlertTriangle className="h-4 w-4 text-destructive" aria-label="Over cap" />}
+                                  {card.hidden_from_dropdown && <EyeOff className="h-3.5 w-3.5 text-muted-foreground" aria-label="Hidden from dropdown" />}
                                 </CardTitle>
                               </div>
                               <div className="flex items-center gap-1">

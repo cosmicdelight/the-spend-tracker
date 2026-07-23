@@ -1,0 +1,1 @@
+ALTER TABLE public.credit_cards ADD COLUMN IF NOT EXISTS hidden_from_dropdown boolean NOT NULL DEFAULT false;
