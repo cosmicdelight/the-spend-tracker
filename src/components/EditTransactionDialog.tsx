@@ -244,7 +244,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               <Select value={creditCardId} onValueChange={setCreditCardId} required>
                 <SelectTrigger><SelectValue placeholder="Select card" /></SelectTrigger>
                 <SelectContent>
-                  {cards?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {cards?.filter((c) => !c.hidden_from_dropdown || c.id === creditCardId).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
