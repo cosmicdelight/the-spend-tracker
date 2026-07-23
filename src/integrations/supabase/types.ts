@@ -41,6 +41,7 @@ export type Database = {
       credit_cards: {
         Row: {
           created_at: string
+          hidden_from_dropdown: boolean
           id: string
           name: string
           sort_order: number
@@ -53,6 +54,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          hidden_from_dropdown?: boolean
           id?: string
           name: string
           sort_order?: number
@@ -65,6 +67,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          hidden_from_dropdown?: boolean
           id?: string
           name?: string
           sort_order?: number
