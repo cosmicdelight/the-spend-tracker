@@ -63,6 +63,10 @@ export default function EditCreditCardDialog({ card, open, onOpenChange }: Props
           <div className="space-y-1.5"><Label>Maximum Spend Cap ($) <span className="text-muted-foreground font-normal">— optional</span></Label><Input type="number" step="0.01" min="0" value={cap} onChange={(e) => setCap(e.target.value)} placeholder="e.g. 2000 bonus cap" /></div>
           <div className="space-y-1.5"><Label>Time Period (months)</Label><Input type="number" min="1" value={months} onChange={(e) => setMonths(e.target.value)} required /></div>
           <div className="space-y-1.5"><Label>Start Date</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required /></div>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <Checkbox checked={hidden} onCheckedChange={(v) => setHidden(!!v)} className="mt-0.5" />
+            <span className="text-sm leading-snug">Hide from dropdown menus<span className="block text-xs text-muted-foreground">Card still appears on the Dashboard, but won't show when adding a new transaction.</span></span>
+          </label>
           <Button type="submit" className="w-full" disabled={update.isPending}>{update.isPending ? "Saving..." : "Save Changes"}</Button>
         </form>
       </DialogContent>
