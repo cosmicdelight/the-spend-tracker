@@ -20,6 +20,7 @@ export default function EditCreditCardDialog({ card, open, onOpenChange }: Props
   const [cap, setCap] = useState("");
   const [months, setMonths] = useState("");
   const [startDate, setStartDate] = useState("");
+  const [hidden, setHidden] = useState(false);
   const update = useUpdateCreditCard();
   const { toast } = useToast();
 
@@ -30,6 +31,7 @@ export default function EditCreditCardDialog({ card, open, onOpenChange }: Props
       setCap(card.spend_cap == null ? "" : String(card.spend_cap));
       setMonths(String(card.time_period_months));
       setStartDate(card.start_date);
+      setHidden(!!card.hidden_from_dropdown);
     }
   }, [card, open]);
 
@@ -43,7 +45,7 @@ export default function EditCreditCardDialog({ card, open, onOpenChange }: Props
       return;
     }
     update.mutate(
-      { id: card.id, name, spend_target: targetNum, spend_cap: capNum, time_period_months: parseInt(months), start_date: startDate },
+      { id: card.id, name, spend_target: targetNum, spend_cap: capNum, time_period_months: parseInt(months), start_date: startDate, hidden_from_dropdown: hidden },
       {
         onSuccess: () => { toast({ title: "Card updated" }); onOpenChange(false); },
         onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
