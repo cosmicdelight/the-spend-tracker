@@ -28,8 +28,10 @@ export default defineConfig(({ mode }) => {
     env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     FALLBACK_SUPABASE_PUBLISHABLE_KEY;
+  // PWA is on by default so every deploy regenerates sw.js; a stale sw.js left on the
+  // host pins installed PWAs to an old build. Set VITE_ENABLE_PWA=false to opt out.
   const enablePwa =
-    (env.VITE_ENABLE_PWA || process.env.VITE_ENABLE_PWA || "false").toLowerCase() === "true";
+    (env.VITE_ENABLE_PWA || process.env.VITE_ENABLE_PWA || "true").toLowerCase() === "true";
 
   return {
     define: {
