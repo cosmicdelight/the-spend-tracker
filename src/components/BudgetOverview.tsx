@@ -96,7 +96,7 @@ interface GroupedEntry {
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export default function BudgetOverview({ categories, transactions, income }: Props) {
+export default function BudgetOverview({ categories, transactions, income, cards }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [view, setView] = useState<"month" | "year">("month");
   const [showIncome, setShowIncome] = useState(true);
