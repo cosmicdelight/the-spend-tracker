@@ -7,6 +7,9 @@ import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
 import type { IncomeEntry } from "@/hooks/useIncome";
 import SpendingTrendsChart from "@/components/SpendingTrendsChart";
+import SpendByCardBreakdown from "@/components/SpendByCardBreakdown";
+import type { CreditCard } from "@/hooks/useCreditCards";
+
 import EditTransactionDialog from "@/components/EditTransactionDialog";
 
 function CategoryTransactions({ category, transactions }: { category: string; transactions: Transaction[] }) {
@@ -81,6 +84,8 @@ interface Props {
   categories: BudgetCategory[];
   transactions: Transaction[];
   income?: IncomeEntry[];
+  cards?: CreditCard[];
+
 }
 
 interface GroupedEntry {
@@ -91,7 +96,7 @@ interface GroupedEntry {
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export default function BudgetOverview({ categories, transactions, income }: Props) {
+export default function BudgetOverview({ categories, transactions, income, cards }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [view, setView] = useState<"month" | "year">("month");
   const [showIncome, setShowIncome] = useState(true);
@@ -501,7 +506,17 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
       </CardContent>
     </Card>
 
+    <SpendByCardBreakdown
+      cards={cards ?? []}
+      transactions={transactions}
+      view={view}
+      selectedMonth={selectedMonth}
+      selectedYear={selectedYear}
+      periodLabel={periodLabel}
+    />
+
     <SpendingTrendsChart transactions={transactions} income={showIncome ? income : undefined} />
+
 
     {/* Income Breakdown card */}
     {income && showIncome && (

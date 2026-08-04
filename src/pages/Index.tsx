@@ -151,7 +151,7 @@ export default function Index() {
         }
 
         {tab === "budget" &&
-          <BudgetOverview categories={categories} transactions={transactions} income={income} />
+          <BudgetOverview categories={categories} transactions={transactions} income={income} cards={cards} />
         }
       </main>
 
