@@ -84,6 +84,8 @@ interface Props {
   categories: BudgetCategory[];
   transactions: Transaction[];
   income?: IncomeEntry[];
+  cards?: CreditCard[];
+
 }
 
 interface GroupedEntry {
