@@ -501,7 +501,17 @@ export default function BudgetOverview({ categories, transactions, income }: Pro
       </CardContent>
     </Card>
 
+    <SpendByCardBreakdown
+      cards={cards ?? []}
+      transactions={transactions}
+      view={view}
+      selectedMonth={selectedMonth}
+      selectedYear={selectedYear}
+      periodLabel={periodLabel}
+    />
+
     <SpendingTrendsChart transactions={transactions} income={showIncome ? income : undefined} />
+
 
     {/* Income Breakdown card */}
     {income && showIncome && (
