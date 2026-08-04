@@ -7,6 +7,9 @@ import type { BudgetCategory } from "@/hooks/useBudgetCategories";
 import type { Transaction } from "@/hooks/useTransactions";
 import type { IncomeEntry } from "@/hooks/useIncome";
 import SpendingTrendsChart from "@/components/SpendingTrendsChart";
+import SpendByCardBreakdown from "@/components/SpendByCardBreakdown";
+import type { CreditCard } from "@/hooks/useCreditCards";
+
 import EditTransactionDialog from "@/components/EditTransactionDialog";
 
 function CategoryTransactions({ category, transactions }: { category: string; transactions: Transaction[] }) {
