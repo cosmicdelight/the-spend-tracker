@@ -9,6 +9,7 @@ import { useRegisterSW } from "virtual:pwa-register/react";
 const PwaUpdateBanner = () => {
   const { toast } = useToast();
   const [hasVersionMismatch, setHasVersionMismatch] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
@@ -65,6 +66,33 @@ const PwaUpdateBanner = () => {
     };
   }, []);
 
+  // A version mismatch with no waiting worker means the page is being served by a stale
+  // service worker. A plain reload goes through that same worker and returns the cached
+  // build, so the banner would reappear forever; drop the worker and its caches first.
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+
+    if (needRefresh) {
+      void updateServiceWorker(true);
+      return;
+    }
+
+    try {
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+    } catch {
+      // Reload anyway: a plain reload is still better than leaving the user stuck.
+    }
+
+    window.location.reload();
+  };
+
   const shouldShowRefresh = useMemo(() => needRefresh || hasVersionMismatch, [needRefresh, hasVersionMismatch]);
 
   if (!shouldShowRefresh) {
@@ -83,17 +111,11 @@ const PwaUpdateBanner = () => {
           </p>
           <Button
             className="gap-2 sm:shrink-0"
-            onClick={() => {
-              if (needRefresh) {
-                void updateServiceWorker(true);
-                return;
-              }
-
-              window.location.reload();
-            }}
+            disabled={isRefreshing}
+            onClick={() => void handleRefresh()}
           >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Refreshing…" : "Refresh"}
           </Button>
         </CardContent>
       </Card>
