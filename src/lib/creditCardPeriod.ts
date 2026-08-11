@@ -1,14 +1,20 @@
 import { addMonths, parseISO, differenceInDays, isAfter, isBefore } from "date-fns";
 import type { CreditCard } from "@/hooks/useCreditCards";
 
+/** Anything tracked over a recurring spend period — a credit card or a bank. */
+export interface SpendPeriodConfig {
+  start_date: string;
+  time_period_months: number;
+}
+
 /**
- * For a recurring credit card period, find the current active period window.
+ * For a recurring spend period, find the current active period window.
  * E.g. start_date=2026-01-01, time_period_months=1 → periods are Jan, Feb, Mar...
  * Returns { periodStart, periodEnd, daysLeft, totalDays, daysElapsed }
  */
-export function getCurrentCardPeriod(card: CreditCard, now: Date = new Date()) {
-  const start = parseISO(card.start_date);
-  const months = card.time_period_months;
+export function getCurrentPeriod(config: SpendPeriodConfig, now: Date = new Date()) {
+  const start = parseISO(config.start_date);
+  const months = config.time_period_months;
 
   // Find which period we're in by stepping forward from start_date
   let periodStart = start;
@@ -39,6 +45,31 @@ export function getCurrentCardPeriod(card: CreditCard, now: Date = new Date()) {
 }
 
 /**
+ * Filter transactions to those inside the current period that `isMember` accepts.
+ * Dates are compared on the transaction (statement) date.
+ */
+export function filterTransactionsForPeriod<T extends { date: string }>(
+  config: SpendPeriodConfig,
+  transactions: T[],
+  isMember: (tx: T) => boolean,
+  now: Date = new Date(),
+): T[] {
+  const { periodStart, periodEnd } = getCurrentPeriod(config, now);
+  return transactions.filter((t) => {
+    if (!isMember(t)) return false;
+    const txDate = parseISO(t.date);
+    return txDate >= periodStart && txDate < periodEnd;
+  });
+}
+
+/**
+ * For a recurring credit card period, find the current active period window.
+ */
+export function getCurrentCardPeriod(card: CreditCard, now: Date = new Date()) {
+  return getCurrentPeriod(card, now);
+}
+
+/**
  * Filter transactions to only those within the current card period.
  */
 export function filterTransactionsForCurrentPeriod<T extends { date: string; credit_card_id: string | null }>(
@@ -46,10 +77,5 @@ export function filterTransactionsForCurrentPeriod<T extends { date: string; cre
   transactions: T[],
   now: Date = new Date(),
 ): T[] {
-  const { periodStart, periodEnd } = getCurrentCardPeriod(card, now);
-  return transactions.filter((t) => {
-    if (t.credit_card_id !== card.id) return false;
-    const txDate = parseISO(t.date);
-    return txDate >= periodStart && txDate < periodEnd;
-  });
+  return filterTransactionsForPeriod(card, transactions, (t) => t.credit_card_id === card.id, now);
 }

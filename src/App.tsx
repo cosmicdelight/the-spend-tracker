@@ -9,6 +9,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Categories from "./pages/Categories";
 import IncomeCategories from "./pages/IncomeCategories";
 import Cards from "./pages/Cards";
+import Banks from "./pages/Banks";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import PwaUpdateBanner from "./components/PwaUpdateBanner";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/categories" element={<Categories />} />
             <Route path="/income-categories" element={<IncomeCategories />} />
             <Route path="/cards" element={<Cards />} />
+            <Route path="/banks" element={<Banks />} />
             <Route path="/install" element={<Install />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

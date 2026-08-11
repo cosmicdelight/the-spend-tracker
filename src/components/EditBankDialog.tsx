@@ -3,49 +3,38 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUpdateCreditCard, type CreditCard } from "@/hooks/useCreditCards";
-import { useBanks } from "@/hooks/useBanks";
+import { useUpdateBank, type Bank } from "@/hooks/useBanks";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 
 interface Props {
-  card: CreditCard | null;
+  bank: Bank | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-/** Sentinel for "no bank": Radix Select cannot use an empty string as a value. */
-const NO_BANK = "__none__";
-
-export default function EditCreditCardDialog({ card, open, onOpenChange }: Props) {
+export default function EditBankDialog({ bank, open, onOpenChange }: Props) {
   const [name, setName] = useState("");
-  const [bankId, setBankId] = useState<string>(NO_BANK);
   const [target, setTarget] = useState("");
   const [cap, setCap] = useState("");
   const [months, setMonths] = useState("");
   const [startDate, setStartDate] = useState("");
-  const [hidden, setHidden] = useState(false);
-  const update = useUpdateCreditCard();
-  const { data: banks = [] } = useBanks();
+  const update = useUpdateBank();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (card) {
-      setName(card.name);
-      setBankId(card.bank_id ?? NO_BANK);
-      setTarget(String(card.spend_target));
-      setCap(card.spend_cap == null ? "" : String(card.spend_cap));
-      setMonths(String(card.time_period_months));
-      setStartDate(card.start_date);
-      setHidden(!!card.hidden_from_dropdown);
+    if (bank) {
+      setName(bank.name);
+      setTarget(String(bank.spend_target));
+      setCap(bank.spend_cap == null ? "" : String(bank.spend_cap));
+      setMonths(String(bank.time_period_months));
+      setStartDate(bank.start_date);
     }
-  }, [card, open]);
+  }, [bank, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!card) return;
+    if (!bank) return;
     const targetNum = target === "" ? 0 : parseFloat(target);
     const capNum = cap === "" ? null : parseFloat(cap);
     if (capNum !== null && targetNum > 0 && capNum < targetNum) {
@@ -53,9 +42,9 @@ export default function EditCreditCardDialog({ card, open, onOpenChange }: Props
       return;
     }
     update.mutate(
-      { id: card.id, name, bank_id: bankId === NO_BANK ? null : bankId, spend_target: targetNum, spend_cap: capNum, time_period_months: parseInt(months), start_date: startDate, hidden_from_dropdown: hidden },
+      { id: bank.id, name, spend_target: targetNum, spend_cap: capNum, time_period_months: parseInt(months), start_date: startDate },
       {
-        onSuccess: () => { toast({ title: "Card updated" }); onOpenChange(false); },
+        onSuccess: () => { toast({ title: "Bank updated" }); onOpenChange(false); },
         onError: (err) => toast({ title: "Error", description: getErrorMessage(err), variant: "destructive" }),
       },
     );
@@ -64,27 +53,13 @@ export default function EditCreditCardDialog({ card, open, onOpenChange }: Props
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle>Edit Credit Card</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Edit Bank</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5"><Label>Card Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
-          <div className="space-y-1.5">
-            <Label>Bank <span className="text-muted-foreground font-normal">— optional</span></Label>
-            <Select value={bankId} onValueChange={setBankId}>
-              <SelectTrigger><SelectValue placeholder="No bank" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_BANK}>No bank</SelectItem>
-                {banks.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="space-y-1.5"><Label>Bank Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
           <div className="space-y-1.5"><Label>Minimum Spend Target ($) <span className="text-muted-foreground font-normal">— optional</span></Label><Input type="number" step="0.01" min="0" value={target} onChange={(e) => setTarget(e.target.value)} /></div>
           <div className="space-y-1.5"><Label>Maximum Spend Cap ($) <span className="text-muted-foreground font-normal">— optional</span></Label><Input type="number" step="0.01" min="0" value={cap} onChange={(e) => setCap(e.target.value)} placeholder="e.g. 2000 bonus cap" /></div>
           <div className="space-y-1.5"><Label>Time Period (months)</Label><Input type="number" min="1" value={months} onChange={(e) => setMonths(e.target.value)} required /></div>
           <div className="space-y-1.5"><Label>Start Date</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required /></div>
-          <label className="flex items-start gap-2 cursor-pointer">
-            <Checkbox checked={hidden} onCheckedChange={(v) => setHidden(!!v)} className="mt-0.5" />
-            <span className="text-sm leading-snug">Hide from dropdown menus<span className="block text-xs text-muted-foreground">Card still appears on the Dashboard, but won't show when adding a new transaction.</span></span>
-          </label>
           <Button type="submit" className="w-full" disabled={update.isPending}>{update.isPending ? "Saving..." : "Save Changes"}</Button>
         </form>
       </DialogContent>

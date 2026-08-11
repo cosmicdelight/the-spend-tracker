@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { useBanks } from "@/hooks/useBanks";
 import { useTransactions, useDeleteTransaction } from "@/hooks/useTransactions";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useTransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
@@ -11,6 +12,7 @@ import ImportTransactionsDialog from "@/components/ImportTransactionsDialog";
 import AddRecurringTransactionDialog from "@/components/AddRecurringTransactionDialog";
 import AddRecurringIncomeDialog from "@/components/AddRecurringIncomeDialog";
 import CreditCardProgress from "@/components/CreditCardProgress";
+import BankProgress from "@/components/BankProgress";
 import BudgetOverview from "@/components/BudgetOverview";
 import TransactionList from "@/components/TransactionList";
 import TransactionFieldSettings from "@/components/TransactionFieldSettings";
@@ -22,13 +24,14 @@ import DemoBanner from "@/components/DemoBanner";
 import OnboardingTour from "@/components/OnboardingTour";
 import IndexPageSkeleton from "@/components/IndexPageSkeleton";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet, Settings, CreditCard, LayoutDashboard, PieChart, List, TrendingUp } from "lucide-react";
+import { LogOut, Wallet, Settings, CreditCard, Landmark, LayoutDashboard, PieChart, List, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DEMO_EMAIL } from "@/lib/seedDemoData";
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
   const { data: cards = [] } = useCreditCards();
+  const { data: banks = [] } = useBanks();
   const { data: transactions = [] } = useTransactions();
   const { data: categories = [] } = useBudgetCategories();
   const deleteTx = useDeleteTransaction();
@@ -104,6 +107,18 @@ export default function Index() {
               <div data-tour="import-csv-button"><ImportTransactionsDialog /></div>
             </div>
 
+            {/* Banks */}
+            {banks.length > 0 &&
+          <section>
+                <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Bank Progress</h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {banks.map((bank) =>
+              <BankProgress key={bank.id} bank={bank} cards={cards} transactions={transactions} />
+              )}
+                </div>
+              </section>
+          }
+
             {/* Credit Cards */}
             {cards.length > 0 &&
           <section>
@@ -126,6 +141,9 @@ export default function Index() {
               <AddRecurringTransactionDialog />
               <Link to="/cards">
                 <Button variant="outline" size="sm"><CreditCard className="mr-1 h-3 w-3" />Manage Cards</Button>
+              </Link>
+              <Link to="/banks">
+                <Button variant="outline" size="sm"><Landmark className="mr-1 h-3 w-3" />Manage Banks</Button>
               </Link>
               <Link to="/categories">
                 <Button variant="outline" size="sm"><Settings className="mr-1 h-3 w-3" />Manage Categories</Button>

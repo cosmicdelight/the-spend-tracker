@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
     admin.from("income").delete().eq("user_id", userId),
     admin.from("recurring_transactions").delete().eq("user_id", userId),
     admin.from("credit_cards").delete().eq("user_id", userId),
+    admin.from("banks").delete().eq("user_id", userId),
     admin.from("budget_categories").delete().eq("user_id", userId),
     admin.from("income_categories").delete().eq("user_id", userId),
     admin.from("payment_modes").delete().eq("user_id", userId).eq("is_system", false),
@@ -155,9 +156,17 @@ Deno.serve(async (req) => {
   const cc1 = "cc000001-0000-0000-0000-000000000001";
   const cc2 = "cc000002-0000-0000-0000-000000000002";
 
+  const bank1 = "bb000001-0000-0000-0000-000000000001";
+  const bank2 = "bb000002-0000-0000-0000-000000000002";
+
+  const banks = [
+    { id: bank1, user_id: userId, name: "Chase",         spend_target: 500, spend_cap: 2000, start_date: date(0, 1), time_period_months: 1, sort_order: 1 },
+    { id: bank2, user_id: userId, name: "American Express", spend_target: 300, spend_cap: 1500, start_date: date(0, 1), time_period_months: 1, sort_order: 2 },
+  ];
+
   const cards = [
-    { id: cc1, user_id: userId, name: "Chase Sapphire", spend_target: 4000, start_date: date(-2, 1), time_period_months: 3, sort_order: 0 },
-    { id: cc2, user_id: userId, name: "Amex Gold",      spend_target: 3000, start_date: date(-1, 1), time_period_months: 3, sort_order: 1 },
+    { id: cc1, user_id: userId, name: "Chase Sapphire", bank_id: bank1, spend_target: 4000, start_date: date(-2, 1), time_period_months: 3, sort_order: 0 },
+    { id: cc2, user_id: userId, name: "Amex Gold",      bank_id: bank2, spend_target: 3000, start_date: date(-1, 1), time_period_months: 3, sort_order: 1 },
   ];
 
   const rawTx = [
@@ -286,7 +295,15 @@ Deno.serve(async (req) => {
     },
   ];
 
-  // 5. Insert everything (cards first due to FK constraints)
+  // 5. Insert everything (banks, then cards, due to FK constraints)
+  const banksRes = await admin.from("banks").insert(banks);
+  if (banksRes.error) {
+    return new Response(JSON.stringify({ error: [banksRes.error.message] }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const cardsRes = await admin.from("credit_cards").insert(cards);
   if (cardsRes.error) {
     return new Response(JSON.stringify({ error: [cardsRes.error.message] }), {

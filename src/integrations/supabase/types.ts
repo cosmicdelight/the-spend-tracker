@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      banks: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          spend_cap: number | null
+          spend_target: number
+          start_date: string
+          time_period_months: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          spend_cap?: number | null
+          spend_target?: number
+          start_date?: string
+          time_period_months?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          spend_cap?: number | null
+          spend_target?: number
+          start_date?: string
+          time_period_months?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       budget_categories: {
         Row: {
           created_at: string
@@ -40,6 +79,7 @@ export type Database = {
       }
       credit_cards: {
         Row: {
+          bank_id: string | null
           created_at: string
           hidden_from_dropdown: boolean
           id: string
@@ -53,6 +93,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bank_id?: string | null
           created_at?: string
           hidden_from_dropdown?: boolean
           id?: string
@@ -66,6 +107,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bank_id?: string | null
           created_at?: string
           hidden_from_dropdown?: boolean
           id?: string
@@ -78,7 +120,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "credit_cards_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       income: {
         Row: {
