@@ -1,5 +1,5 @@
 -- Banks: group credit cards so spend can be tracked per bank as well as per card.
-CREATE TABLE public.banks (
+CREATE TABLE IF NOT EXISTS public.banks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name text NOT NULL,
@@ -14,6 +14,7 @@ CREATE TABLE public.banks (
 
 ALTER TABLE public.banks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own banks" ON public.banks;
 CREATE POLICY "Users manage own banks"
   ON public.banks
   FOR ALL
@@ -21,6 +22,7 @@ CREATE POLICY "Users manage own banks"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+DROP TRIGGER IF EXISTS update_banks_updated_at ON public.banks;
 CREATE TRIGGER update_banks_updated_at
   BEFORE UPDATE ON public.banks
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
