@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      banks: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          spend_cap: number | null
+          spend_target: number
+          start_date: string
+          time_period_months: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          spend_cap?: number | null
+          spend_target?: number
+          start_date?: string
+          time_period_months?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          spend_cap?: number | null
+          spend_target?: number
+          start_date?: string
+          time_period_months?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       budget_categories: {
         Row: {
           created_at: string
@@ -40,6 +79,7 @@ export type Database = {
       }
       credit_cards: {
         Row: {
+          bank_id: string | null
           created_at: string
           hidden_from_dropdown: boolean
           id: string
@@ -53,6 +93,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bank_id?: string | null
           created_at?: string
           hidden_from_dropdown?: boolean
           id?: string
@@ -66,6 +107,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bank_id?: string | null
           created_at?: string
           hidden_from_dropdown?: boolean
           id?: string
@@ -77,6 +119,56 @@ export type Database = {
           time_period_months?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_cards_bank_id_fkey"
+            columns: ["bank_id"]
+            isOneToOne: false
+            referencedRelation: "banks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_cards_backup_20260820: {
+        Row: {
+          created_at: string | null
+          hidden_from_dropdown: boolean | null
+          id: string | null
+          name: string | null
+          sort_order: number | null
+          spend_cap: number | null
+          spend_target: number | null
+          start_date: string | null
+          time_period_months: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          hidden_from_dropdown?: boolean | null
+          id?: string | null
+          name?: string | null
+          sort_order?: number | null
+          spend_cap?: number | null
+          spend_target?: number | null
+          start_date?: string | null
+          time_period_months?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          hidden_from_dropdown?: boolean | null
+          id?: string | null
+          name?: string | null
+          sort_order?: number | null
+          spend_cap?: number | null
+          spend_target?: number | null
+          start_date?: string | null
+          time_period_months?: number | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
