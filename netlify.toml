@@ -1,0 +1,15 @@
+[build]
+  command = "BUILD_ID=$COMMIT_REF npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback, mirroring the `try_files $uri $uri/ /index.html` rule that
+# nginx.conf already uses for the Docker path. Netlify serves real files
+# first for status-200 rewrites, so /sw.js, /manifest.webmanifest and
+# /version.json are unaffected. Keep this last.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
