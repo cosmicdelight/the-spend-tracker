@@ -31,13 +31,12 @@ test.describe('The Spend Tracker', () => {
     const csvContent = 'date,amount,personal_amount,category,sub_category,payment_mode,description,notes\n' +
                        '2026-03-01,100.00,100.00,Dining,,credit_card,"Dinner, with friends",test notes';
 
-    // 4. Upload it from memory. The previous version wrote a temp file via
-    //    __dirname, which does not exist under "type": "module" — the test threw
-    //    ReferenceError before it asserted anything.
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.locator('input[type="file"]').click();
-    const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles({
+    // 4. Set the file straight on the input. The input is class="hidden", so the
+    //    old click-then-await-filechooser approach could never work: Playwright
+    //    refuses to click an invisible element. setInputFiles drives hidden inputs
+    //    directly, and takes the fixture from memory so there is no temp file and
+    //    no __dirname (absent under "type": "module").
+    await page.locator('input[type="file"]').setInputFiles({
       name: 'test_import.csv',
       mimeType: 'text/csv',
       buffer: Buffer.from(csvContent),
