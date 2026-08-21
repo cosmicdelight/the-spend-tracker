@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCSVLines, parseExpenseCSV, parseIncomeCSV } from "@/lib/csvImport";
+import { parseCSVLines, parseExpenseCSV, parseIncomeCSV, parseMoney } from "@/lib/csvImport";
 
 describe("parseCSVLines", () => {
   it("returns error when file has no header or data", () => {
@@ -16,7 +16,7 @@ describe("parseCSVLines", () => {
     expect("error" in result).toBe(false);
     if (!("error" in result)) {
       expect(result.headers).toEqual(["date", "amount", "category"]);
-      expect(result.lines).toEqual(["2024-01-15,50.00,Food"]);
+      expect(result.rows).toEqual([["2024-01-15", "50.00", "Food"]]);
     }
   });
 
@@ -94,5 +94,80 @@ describe("parseIncomeCSV", () => {
       description: "Monthly pay",
       notes: null,
     });
+  });
+});
+
+describe("parseMoney", () => {
+  it("reads plain numbers", () => {
+    expect(parseMoney("1234.56")).toBe(1234.56);
+    expect(parseMoney("0")).toBe(0);
+    expect(parseMoney(" 42 ")).toBe(42);
+  });
+
+  it("reads comma thousands separators instead of truncating them", () => {
+    // parseFloat("1,234.56") returns 1 — the bug this function exists to prevent.
+    expect(parseMoney("1,234.56")).toBe(1234.56);
+    expect(parseMoney("1,234,567")).toBe(1234567);
+  });
+
+  it("reads a leading currency symbol or ISO code", () => {
+    expect(parseMoney("$1,234.56")).toBe(1234.56);
+    expect(parseMoney("S$45")).toBe(45);
+    expect(parseMoney("SGD 20")).toBe(20);
+  });
+
+  it("reads negatives, including accounting parentheses", () => {
+    expect(parseMoney("-10")).toBe(-10);
+    expect(parseMoney("(45.00)")).toBe(-45);
+  });
+
+  it("rejects rather than truncating anything it cannot read exactly", () => {
+    expect(parseMoney("45 CR")).toBeNull();
+    expect(parseMoney("12abc")).toBeNull();
+    expect(parseMoney("1,23.45")).toBeNull(); // malformed grouping
+    expect(parseMoney("1.2.3")).toBeNull();
+    expect(parseMoney("")).toBeNull();
+    expect(parseMoney("abc")).toBeNull();
+  });
+});
+
+describe("CSV quoting (RFC 4180)", () => {
+  const validHeaders = "date,amount,personal_amount,category,sub_category,payment_mode,description,notes";
+
+  it("keeps quoted commas inside a field", () => {
+    const csv = `${validHeaders}\n2024-01-15,"1,234.56","1,234.56",Food,,cash,"Dinner, drinks",`;
+    const result = parseExpenseCSV(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].amount).toBe(1234.56);
+    expect(result.rows[0].description).toBe("Dinner, drinks");
+  });
+
+  it("unescapes doubled quotes", () => {
+    const csv = `${validHeaders}\n2024-01-15,10,10,Food,,cash,"He said ""hi""",`;
+    const result = parseExpenseCSV(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0].description).toBe('He said "hi"');
+  });
+
+  it("keeps a quoted field containing a newline as one row", () => {
+    const csv = `${validHeaders}\n2024-01-15,10,10,Food,,cash,"Line one\nLine two",`;
+    const result = parseExpenseCSV(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].description).toBe("Line one Line two");
+  });
+
+  it("handles CRLF line endings", () => {
+    const csv = `${validHeaders}\r\n2024-01-15,10,10,Food,,cash,Lunch,\r\n`;
+    const result = parseExpenseCSV(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.rows).toHaveLength(1);
+  });
+
+  it("reports an unreadable amount instead of importing a wrong value", () => {
+    const csv = `${validHeaders}\n2024-01-15,45 CR,45,Food,,cash,Refund,`;
+    const result = parseExpenseCSV(csv);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors.some((e) => e.includes('could not read amount "45 CR"'))).toBe(true);
   });
 });
