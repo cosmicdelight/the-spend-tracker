@@ -70,18 +70,21 @@ test.describe('The Spend Tracker', () => {
     
     // 6. Complete import and check original_amount (bug 1 check)
     await page.getByRole('button', { name: /Import 1 expenses/i }).click();
-    await expect(page.getByText(/Import successful/i)).toBeVisible();
+    // The toast renders its title and an aria-live announcement containing the same
+    // words, so an unqualified getByText matches two nodes and trips strict mode.
+    await expect(page.getByText(/Import successful/i).first()).toBeVisible();
 
     // 7. Go to Expenses tab and check the transaction
-    await page.getByRole('button', { name: /Expenses/i, exact: true }).click();
-    await expect(page.getByText(/Dinner, with friends/i)).toBeVisible();
-    
+    await page.getByRole('button', { name: /Expenses/i }).first().click();
+    const importedRow = page.getByText(/Dinner, with friends/i).first();
+    await expect(importedRow).toBeVisible();
+
     // Click to edit and check original amount
-    await page.getByText(/Dinner, with friends/i).click();
-    
+    await importedRow.click();
+
     // We expect original_amount to be 100.00 but bug says it's 0
-    const originalAmountLabel = page.locator('text=Original:');
-    if (await originalAmountLabel.isVisible()) {
+    const originalAmountLabel = page.locator('text=Original:').first();
+    if (await originalAmountLabel.isVisible().catch(() => false)) {
         const text = await originalAmountLabel.textContent();
         console.log('Original amount in UI:', text);
     }
