@@ -28,8 +28,14 @@ test.describe('The Spend Tracker', () => {
     await expect(page.getByText(/Import from CSV/i)).toBeVisible();
 
     // 3. Create a CSV file with a quoted comma in description
+    // Date the fixture to today: the Expenses list filters to the selected month,
+    // which defaults to the current one, so a hardcoded past date would import fine
+    // and then be correctly invisible in step 7. Built from local parts rather than
+    // toISOString(), which is UTC and rolls the date over early in +08:00.
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const csvContent = 'date,amount,personal_amount,category,sub_category,payment_mode,description,notes\n' +
-                       '2026-03-01,100.00,100.00,Dining,,credit_card,"Dinner, with friends",test notes';
+                       `${today},100.00,100.00,Dining,,credit_card,"Dinner, with friends",test notes`;
 
     // 4. Set the file straight on the input. The input is class="hidden", so the
     //    old click-then-await-filechooser approach could never work: Playwright
