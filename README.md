@@ -2,7 +2,7 @@
 
 A budget and finance tracker that separates your **actual spending** from **credit card spending** so you can stay on track toward your monthly minimum spend goals — and know what counts as your own expenditure vs. split expenses (e.g., when you pay for the table and friends pay you back).
 
-[Live demo](https://the-spend-tracker.lovable.app/) · [GitHub](https://github.com/cosmicdelight/the-spend-tracker)
+[Live demo](https://the-spend-tracker.netlify.app/) · [GitHub](https://github.com/cosmicdelight/the-spend-tracker)
 
 ---
 
@@ -36,7 +36,9 @@ A budget and finance tracker that separates your **actual spending** from **cred
 
 ## Live demo
 
-**[the-spend-tracker.lovable.app](https://the-spend-tracker.lovable.app/)** — being retired, see [Deployment](#deployment).
+**[the-spend-tracker.netlify.app](https://the-spend-tracker.netlify.app/)**
+
+The old Lovable origin (`the-spend-tracker.lovable.app`) is being retired — see [Deployment](#deployment).
 
 Use **Try Demo** on the login screen to explore without signing up.
 
