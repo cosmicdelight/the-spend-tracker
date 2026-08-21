@@ -68,7 +68,7 @@ jobs:
           set +a
           rm -f supabase-status.env
 
-          for name in API_URL ANON_KEY SERVICE_ROLE_KEY; do
+          for name in API_URL ANON_KEY SERVICE_ROLE_KEY DB_URL; do
             if [ -z "${!name}" ]; then
               echo "::error::supabase status did not report $name. Keys it did report:"
               supabase status -o env | cut -d= -f1
@@ -78,11 +78,25 @@ jobs:
 
           echo "::add-mask::$ANON_KEY"
           echo "::add-mask::$SERVICE_ROLE_KEY"
+          echo "::add-mask::$DB_URL"
           {
             echo "VITE_SUPABASE_URL=$API_URL"
             echo "VITE_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY"
             echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "DB_URL=$DB_URL"
           } >> "$GITHUB_ENV"
+      - name: Grant table privileges on the local stack
+        run: |
+          # The migrations create tables but never GRANT on them. The hosted project
+          # only works because Supabase applied default privileges when the project
+          # was created; a fresh local stack has no such history, so service_role
+          # cannot write and seeding fails with 42501. Mirror the hosted grants so
+          # e2e exercises the same permissions production has.
+          psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+          GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+          GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+          SQL
       - name: Seed local database
         run: node scripts/seed-local.js
       - name: Install Playwright Browsers
