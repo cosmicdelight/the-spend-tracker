@@ -47,7 +47,17 @@ test.describe('The Spend Tracker', () => {
     
     // If the quoted comma bug exists, the description might be messed up or columns shifted
     // Wait for preview step
-    await page.getByRole('button', { name: /Confirm & continue/i }).click();
+    // The review step only renders when the CSV introduces categories that need
+    // resolving — handleProceed goes straight to preview otherwise. This CSV uses
+    // "Dining", which the seed already creates, so the step is skipped. Wait for
+    // the flow to settle on either step, then click review only if it is there.
+    await expect(
+      page.getByRole('button', { name: /Confirm & continue|Import \d+ expenses/i }).first()
+    ).toBeVisible();
+    const confirmReview = page.getByRole('button', { name: /Confirm & continue/i });
+    if (await confirmReview.count()) {
+      await confirmReview.click();
+    }
     
     const descriptionCell = page.locator('table tbody tr td').last();
     const descriptionText = await descriptionCell.textContent();
