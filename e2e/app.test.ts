@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
 
 test.describe('The Spend Tracker', () => {
   test('should log in via Try Demo and show dashboard', async ({ page }) => {
@@ -32,14 +30,18 @@ test.describe('The Spend Tracker', () => {
     // 3. Create a CSV file with a quoted comma in description
     const csvContent = 'date,amount,personal_amount,category,sub_category,payment_mode,description,notes\n' +
                        '2026-03-01,100.00,100.00,Dining,,credit_card,"Dinner, with friends",test notes';
-    const csvPath = path.join(__dirname, 'test_import.csv');
-    fs.writeFileSync(csvPath, csvContent);
 
-    // 4. Upload the file
+    // 4. Upload it from memory. The previous version wrote a temp file via
+    //    __dirname, which does not exist under "type": "module" — the test threw
+    //    ReferenceError before it asserted anything.
     const fileChooserPromise = page.waitForEvent('filechooser');
     await page.locator('input[type="file"]').click();
     const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles(csvPath);
+    await fileChooser.setFiles({
+      name: 'test_import.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvContent),
+    });
 
     // 5. Check if it parsed correctly (bug 2 check)
     await page.getByRole('button', { name: /Continue/i }).click();
