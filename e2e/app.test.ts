@@ -1,6 +1,4 @@
 import { test, expect } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
 
 test.describe('The Spend Tracker', () => {
   test('should log in via Try Demo and show dashboard', async ({ page }) => {
@@ -30,23 +28,42 @@ test.describe('The Spend Tracker', () => {
     await expect(page.getByText(/Import from CSV/i)).toBeVisible();
 
     // 3. Create a CSV file with a quoted comma in description
+    // Date the fixture to today: the Expenses list filters to the selected month,
+    // which defaults to the current one, so a hardcoded past date would import fine
+    // and then be correctly invisible in step 7. Built from local parts rather than
+    // toISOString(), which is UTC and rolls the date over early in +08:00.
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const csvContent = 'date,amount,personal_amount,category,sub_category,payment_mode,description,notes\n' +
-                       '2026-03-01,100.00,100.00,Dining,,credit_card,"Dinner, with friends",test notes';
-    const csvPath = path.join(__dirname, 'test_import.csv');
-    fs.writeFileSync(csvPath, csvContent);
+                       `${today},100.00,100.00,Dining,,credit_card,"Dinner, with friends",test notes`;
 
-    // 4. Upload the file
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.locator('input[type="file"]').click();
-    const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles(csvPath);
+    // 4. Set the file straight on the input. The input is class="hidden", so the
+    //    old click-then-await-filechooser approach could never work: Playwright
+    //    refuses to click an invisible element. setInputFiles drives hidden inputs
+    //    directly, and takes the fixture from memory so there is no temp file and
+    //    no __dirname (absent under "type": "module").
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'test_import.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csvContent),
+    });
 
     // 5. Check if it parsed correctly (bug 2 check)
     await page.getByRole('button', { name: /Continue/i }).click();
     
     // If the quoted comma bug exists, the description might be messed up or columns shifted
     // Wait for preview step
-    await page.getByRole('button', { name: /Confirm & continue/i }).click();
+    // The review step only renders when the CSV introduces categories that need
+    // resolving — handleProceed goes straight to preview otherwise. This CSV uses
+    // "Dining", which the seed already creates, so the step is skipped. Wait for
+    // the flow to settle on either step, then click review only if it is there.
+    await expect(
+      page.getByRole('button', { name: /Confirm & continue|Import \d+ expenses/i }).first()
+    ).toBeVisible();
+    const confirmReview = page.getByRole('button', { name: /Confirm & continue/i });
+    if (await confirmReview.count()) {
+      await confirmReview.click();
+    }
     
     const descriptionCell = page.locator('table tbody tr td').last();
     const descriptionText = await descriptionCell.textContent();
@@ -59,18 +76,21 @@ test.describe('The Spend Tracker', () => {
     
     // 6. Complete import and check original_amount (bug 1 check)
     await page.getByRole('button', { name: /Import 1 expenses/i }).click();
-    await expect(page.getByText(/Import successful/i)).toBeVisible();
+    // The toast renders its title and an aria-live announcement containing the same
+    // words, so an unqualified getByText matches two nodes and trips strict mode.
+    await expect(page.getByText(/Import successful/i).first()).toBeVisible();
 
     // 7. Go to Expenses tab and check the transaction
-    await page.getByRole('button', { name: /Expenses/i, exact: true }).click();
-    await expect(page.getByText(/Dinner, with friends/i)).toBeVisible();
-    
+    await page.getByRole('button', { name: /Expenses/i }).first().click();
+    const importedRow = page.getByText(/Dinner, with friends/i).first();
+    await expect(importedRow).toBeVisible();
+
     // Click to edit and check original amount
-    await page.getByText(/Dinner, with friends/i).click();
-    
+    await importedRow.click();
+
     // We expect original_amount to be 100.00 but bug says it's 0
-    const originalAmountLabel = page.locator('text=Original:');
-    if (await originalAmountLabel.isVisible()) {
+    const originalAmountLabel = page.locator('text=Original:').first();
+    if (await originalAmountLabel.isVisible().catch(() => false)) {
         const text = await originalAmountLabel.textContent();
         console.log('Original amount in UI:', text);
     }

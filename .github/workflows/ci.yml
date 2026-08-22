@@ -28,6 +28,10 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     needs: quality-check
+    env:
+      # Not a secret: this only ever authenticates the throwaway demo account on the
+      # ephemeral local Supabase that this job starts and discards.
+      DEMO_PASSWORD: e2e-demo-password
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
@@ -40,31 +44,69 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned deliberately. Under `latest` the CLI changed its `status` output
+          # and silently broke the credential extraction below, so this job failed on
+          # every run for weeks while still looking like a normal red check.
+          version: 2.115.0
+      - name: Configure local edge function secrets
+        run: |
+          # demo-login reads DEMO_PASSWORD. supabase/functions/.env is gitignored,
+          # so CI has to write it before the functions runtime starts.
+          printf 'DEMO_PASSWORD=%s\n' "$DEMO_PASSWORD" > supabase/functions/.env
       - name: Start Supabase
         run: supabase start
+      - name: Export Supabase connection parameters
+        run: |
+          # `supabase status -o env` is the documented way to export connection
+          # parameters, and its keys are UPPERCASE (API_URL, ANON_KEY,
+          # SERVICE_ROLE_KEY). This step used to grep the JSON output for lowercase
+          # "anon_key"/"service_role_key", silently produced empty strings, and the
+          # run died three steps later with "supabaseKey is required."
+          supabase status -o env > supabase-status.env
+          set -a
+          . ./supabase-status.env
+          set +a
+          rm -f supabase-status.env
+
+          for name in API_URL ANON_KEY SERVICE_ROLE_KEY DB_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::supabase status did not report $name. Keys it did report:"
+              supabase status -o env | cut -d= -f1
+              exit 1
+            fi
+          done
+
+          echo "::add-mask::$ANON_KEY"
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+          echo "::add-mask::$DB_URL"
+          {
+            echo "VITE_SUPABASE_URL=$API_URL"
+            echo "VITE_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "DB_URL=$DB_URL"
+          } >> "$GITHUB_ENV"
+      - name: Grant table privileges on the local stack
+        run: |
+          # The migrations create tables but never GRANT on them. The hosted project
+          # only works because Supabase applied default privileges when the project
+          # was created; a fresh local stack has no such history, so service_role
+          # cannot write and seeding fails with 42501. Mirror the hosted grants so
+          # e2e exercises the same permissions production has.
+          psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+          GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+          GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+          SQL
+      - name: Seed local database
+        run: node scripts/seed-local.js
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
-      - name: Run Playwright E2E Tests
+      - name: Start app
         run: |
-          # Extract dynamic keys
-          VITE_SUPABASE_URL=$(supabase status -o json | grep '"api_url"' | awk -F'"' '{print $4}')
-          VITE_SUPABASE_PUBLISHABLE_KEY=$(supabase status -o json | grep '"anon_key"' | awk -F'"' '{print $4}')
-          export SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | grep '"service_role_key"' | awk -F'"' '{print $4}')
-          
-          # Seed data first
-          export VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-          export VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
-          node scripts/seed-local.js
-          
-          # Start app in background
           npm run dev &
-          
-          # Wait for app to be ready
-          npx wait-on http://localhost:8080
-          
-          # Run tests
-          npx playwright test --project=chromium
+          npx wait-on http://localhost:8080 --timeout 120000
+      - name: Run Playwright E2E Tests
+        run: npx playwright test --project=chromium
       - uses: actions/upload-artifact@v4
         if: always()
         with:
