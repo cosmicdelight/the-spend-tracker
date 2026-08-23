@@ -24,6 +24,21 @@ jobs:
         run: npx tsc --noEmit
       - name: Unit Tests (Vitest)
         run: npm run test
+      - name: Build
+        run: npm run build
+      - name: Assert the service worker caches no authenticated responses
+        run: |
+          # A runtimeCaching rule for Supabase once cached authenticated responses in a
+          # cache keyed by URL alone, so one account's rows could be served to the next
+          # on a shared device. The rule is gone; this keeps it gone. Cache Storage has
+          # no access to the Authorization header, so nothing whose contents depend on
+          # the caller's identity can be cached safely here.
+          if grep -q "supabase" dist/sw.js; then
+            echo "::error file=vite.config.ts::dist/sw.js references Supabase. A runtime cache keyed by URL cannot distinguish between accounts — see the note on runtimeCaching in vite.config.ts."
+            grep -n "supabase" dist/sw.js
+            exit 1
+          fi
+          echo "OK: sw.js registers no Supabase runtime caching"
 
   e2e-tests:
     runs-on: ubuntu-latest

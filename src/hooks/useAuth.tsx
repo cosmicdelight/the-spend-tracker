@@ -11,11 +11,12 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ error: AuthError | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** Must be rendered inside a QueryClientProvider — sign-out clears the query cache. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -75,13 +76,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    // Signing out has to take the user's data with it. React Query keys by user id so
-    // the next account never reads these entries, but the rows stay in memory until a
-    // reload; the service worker cache is worse, since it survives on disk.
-    await purgeUserDataCaches();
-    queryClient.clear();
+  const signOut = async (): Promise<{ error: AuthError | null }> => {
+    let error: AuthError | null = null;
+    try {
+      ({ error } = await supabase.auth.signOut());
+    } catch (caught) {
+      // supabase-js returns { error } for AuthErrors but re-throws anything else, a
+      // network fault included.
+      error = caught as AuthError;
+    } finally {
+      // Runs even when revocation failed: a network error must not leave the previous
+      // account's rows readable. Memory first — clear() is synchronous — then the disk
+      // caches, so nothing is served from memory while the delete is in flight.
+      queryClient.clear();
+      await purgeUserDataCaches();
+    }
+    return { error };
   };
 
   return (
