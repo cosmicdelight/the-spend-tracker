@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import type { ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { purgeUserDataCaches } from "@/lib/userDataCaches";
 import type { User, Session, AuthError } from "@supabase/supabase-js";
 
 interface AuthContextType {
@@ -18,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     let isMounted = true;
@@ -74,6 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Signing out has to take the user's data with it. React Query keys by user id so
+    // the next account never reads these entries, but the rows stay in memory until a
+    // reload; the service worker cache is worse, since it survives on disk.
+    await purgeUserDataCaches();
+    queryClient.clear();
   };
 
   return (
