@@ -66,16 +66,14 @@ export default defineConfig(({ mode }) => {
             skipWaiting: true,
             navigateFallbackDenylist: [/^\/~oauth/],
             globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-            runtimeCaching: [
-              {
-                urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-                handler: "NetworkFirst",
-                options: {
-                  cacheName: "supabase-api",
-                  expiration: { maxEntries: 50, maxAgeSeconds: 300 },
-                },
-              },
-            ],
+            // No runtimeCaching for Supabase. A NetworkFirst rule here used to cache
+            // every *.supabase.co response — including authenticated /rest/v1 rows and
+            // /auth/v1 token payloads — in a "supabase-api" cache keyed by URL alone.
+            // The signed-in user is carried in the Authorization header, which is not
+            // part of the cache key, so on a shared device one account's transactions
+            // could be served to the next from disk whenever the network dropped.
+            // Nothing cleared it on sign-out either. The precache above still gives the
+            // PWA its offline shell; the 5-minute API cache bought almost nothing.
           },
           manifest: {
             name: "SpendTracker",
