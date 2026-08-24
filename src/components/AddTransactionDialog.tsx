@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { Link } from "react-router-dom";
+import { isSplitExpense } from "@/lib/splitExpense";
 
 export interface DuplicateTransactionData {
   amount: string;
@@ -181,7 +182,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
           original_currency: activeCurrency,
           original_amount: amtNum,
-          settled_up: sgdPersonal < sgdAmount ? settledUp : false,
+          settled_up: isSplitExpense(sgdPersonal, sgdAmount) ? settledUp : false,
         },
         {
           onSuccess: async (transactionId) => {
@@ -313,7 +314,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           )}
 
           {/* Settled-up checkbox (only when this is a split) */}
-          {type === "expense" && personalNum > 0 && personalNum < amtNum && (
+          {type === "expense" && isSplitExpense(personalNum, amtNum) && (
             <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-2.5 cursor-pointer">
               <input
                 type="checkbox"

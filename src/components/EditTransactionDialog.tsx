@@ -20,6 +20,7 @@ import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
+import { isSplitExpense } from "@/lib/splitExpense";
 
 interface Props {
   transaction: Transaction | null;
@@ -118,7 +119,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
         sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
         original_currency: activeCurrency,
         original_amount: amtNum,
-        settled_up: sgdPersonal < sgdAmount ? settledUp : false,
+        settled_up: isSplitExpense(sgdPersonal, sgdAmount) ? settledUp : false,
       },
       {
         onSuccess: () => {
@@ -190,7 +191,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
               {ratesLoading && " (loading rates...)"}
             </p>
           )}
-          {personalNum > 0 && personalNum < amtNum && (
+          {isSplitExpense(personalNum, amtNum) && (
             <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-2.5 cursor-pointer">
               <input
                 type="checkbox"
