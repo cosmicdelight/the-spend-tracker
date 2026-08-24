@@ -29,7 +29,7 @@ export default function BankProgress({ bank, cards, transactions }: Props) {
       </CardHeader>
       <CardContent className="space-y-3">
         <SpendProgressBlock config={bank} periodTransactions={periodTxs} />
-        <p className="text-xs text-muted-foreground truncate">
+        <p className="text-xs text-muted-foreground break-words">
           {bankCards.length === 0
             ? "No cards assigned yet"
             : `${bankCards.length} card${bankCards.length === 1 ? "" : "s"}: ${bankCards.map((c) => c.name).join(", ")}`}
