@@ -45,6 +45,7 @@ async function seed() {
   await supabase.from('income').delete().eq('user_id', userId);
   await supabase.from('recurring_transactions').delete().eq('user_id', userId);
   await supabase.from('credit_cards').delete().eq('user_id', userId);
+  await supabase.from('banks').delete().eq('user_id', userId);
   await supabase.from('budget_categories').delete().eq('user_id', userId);
 
   // 3. Seed Categories
@@ -54,12 +55,30 @@ async function seed() {
   const { error: catError } = await supabase.from('budget_categories').insert(cats);
   if (catError) throw catError;
 
-  // 4. Seed Credit Cards
-  console.log('Seeding credit cards...');
+  // 4. Seed a bank, then the cards assigned to it.
+  //    Several cards with realistic names is deliberate, not decoration: the dashboard
+  //    lists a bank's cards on one line, and the length of that line is what used to
+  //    push the bank card past the viewport on mobile. A bank with one short-named card
+  //    would leave that regression untestable.
+  console.log('Seeding bank...');
   const today = new Date().toISOString().split('T')[0];
+  const { data: bank, error: bankError } = await supabase.from('banks').insert({
+    user_id: userId,
+    name: 'UOB',
+    spend_target: 500,
+    spend_cap: 2000,
+    time_period_months: 1,
+    start_date: today,
+    sort_order: 0,
+  }).select().single();
+  if (bankError) throw bankError;
+
+  console.log('Seeding credit cards...');
   const { data: cards, error: cardError } = await supabase.from('credit_cards').insert([
-    { user_id: userId, name: 'Chase Sapphire', spend_target: 4000, start_date: today },
-    { user_id: userId, name: 'Amex Gold', spend_target: 3000, start_date: today }
+    { user_id: userId, name: 'UOB Preferred Visa', bank_id: bank.id, spend_target: 600, start_date: today },
+    { user_id: userId, name: "UOB Lady's Solitaire", bank_id: bank.id, spend_target: 800, start_date: today },
+    { user_id: userId, name: 'UOB PRVI Miles', bank_id: bank.id, spend_target: 1000, start_date: today },
+    { user_id: userId, name: 'UOB Visa Signature', bank_id: bank.id, spend_target: 4000, start_date: today },
   ]).select();
   if (cardError) throw cardError;
 

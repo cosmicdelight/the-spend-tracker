@@ -96,6 +96,44 @@ test.describe('The Spend Tracker', () => {
     }
   });
 
+  test('bank and credit card cards match width on a narrow viewport', async ({ page }) => {
+    // Regression: both dashboard grids lacked a base grid-cols, so below the sm
+    // breakpoint items landed in an implicit auto track sized by min-content. The
+    // bank card lists its assigned cards on one line, which made that line
+    // unbreakable and pushed the card past the viewport — wider than the credit
+    // card cards beside it.
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/auth');
+    await page.getByRole('button', { name: /Try Demo/i }).click();
+    await expect(page).toHaveURL('/', { timeout: 15000 });
+
+    const bankSection = page.locator('section').filter({ hasText: 'Bank Progress' }).first();
+    const cardSection = page.locator('section').filter({ hasText: 'Credit Card Progress' }).first();
+    const bankCard = bankSection.locator('div.grid > div').first();
+    const creditCard = cardSection.locator('div.grid > div').first();
+    await expect(bankCard).toBeVisible();
+    await expect(creditCard).toBeVisible();
+
+    const bankBox = await bankCard.boundingBox();
+    const creditBox = await creditCard.boundingBox();
+    expect(bankBox).not.toBeNull();
+    expect(creditBox).not.toBeNull();
+    expect(Math.round(bankBox!.width)).toBe(Math.round(creditBox!.width));
+
+    // The page itself must not scroll sideways — the general form of the same bug.
+    const overflows = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+    );
+    expect(overflows).toBe(false);
+
+    // And the card list must be readable rather than clipped: constraining the width
+    // is what made the old `truncate` start cutting names off.
+    const cardList = bankCard.locator('p').last();
+    await expect(cardList).toContainText('UOB Visa Signature');
+    const clipped = await cardList.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+    expect(clipped).toBe(false);
+  });
+
   test('Manual Recurring Transaction advancement bug', async ({ page }) => {
     // 1. Login
     await page.goto('/auth');
