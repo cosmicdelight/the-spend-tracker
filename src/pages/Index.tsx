@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Wallet, Settings, CreditCard, Landmark, LayoutDashboard, PieChart, List, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DEMO_EMAIL } from "@/lib/seedDemoData";
+import { formatLocalDate } from "@/lib/localDate";
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -47,7 +48,9 @@ export default function Index() {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
-  const todayStr = now.toISOString().split("T")[0];
+  // Local, not UTC: at UTC+8 the UTC date is still yesterday until 08:00, which
+  // dropped same-day transactions out of the totals below.
+  const todayStr = formatLocalDate(now);
   const monthlyTxs = transactions.filter((t) => {
     const key = t.expense_date || t.date;
     const d = new Date(key);
