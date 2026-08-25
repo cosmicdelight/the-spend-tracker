@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { Link } from "react-router-dom";
+import { isSplitExpense, resolveShare } from "@/lib/splitExpense";
 
 export interface DuplicateTransactionData {
   amount: string;
@@ -118,7 +119,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
   // Expense derived
   const hasSubs = fieldPrefs.subCategory && (categories?.some((c) => c.name === category && c.sub_category_name) ?? false);
   const amtNum = parseFloat(amount) || 0;
-  const personalNum = personalAmount ? parseFloat(personalAmount) || 0 : amtNum;
+  const personalNum = resolveShare(personalAmount, amtNum);
   const activeCurrency = fieldPrefs.currency ? currency : "SGD";
   const sgdAmount = activeCurrency !== "SGD" ? convertToSGD(amtNum, activeCurrency) : amtNum;
   const sgdPersonal = activeCurrency !== "SGD" ? convertToSGD(personalNum, activeCurrency) : personalNum;
@@ -160,6 +161,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
 
     if (type === "expense") {
       if (amtNum < 0) newErrors.push("Amount must be 0 or greater.");
+      if (personalNum > amtNum) newErrors.push("Your share cannot exceed the total amount.");
       if (!category) newErrors.push("Please select a category.");
       if (!description.trim()) newErrors.push("Please enter a description.");
       if (fieldPrefs.creditCard && paymentMode === "credit_card" && !creditCardId)
@@ -181,7 +183,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           sub_category: fieldPrefs.subCategory ? (subCategory || null) : null,
           original_currency: activeCurrency,
           original_amount: amtNum,
-          settled_up: sgdPersonal < sgdAmount ? settledUp : false,
+          settled_up: isSplitExpense(sgdPersonal, sgdAmount) ? settledUp : false,
         },
         {
           onSuccess: async (transactionId) => {
@@ -313,7 +315,7 @@ export default function AddTransactionDialog({ fieldPrefs, dashboardTrigger, def
           )}
 
           {/* Settled-up checkbox (only when this is a split) */}
-          {type === "expense" && personalNum > 0 && personalNum < amtNum && (
+          {type === "expense" && isSplitExpense(personalNum, amtNum) && (
             <label className="flex items-start gap-2 rounded-md border bg-muted/30 p-2.5 cursor-pointer">
               <input
                 type="checkbox"
