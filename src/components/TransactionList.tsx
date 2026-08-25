@@ -10,6 +10,7 @@ import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
 import { format, parseISO, isToday } from "date-fns";
 import EditTransactionDialog from "./EditTransactionDialog";
 import AddTransactionDialog, { type DuplicateTransactionData } from "./AddTransactionDialog";
+import { isSplitExpense } from "@/lib/splitExpense";
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -51,9 +52,9 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
       });
     }
     if (settledFilter === 'unsettled') {
-      base = base.filter((t) => Number(t.personal_amount) < Number(t.amount) && !t.settled_up);
+      base = base.filter((t) => isSplitExpense(Number(t.personal_amount), Number(t.amount)) && !t.settled_up);
     } else if (settledFilter === 'settled') {
-      base = base.filter((t) => Number(t.personal_amount) < Number(t.amount) && t.settled_up);
+      base = base.filter((t) => isSplitExpense(Number(t.personal_amount), Number(t.amount)) && t.settled_up);
     }
     return base;
   }, [transactions, selectedMonth, selectedYear, search, isSearching, settledFilter]);

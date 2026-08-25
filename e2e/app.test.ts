@@ -110,7 +110,8 @@ test.describe('The Spend Tracker', () => {
 
     const total = dialog.getByPlaceholder('200.00');
     const share = dialog.getByPlaceholder('Same as total');
-    const settledUp = dialog.getByText('Settled up', { exact: true });
+    // The control itself, not the label beside it: the bug was a missing checkbox.
+    const settledUp = dialog.getByRole('checkbox');
 
     await total.fill('100');
     // Share left blank means it defaults to the total, so this is not a split.
@@ -118,12 +119,33 @@ test.describe('The Spend Tracker', () => {
 
     await share.fill('0');
     await expect(settledUp).toBeVisible();
+    await expect(settledUp).toBeEnabled();
+    await settledUp.check();
+    await expect(settledUp).toBeChecked();
 
     await share.fill('50');
     await expect(settledUp).toBeVisible();
 
     await share.fill('100');
     await expect(settledUp).toBeHidden();
+  });
+
+  test('a saved zero-share expense reopens with settled-up visible and checked', async ({ page }) => {
+    // Covers the edit dialog and the persistence half: the Add-dialog test only proves
+    // the checkbox renders, not that a ticked value survives a round trip through the
+    // database. The seeded row has personal_amount 0 with settled_up true.
+    await page.goto('/auth');
+    await page.getByRole('button', { name: /Try Demo/i }).click();
+    await expect(page).toHaveURL('/', { timeout: 15000 });
+
+    await page.getByRole('button', { name: /Expenses/i }).first().click();
+    await page.getByText('Group dinner').first().click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const settledUp = dialog.getByRole('checkbox');
+    await expect(settledUp).toBeVisible();
+    await expect(settledUp).toBeChecked();
   });
 
   test('bank and credit card cards match width on a narrow viewport', async ({ page }) => {

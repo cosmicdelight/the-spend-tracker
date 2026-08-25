@@ -20,7 +20,7 @@ import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
-import { isSplitExpense } from "@/lib/splitExpense";
+import { isSplitExpense, resolveShare } from "@/lib/splitExpense";
 
 interface Props {
   transaction: Transaction | null;
@@ -87,7 +87,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
   const hasSubs = fieldPrefs.subCategory && (categories?.some((c) => c.name === category && c.sub_category_name) ?? false);
 
   const amtNum = parseFloat(amount) || 0;
-  const personalNum = personalAmount ? parseFloat(personalAmount) || 0 : amtNum;
+  const personalNum = resolveShare(personalAmount, amtNum);
   const activeCurrency = fieldPrefs.currency ? currency : "SGD";
   const sgdAmount = activeCurrency !== "SGD" ? convertToSGD(amtNum, activeCurrency) : amtNum;
   const sgdPersonal = activeCurrency !== "SGD" ? convertToSGD(personalNum, activeCurrency) : personalNum;
@@ -97,6 +97,10 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
     if (!transaction) return;
     if (amtNum < 0 || !category || !description.trim()) {
       toast({ title: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+    if (personalNum > amtNum) {
+      toast({ title: "Your share cannot exceed the total amount", variant: "destructive" });
       return;
     }
     if (fieldPrefs.creditCard && paymentMode === "credit_card" && !creditCardId) {

@@ -89,7 +89,10 @@ async function seed() {
   const { error: txError } = await supabase.from('transactions').insert([
     { user_id: userId, description: 'Whole Foods', category: 'Groceries', amount: 85.50, personal_amount: 85.50, date: today, expense_date: today, payment_mode: 'credit_card', credit_card_id: cc1, original_amount: 85.50, original_currency: 'SGD' },
     { user_id: userId, description: 'Netflix', category: 'Entertainment', amount: 15.99, personal_amount: 15.99, date: today, expense_date: today, payment_mode: 'credit_card', credit_card_id: cc1, original_amount: 15.99, original_currency: 'SGD' },
-    { user_id: userId, description: 'Uber Trip', category: 'Transport', amount: 25.00, personal_amount: 12.50, date: today, expense_date: today, payment_mode: 'credit_card', credit_card_id: cc1, original_amount: 25.00, original_currency: 'SGD', notes: 'Split with friend' }
+    { user_id: userId, description: 'Uber Trip', category: 'Transport', amount: 25.00, personal_amount: 12.50, date: today, expense_date: today, payment_mode: 'credit_card', credit_card_id: cc1, original_amount: 25.00, original_currency: 'SGD', notes: 'Split with friend' },
+    // Zero share, already settled: you paid, they owed all of it, they paid you back.
+    // Covers the settled-up round trip in the edit dialog.
+    { user_id: userId, description: 'Group dinner', category: 'Dining', amount: 120, personal_amount: 0, date: today, expense_date: today, payment_mode: 'credit_card', credit_card_id: cc1, original_amount: 120, original_currency: 'SGD', settled_up: true }
   ]);
   if (txError) throw txError;
 
