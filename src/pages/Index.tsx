@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Wallet, Settings, CreditCard, Landmark, LayoutDashboard, PieChart, List, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DEMO_EMAIL } from "@/lib/seedDemoData";
+import { filterMonthToDate } from "@/lib/monthToDate";
 
 export default function Index() {
   const { user, loading, signOut } = useAuth();
@@ -45,14 +46,7 @@ export default function Index() {
   if (!user) return <Navigate to="/auth" replace />;
 
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  const todayStr = now.toISOString().split("T")[0];
-  const monthlyTxs = transactions.filter((t) => {
-    const key = t.expense_date || t.date;
-    const d = new Date(key);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear && key <= todayStr;
-  });
+  const monthlyTxs = filterMonthToDate(transactions, now);
   const totalCharged = monthlyTxs.reduce((s, t) => s + Number(t.amount), 0);
   const totalPersonal = monthlyTxs.reduce((s, t) => s + Number(t.personal_amount), 0);
   const totalOwed = monthlyTxs.reduce(
