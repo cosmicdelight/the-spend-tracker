@@ -29,3 +29,16 @@ export function resolveShare(shareInput: string, total: number): number {
   const parsed = parseFloat(shareInput);
   return Number.isFinite(parsed) ? parsed : total;
 }
+
+/**
+ * Whether the entered share is impossible — larger than the total.
+ *
+ * Separate from isSplitExpense, which only classifies: this is the rule that rejects.
+ * It must be applied at every path that writes personal_amount, not just the one where
+ * a bug happened to surface. Today that is: the add dialog, the edit dialog, the CSV
+ * importer, and the recurring generator — the last of which writes up to 60 rows from a
+ * single submission, so one unchecked entry becomes sixty bad transactions.
+ */
+export function shareExceedsTotal(share: number, total: number): boolean {
+  return share > total;
+}

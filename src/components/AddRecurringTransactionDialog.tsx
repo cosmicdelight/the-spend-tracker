@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import SearchableSelect from "@/components/SearchableSelect";
+import { shareExceedsTotal } from "@/lib/splitExpense";
 
 export default function AddRecurringTransactionDialog() {
   const [open, setOpen] = useState(false);
@@ -48,6 +49,7 @@ export default function AddRecurringTransactionDialog() {
     const personal = personalAmount ? parseFloat(personalAmount) : amt;
     const count = parseInt(occurrences);
     if (isNaN(amt) || amt < 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
+    if (shareExceedsTotal(personal, amt)) { toast({ title: "Your share cannot exceed the total amount", variant: "destructive" }); return; }
     if (!category) { toast({ title: "Please select a category", variant: "destructive" }); return; }
     if (!description.trim()) { toast({ title: "Please enter a description", variant: "destructive" }); return; }
     if (paymentMode === "credit_card" && !creditCardId) { toast({ title: "Please select a credit card", variant: "destructive" }); return; }
