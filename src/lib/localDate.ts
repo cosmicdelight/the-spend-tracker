@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 /**
  * A date as YYYY-MM-DD in the viewer's own timezone.
  *
@@ -8,10 +10,12 @@
  *
  * Transaction dates are stored as plain YYYY-MM-DD calendar days with no time or zone,
  * so the only correct thing to compare them against is the viewer's local calendar day.
+ *
+ * Delegates to date-fns rather than hand-rolling the parts: `format` is already the
+ * codebase's date formatter, pads years below 1000 to four digits, and throws on an
+ * invalid date instead of returning "NaN-NaN-NaN" — a string that sorts after every
+ * real date and would silently defeat the `<=` comparisons this feeds.
  */
 export function formatLocalDate(date: Date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return format(date, "yyyy-MM-dd");
 }

@@ -1,5 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { formatLocalDate } from "@/lib/localDate";
+import { withTZ } from "./tz";
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("formatLocalDate", () => {
   it("formats a date from its local calendar parts", () => {
@@ -11,28 +16,30 @@ describe("formatLocalDate", () => {
     expect(formatLocalDate(new Date(2026, 11, 31))).toBe("2026-12-31");
   });
 
-  it("reports the local day just after local midnight", () => {
-    // The case the dashboard got wrong: early morning, when a positive UTC offset means
-    // toISOString() is still reporting the previous calendar day.
-    const justAfterMidnight = new Date(2026, 7, 25, 0, 30);
-    expect(formatLocalDate(justAfterMidnight)).toBe("2026-08-25");
+  it("pads years below 1000 to four digits", () => {
+    expect(formatLocalDate(new Date(999, 0, 5))).toBe("0999-01-05");
   });
 
   it("follows local time rather than UTC when the two disagree", () => {
-    const d = new Date(2026, 7, 25, 0, 30);
-    const utcDay = d.toISOString().split("T")[0];
-    // Only diverges when the runner is not on UTC; assert the divergence where it
-    // exists, and the local answer everywhere.
-    if (utcDay !== "2026-08-25") {
-      expect(formatLocalDate(d)).not.toBe(utcDay);
-    }
-    expect(formatLocalDate(d)).toBe("2026-08-25");
+    // Unconditional: the zone is pinned, so this asserts the divergence everywhere
+    // rather than only on a developer machine that happens not to be on UTC.
+    const { local, utc } = withTZ("Asia/Singapore", () => {
+      const d = new Date(2026, 7, 25, 0, 30); // 00:30 SGT is 16:30Z the previous day
+      return { local: formatLocalDate(d), utc: d.toISOString().split("T")[0] };
+    });
+    expect(utc).toBe("2026-08-24"); // the old behaviour, and why it was wrong
+    expect(local).toBe("2026-08-25");
   });
 
-  it("defaults to now", () => {
-    const now = new Date();
-    expect(formatLocalDate()).toBe(
-      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
-    );
+  it("defaults to the current time", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 25, 9, 0));
+    expect(formatLocalDate()).toBe("2026-08-25");
+  });
+
+  it("throws on an invalid date rather than returning a malformed string", () => {
+    // "NaN-NaN-NaN" would sort after every real date and silently defeat the `<=`
+    // comparisons this feeds.
+    expect(() => formatLocalDate(new Date("nonsense"))).toThrow(RangeError);
   });
 });

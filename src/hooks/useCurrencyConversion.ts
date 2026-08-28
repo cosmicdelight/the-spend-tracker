@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { formatLocalDate } from "@/lib/localDate";
 
 const POPULAR_CURRENCIES = [
   "SGD", "USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "HKD",
@@ -13,7 +14,9 @@ let cachedRates: ExchangeRates | null = null;
 let cacheDate: string | null = null;
 
 async function fetchRates(): Promise<ExchangeRates> {
-  const today = new Date().toISOString().split("T")[0];
+  // Local, not UTC: a UTC key rolls the cache over at 08:00 in +08:00 rather than at
+  // local midnight, serving yesterday's rates through the early morning.
+  const today = formatLocalDate();
   if (cachedRates && cacheDate === today) return cachedRates;
 
   const res = await fetch("https://api.frankfurter.dev/v1/latest?base=SGD");
