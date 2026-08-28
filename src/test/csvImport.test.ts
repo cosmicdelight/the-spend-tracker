@@ -70,6 +70,15 @@ describe("parseExpenseCSV", () => {
     expect(result.errors.some((e) => e.includes("0 or greater"))).toBe(true);
   });
 
+  it("rejects a personal_amount larger than the amount", () => {
+    // Your share cannot exceed the total. Without this, an import writes a row that
+    // drags Others Owe You negative, exactly like the three found in production.
+    const csv = `${validHeaders}\n2024-01-15,18.10,18.50,Paper,,cash,Novel from Kinokuniya,`;
+    const result = parseExpenseCSV(csv);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors.some((e) => e.includes("cannot exceed"))).toBe(true);
+  });
+
   it("accepts personal_amount same as amount (no split)", () => {
     const csv = `${validHeaders}\n2024-01-15,100,100,Food,,cash,Dinner,`;
     const result = parseExpenseCSV(csv);

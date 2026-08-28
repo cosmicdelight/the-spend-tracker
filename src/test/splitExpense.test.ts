@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isSplitExpense, resolveShare } from "@/lib/splitExpense";
+import { isSplitExpense, resolveShare, shareExceedsTotal } from "@/lib/splitExpense";
 
 describe("isSplitExpense", () => {
   it("treats a share of zero as a split", () => {
@@ -56,5 +56,25 @@ describe("resolveShare", () => {
     expect(resolveShare(".", 100)).toBe(100);
     expect(resolveShare("-", 100)).toBe(100);
     expect(resolveShare("abc", 100)).toBe(100);
+  });
+});
+
+describe("shareExceedsTotal", () => {
+  it("rejects a share larger than the total", () => {
+    expect(shareExceedsTotal(18.5, 18.1)).toBe(true);
+    expect(shareExceedsTotal(1.96, 1.58)).toBe(true);
+  });
+
+  it("accepts a share equal to the total", () => {
+    expect(shareExceedsTotal(100, 100)).toBe(false);
+  });
+
+  it("accepts a share below the total, including zero", () => {
+    expect(shareExceedsTotal(50, 100)).toBe(false);
+    expect(shareExceedsTotal(0, 100)).toBe(false);
+  });
+
+  it("accepts an empty form", () => {
+    expect(shareExceedsTotal(0, 0)).toBe(false);
   });
 });

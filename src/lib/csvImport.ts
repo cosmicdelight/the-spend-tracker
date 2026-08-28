@@ -1,3 +1,5 @@
+import { shareExceedsTotal } from "./splitExpense";
+
 /**
  * CSV parsing utilities for transaction import.
  * Extracted for testability.
@@ -218,6 +220,10 @@ export function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: 
     }
     if (amount < 0 || personalAmount < 0) {
       errors.push(`Row ${rowNum}: amount must be 0 or greater`);
+      continue;
+    }
+    if (shareExceedsTotal(personalAmount, amount)) {
+      errors.push(`Row ${rowNum}: personal_amount (${personalAmount}) cannot exceed amount (${amount})`);
       continue;
     }
     const expenseDateRaw = getRaw("expense_date");

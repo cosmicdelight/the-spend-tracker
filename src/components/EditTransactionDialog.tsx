@@ -20,7 +20,7 @@ import { usePaymentModes } from "@/hooks/usePaymentModes";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import type { TransactionFieldPrefs } from "@/hooks/useTransactionFieldPrefs";
-import { isSplitExpense, resolveShare } from "@/lib/splitExpense";
+import { isSplitExpense, resolveShare, shareExceedsTotal } from "@/lib/splitExpense";
 
 interface Props {
   transaction: Transaction | null;
@@ -99,7 +99,7 @@ export default function EditTransactionDialog({ transaction, open, onOpenChange,
       toast({ title: "Please fill in all required fields", variant: "destructive" });
       return;
     }
-    if (personalNum > amtNum) {
+    if (shareExceedsTotal(personalNum, amtNum)) {
       toast({ title: "Your share cannot exceed the total amount", variant: "destructive" });
       return;
     }
