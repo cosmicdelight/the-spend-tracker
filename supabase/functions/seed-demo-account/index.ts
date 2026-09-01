@@ -100,7 +100,10 @@ Deno.serve(async (req) => {
     admin.from("banks").delete().eq("user_id", userId),
     admin.from("budget_categories").delete().eq("user_id", userId),
     admin.from("income_categories").delete().eq("user_id", userId),
-    admin.from("payment_modes").delete().eq("user_id", userId).eq("is_system", false),
+    // All of them, system rows included: this function reseeds the demo from scratch
+    // and re-inserts the full set below, so leaving the is_system row behind would
+    // collide with the UNIQUE(user_id, value) constraint.
+    admin.from("payment_modes").delete().eq("user_id", userId),
   ]);
 
   // 3. Seed categories
@@ -139,9 +142,24 @@ Deno.serve(async (req) => {
     { name: "Rental Income", sub_category_name: null },
   ].map((c) => ({ ...c, user_id: userId }));
 
+  // Payment modes are seeded here rather than left to the client. usePaymentModes
+  // auto-inserts defaults whenever the table reads back empty, which for the demo meant
+  // the first visitor after each reseed silently wrote these rows into the shared
+  // account. Now that the demo is read-only that write is denied and the query would
+  // fail outright, taking the transaction form with it. Includes bank_transfer, which
+  // the seeded transactions below reference but DEFAULT_MODES never contained.
+  const paymentModes = [
+    { value: "credit_card", label: "Credit Card", is_system: true },
+    { value: "cash", label: "Cash", is_system: false },
+    { value: "bank_transfer", label: "Bank Transfer", is_system: false },
+    { value: "paynow", label: "PayNow", is_system: false },
+    { value: "giro", label: "GIRO", is_system: false },
+  ].map((m) => ({ ...m, user_id: userId }));
+
   await Promise.all([
     admin.from("budget_categories").insert(budgetCategories),
     admin.from("income_categories").insert(incomeCategories),
+    admin.from("payment_modes").insert(paymentModes),
   ]);
 
   // 4. Build seed data inline (mirrors seedDemoData.ts logic)
