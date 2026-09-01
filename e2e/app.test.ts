@@ -6,6 +6,13 @@ const E2E_EMAIL = 'e2e@spendtracker.app';
 const E2E_PASSWORD = process.env.DEMO_PASSWORD || 'password123';
 
 async function signIn(page: Page) {
+  // Index renders the onboarding tour for real accounts only ({!isDemo && ...}), and
+  // its backdrop is a fixed inset-0 overlay that swallows every click. Try Demo never
+  // hit this because handleTryDemo pre-sets the same key. Must run before the app
+  // loads, hence addInitScript rather than an evaluate after goto.
+  await page.addInitScript(() => {
+    window.localStorage.setItem('onboarding-tour-seen', 'true');
+  });
   await page.goto('/auth');
   await page.getByPlaceholder('Email').fill(E2E_EMAIL);
   await page.getByPlaceholder('Password').first().fill(E2E_PASSWORD);
