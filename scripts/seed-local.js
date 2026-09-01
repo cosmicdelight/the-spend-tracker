@@ -1,9 +1,12 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Get from environment
 const DEMO_EMAIL = 'demo@spendtracker.app';
+// The demo account is read-only in the database (see the demo_account_read_only
+// migration), so e2e cannot use it for anything that writes. This second account is an
+// ordinary user with the same seeded data, and it is what the write tests drive.
+const E2E_EMAIL = 'e2e@spendtracker.app';
 // Must match the DEMO_PASSWORD the demo-login edge function is served with, or
 // "Try Demo" fails to authenticate.
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'password123';
@@ -15,31 +18,30 @@ if (!SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-async function seed() {
-  console.log('Seeding local database...');
-
-  // 1. Find or create the demo user. On a fresh local stack it never exists yet,
-  //    so creating it here is what makes "Try Demo" work in e2e runs.
-  const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
-  if (listError) throw listError;
-  let user = users.find(u => u.email === DEMO_EMAIL);
-  if (user) {
-    console.log('Demo user found, syncing password...');
-    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, { password: DEMO_PASSWORD });
-    if (updateError) throw updateError;
-  } else {
-    console.log('Demo user not found, creating it...');
-    const { data: created, error: createError } = await supabase.auth.admin.createUser({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-      email_confirm: true,
-    });
-    if (createError) throw createError;
-    user = created.user;
+/** Find or create an account, syncing its password either way. On a fresh local stack
+ *  neither exists yet, so creating them here is what makes e2e able to sign in. */
+async function ensureUser(users, email) {
+  const existing = users.find((u) => u.email === email);
+  if (existing) {
+    console.log(`${email} found, syncing password...`);
+    const { error } = await supabase.auth.admin.updateUserById(existing.id, { password: DEMO_PASSWORD });
+    if (error) throw error;
+    return existing.id;
   }
-  const userId = user.id;
+  console.log(`${email} not found, creating it...`);
+  const { data: created, error } = await supabase.auth.admin.createUser({
+    email,
+    password: DEMO_PASSWORD,
+    email_confirm: true,
+  });
+  if (error) throw error;
+  return created.user.id;
+}
 
-  // 2. Clear existing data
+async function seedForUser(userId, label) {
+  console.log(`\n--- seeding ${label} ---`);
+
+  // Clear existing data
   console.log('Cleaning up old data...');
   await supabase.from('transactions').delete().eq('user_id', userId);
   await supabase.from('income').delete().eq('user_id', userId);
@@ -48,14 +50,14 @@ async function seed() {
   await supabase.from('banks').delete().eq('user_id', userId);
   await supabase.from('budget_categories').delete().eq('user_id', userId);
 
-  // 3. Seed Categories
+  // Categories
   console.log('Seeding categories...');
   const cats = ['Groceries', 'Dining', 'Transport', 'Entertainment', 'Health', 'Shopping', 'Travel', 'Utilities']
     .map(name => ({ user_id: userId, name }));
   const { error: catError } = await supabase.from('budget_categories').insert(cats);
   if (catError) throw catError;
 
-  // 4. Seed a bank, then the cards assigned to it.
+  // A bank, then the cards assigned to it.
   //    Several cards with realistic names is deliberate, not decoration: the dashboard
   //    lists a bank's cards on one line, and the length of that line is what used to
   //    push the bank card past the viewport on mobile. A bank with one short-named card
@@ -84,7 +86,7 @@ async function seed() {
 
   const cc1 = cards[0].id;
 
-  // 5. Seed Transactions
+  // Transactions
   console.log('Seeding transactions...');
   const { error: txError } = await supabase.from('transactions').insert([
     { user_id: userId, description: 'Whole Foods', category: 'Groceries', amount: 85.50, personal_amount: 85.50, date: today, expense_date: today, payment_mode: 'credit_card', credit_card_id: cc1, original_amount: 85.50, original_currency: 'SGD' , settled_up: false },
@@ -96,7 +98,34 @@ async function seed() {
   ]);
   if (txError) throw txError;
 
-  console.log(`Seeding complete! You can now log in with ${DEMO_EMAIL}`);
+  // Payment modes. usePaymentModes auto-seeds these from the client when the table
+  // reads back empty — which the read-only demo account is no longer allowed to do.
+  console.log('Seeding payment modes...');
+  await supabase.from('payment_modes').delete().eq('user_id', userId);
+  const { error: pmError } = await supabase.from('payment_modes').insert([
+    { user_id: userId, value: 'credit_card', label: 'Credit Card', is_system: true },
+    { user_id: userId, value: 'cash', label: 'Cash', is_system: false },
+    { user_id: userId, value: 'bank_transfer', label: 'Bank Transfer', is_system: false },
+    { user_id: userId, value: 'paynow', label: 'PayNow', is_system: false },
+    { user_id: userId, value: 'giro', label: 'GIRO', is_system: false },
+  ]);
+  if (pmError) throw pmError;
+}
+
+async function seed() {
+  console.log('Seeding local database...');
+
+  const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+  if (listError) throw listError;
+
+  const demoId = await ensureUser(users, DEMO_EMAIL);
+  const e2eId = await ensureUser(users, E2E_EMAIL);
+
+  // Both get identical data so a test reads the same fixtures whichever it signs in as.
+  await seedForUser(demoId, `${DEMO_EMAIL} (read-only)`);
+  await seedForUser(e2eId, `${E2E_EMAIL} (writable)`);
+
+  console.log(`\nSeeding complete. Demo: ${DEMO_EMAIL} (read-only) · e2e: ${E2E_EMAIL}`);
 }
 
 seed().catch((err) => {

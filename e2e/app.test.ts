@@ -1,4 +1,24 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+// The demo account is read-only in the database, so it cannot drive anything that
+// writes. scripts/seed-local.js provisions this ordinary account with identical data.
+const E2E_EMAIL = 'e2e@spendtracker.app';
+const E2E_PASSWORD = process.env.DEMO_PASSWORD || 'password123';
+
+async function signIn(page: Page) {
+  // Index renders the onboarding tour for real accounts only ({!isDemo && ...}), and
+  // its backdrop is a fixed inset-0 overlay that swallows every click. Try Demo never
+  // hit this because handleTryDemo pre-sets the same key. Must run before the app
+  // loads, hence addInitScript rather than an evaluate after goto.
+  await page.addInitScript(() => {
+    window.localStorage.setItem('onboarding-tour-seen', 'true');
+  });
+  await page.goto('/auth');
+  await page.getByPlaceholder('Email').fill(E2E_EMAIL);
+  await page.getByPlaceholder('Password').first().fill(E2E_PASSWORD);
+  await page.getByRole('button', { name: /^Sign In$/ }).click();
+  await expect(page).toHaveURL('/', { timeout: 15000 });
+}
 
 test.describe('The Spend Tracker', () => {
   test('should log in via Try Demo and show dashboard', async ({ page }) => {
@@ -17,11 +37,26 @@ test.describe('The Spend Tracker', () => {
     await expect(page.getByText(/Total Charged/i)).toBeVisible();
   });
 
-  test('CSV Import bug: missing original_amount and quoted comma parsing', async ({ page }) => {
-    // 1. Login first
-    await page.goto('/auth');
+  test('the demo account warns that it is shared, and still loads its data', async ({ page }) => {
+    // That the demo cannot WRITE is proved by scripts/verify-demo-readonly.sql, which
+    // impersonates the session in Postgres and watches the insert get refused — far
+    // more precise than driving a form. What this covers instead is the half that only
+    // a browser can show: the warning renders, and the read-only policy did not
+    // over-reach into SELECT and leave the demo staring at an empty app.
+    await page.goto('/');
     await page.getByRole('button', { name: /Try Demo/i }).click();
     await expect(page).toHaveURL('/', { timeout: 15000 });
+
+    await expect(page.getByText(/shared sample account/i)).toBeVisible();
+    await expect(page.getByText(/Total Charged/i)).toBeVisible();
+
+    await page.getByRole('button', { name: /Expenses/i }).first().click();
+    await expect(page.getByText('Netflix').first()).toBeVisible();
+  });
+
+  test('CSV Import bug: missing original_amount and quoted comma parsing', async ({ page }) => {
+    // 1. Login first
+    await signIn(page);
 
     // 2. Open Import CSV dialog
     await page.getByRole('button', { name: /Import CSV/i }).click();
@@ -100,9 +135,7 @@ test.describe('The Spend Tracker', () => {
     // Regression: the checkbox was gated on `share > 0 && share < total`, while the
     // save path used `share < total`. Entering 0 — you paid, someone owes all of it —
     // hid the checkbox but still wrote whatever settledUp was left at.
-    await page.goto('/auth');
-    await page.getByRole('button', { name: /Try Demo/i }).click();
-    await expect(page).toHaveURL('/', { timeout: 15000 });
+    await signIn(page);
 
     await page.getByRole('button', { name: /Add Transaction/i }).first().click();
     const dialog = page.getByRole('dialog');
@@ -134,9 +167,7 @@ test.describe('The Spend Tracker', () => {
     // Covers the edit dialog and the persistence half: the Add-dialog test only proves
     // the checkbox renders, not that a ticked value survives a round trip through the
     // database. The seeded row has personal_amount 0 with settled_up true.
-    await page.goto('/auth');
-    await page.getByRole('button', { name: /Try Demo/i }).click();
-    await expect(page).toHaveURL('/', { timeout: 15000 });
+    await signIn(page);
 
     await page.getByRole('button', { name: /Expenses/i }).first().click();
     await page.getByText('Group dinner').first().click();
@@ -155,9 +186,7 @@ test.describe('The Spend Tracker', () => {
     // unbreakable and pushed the card past the viewport — wider than the credit
     // card cards beside it.
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/auth');
-    await page.getByRole('button', { name: /Try Demo/i }).click();
-    await expect(page).toHaveURL('/', { timeout: 15000 });
+    await signIn(page);
 
     const bankSection = page.locator('section').filter({ hasText: 'Bank Progress' }).first();
     const cardSection = page.locator('section').filter({ hasText: 'Credit Card Progress' }).first();
@@ -188,9 +217,7 @@ test.describe('The Spend Tracker', () => {
 
   test('Manual Recurring Transaction advancement bug', async ({ page }) => {
     // 1. Login
-    await page.goto('/auth');
-    await page.getByRole('button', { name: /Try Demo/i }).click();
-    await expect(page).toHaveURL('/', { timeout: 15000 });
+    await signIn(page);
 
     // 2. Find a recurring transaction with "Create Now" button
     // The demo seed has "Netflix"

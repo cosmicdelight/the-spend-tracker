@@ -114,6 +114,14 @@ jobs:
           SQL
       - name: Seed local database
         run: node scripts/seed-local.js
+      - name: Verify the demo account is read-only
+        run: |
+          # The demo account's read-only guarantee lives in RLS policies, which no unit
+          # test can reach. This impersonates both a demo session and a normal one and
+          # asserts the first is refused writes while the second is not — the second
+          # half being the one that catches a policy broad enough to lock real users
+          # out of their own data.
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f scripts/verify-demo-readonly.sql
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       - name: Start app

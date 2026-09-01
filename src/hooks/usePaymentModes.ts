@@ -36,7 +36,11 @@ export function usePaymentModes() {
           .from("payment_modes")
           .insert(seed)
           .select();
-        if (seedErr) throw seedErr;
+        // A refused insert must not blank the payment-mode list. Seeding is a
+        // convenience for fresh accounts, not a precondition for reading, and the demo
+        // account is denied writes by RLS — throwing here would fail the whole query
+        // and take the transaction form down with it.
+        if (seedErr) return data as PaymentMode[];
         return seeded as PaymentMode[];
       }
 
