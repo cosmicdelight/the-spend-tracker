@@ -22,9 +22,21 @@ type NavigatorWithStandalone = Navigator & { standalone?: boolean };
 export default function Auth() {
   const { user, loading } = useAuth();
   const [searchParams] = useSearchParams();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(() => {
-    return searchParams.get("mode") === "signup" ? "signup" : "signin";
-  });
+  const modeParam = searchParams.get("mode");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(
+    modeParam === "signup" ? "signup" : "signin",
+  );
+
+  // The initializer above runs once, but this route gets re-targeted while it stays
+  // mounted. Signing out of the demo lands every visitor on a bare /auth first —
+  // Index redirects there the moment `user` goes null — and only then does the demo
+  // banner push ?mode=signup. Same route, so React keeps the mount, the initializer
+  // never re-runs, and someone who clicked "Sign up" would be handed the sign-in
+  // form. Keyed on the string rather than the URLSearchParams object so an unrelated
+  // re-render cannot clobber the signin/signup toggle further down.
+  useEffect(() => {
+    setMode(modeParam === "signup" ? "signup" : "signin");
+  }, [modeParam]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
