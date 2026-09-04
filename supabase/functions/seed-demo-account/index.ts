@@ -100,7 +100,9 @@ Deno.serve(async (req) => {
     admin.from("banks").delete().eq("user_id", userId),
     admin.from("budget_categories").delete().eq("user_id", userId),
     admin.from("income_categories").delete().eq("user_id", userId),
-    admin.from("payment_modes").delete().eq("user_id", userId).eq("is_system", false),
+    // All of them, is_system included. This used to keep system rows, which left the
+    // demo with credit_card and nothing else — see the note on the reseed below.
+    admin.from("payment_modes").delete().eq("user_id", userId),
   ]);
 
   // 3. Seed categories
@@ -139,9 +141,29 @@ Deno.serve(async (req) => {
     { name: "Rental Income", sub_category_name: null },
   ].map((c) => ({ ...c, user_id: userId }));
 
+  // Payment modes have to be seeded here, not left to the client.
+  //
+  // Nothing in the schema creates them: usePaymentModes inserts a default set from the
+  // browser the first time the table reads back empty for an account. The wipe above
+  // used to spare is_system rows, so a reseed deleted cash/paynow/giro and left
+  // credit_card standing — and because the client only seeds when the list is *empty*,
+  // one surviving row meant it never refilled. The demo has been stuck on a single
+  // payment mode ever since, while every real account has four.
+  //
+  // bank_transfer is included because the seeded transactions below use it, and the
+  // client's defaults never contained it.
+  const paymentModes = [
+    { value: "credit_card", label: "Credit Card", is_system: true },
+    { value: "cash", label: "Cash", is_system: false },
+    { value: "bank_transfer", label: "Bank Transfer", is_system: false },
+    { value: "paynow", label: "PayNow", is_system: false },
+    { value: "giro", label: "GIRO", is_system: false },
+  ].map((m) => ({ ...m, user_id: userId }));
+
   await Promise.all([
     admin.from("budget_categories").insert(budgetCategories),
     admin.from("income_categories").insert(incomeCategories),
+    admin.from("payment_modes").insert(paymentModes),
   ]);
 
   // 4. Build seed data inline (mirrors seedDemoData.ts logic)
