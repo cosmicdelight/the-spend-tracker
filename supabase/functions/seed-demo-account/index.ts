@@ -91,8 +91,29 @@ Deno.serve(async (req) => {
     });
   }
 
+  // The demo's payment modes. Declared before the wipe because the wipe needs the value
+  // list, and upserted rather than inserted further down.
+  //
+  // Nothing in the schema creates payment modes: usePaymentModes inserts a default set
+  // from the browser the first time the table reads back empty for an account. The wipe
+  // below used to delete every is_system = false row and never re-create them, which
+  // left the demo holding credit_card alone — and since the client only seeds on an
+  // empty read, one surviving row meant it never refilled.
+  //
+  // bank_transfer is here because the seeded transactions reference it and the client's
+  // defaults never contained it.
+  const paymentModes = [
+    { value: "credit_card", label: "Credit Card", is_system: true },
+    { value: "cash", label: "Cash", is_system: false },
+    { value: "bank_transfer", label: "Bank Transfer", is_system: false },
+    { value: "paynow", label: "PayNow", is_system: false },
+    { value: "giro", label: "GIRO", is_system: false },
+  ].map((m) => ({ ...m, user_id: userId }));
+
+  const canonicalModes = paymentModes.map((m) => m.value);
+
   // 2. Wipe existing demo data
-  await Promise.all([
+  const wipeResults = await Promise.all([
     admin.from("transactions").delete().eq("user_id", userId),
     admin.from("income").delete().eq("user_id", userId),
     admin.from("recurring_transactions").delete().eq("user_id", userId),
@@ -100,10 +121,24 @@ Deno.serve(async (req) => {
     admin.from("banks").delete().eq("user_id", userId),
     admin.from("budget_categories").delete().eq("user_id", userId),
     admin.from("income_categories").delete().eq("user_id", userId),
-    // All of them, is_system included. This used to keep system rows, which left the
-    // demo with credit_card and nothing else — see the note on the reseed below.
-    admin.from("payment_modes").delete().eq("user_id", userId),
+    // Only the modes a visitor added — never the canonical ones. Emptying this table
+    // would hand the browser an empty read, and usePaymentModes would race in with its
+    // own defaults between here and the upsert below, colliding with
+    // UNIQUE(user_id, value). Leaving the canonical rows in place keeps it non-empty
+    // throughout, so that client-side seed can never fire for the demo.
+    admin.from("payment_modes").delete().eq("user_id", userId)
+      .not("value", "in", `(${canonicalModes.join(",")})`),
   ]);
+
+  // These deletes used to run unchecked. They are load-bearing now: leftover rows would
+  // otherwise surface as a confusing upsert or a demo seeded on top of stale data.
+  const wipeErrors = wipeResults.map((r) => r.error).filter(Boolean);
+  if (wipeErrors.length) {
+    return new Response(JSON.stringify({ error: wipeErrors.map((e) => e!.message) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   // 3. Seed categories
   const budgetCategories = [
@@ -141,30 +176,25 @@ Deno.serve(async (req) => {
     { name: "Rental Income", sub_category_name: null },
   ].map((c) => ({ ...c, user_id: userId }));
 
-  // Payment modes have to be seeded here, not left to the client.
-  //
-  // Nothing in the schema creates them: usePaymentModes inserts a default set from the
-  // browser the first time the table reads back empty for an account. The wipe above
-  // used to spare is_system rows, so a reseed deleted cash/paynow/giro and left
-  // credit_card standing — and because the client only seeds when the list is *empty*,
-  // one surviving row meant it never refilled. The demo has been stuck on a single
-  // payment mode ever since, while every real account has four.
-  //
-  // bank_transfer is included because the seeded transactions below use it, and the
-  // client's defaults never contained it.
-  const paymentModes = [
-    { value: "credit_card", label: "Credit Card", is_system: true },
-    { value: "cash", label: "Cash", is_system: false },
-    { value: "bank_transfer", label: "Bank Transfer", is_system: false },
-    { value: "paynow", label: "PayNow", is_system: false },
-    { value: "giro", label: "GIRO", is_system: false },
-  ].map((m) => ({ ...m, user_id: userId }));
-
-  await Promise.all([
+  const [budgetCatRes, incomeCatRes, modesRes] = await Promise.all([
     admin.from("budget_categories").insert(budgetCategories),
     admin.from("income_categories").insert(incomeCategories),
-    admin.from("payment_modes").insert(paymentModes),
+    // Upsert, not insert: the canonical rows deliberately survive the wipe, so they are
+    // already there on every reseed after the first. Keying on the table's
+    // UNIQUE(user_id, value) also makes this safe against a row the browser managed to
+    // create, instead of failing the whole reseed on a duplicate.
+    admin.from("payment_modes").upsert(paymentModes, { onConflict: "user_id,value" }),
   ]);
+
+  // Previously discarded. A failed payment-mode write is exactly the bug this reseed
+  // exists to fix, so it must not be able to pass silently as success.
+  const seedErrors = [budgetCatRes.error, incomeCatRes.error, modesRes.error].filter(Boolean);
+  if (seedErrors.length) {
+    return new Response(JSON.stringify({ error: seedErrors.map((e) => e!.message) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   // 4. Build seed data inline (mirrors seedDemoData.ts logic)
   const now = new Date();
