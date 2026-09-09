@@ -5,6 +5,12 @@ import { format } from "date-fns";
 import type { CreditCard } from "@/hooks/useCreditCards";
 import type { Transaction } from "@/hooks/useTransactions";
 import EditTransactionDialog from "@/components/EditTransactionDialog";
+import {
+  EMPTY_EXCLUSION,
+  excludeCategories,
+  isFilterActive,
+  type CategoryExclusion,
+} from "@/lib/spendFilter";
 
 const CARD_COLORS = [
   "hsl(var(--primary))",
@@ -29,6 +35,7 @@ interface Props {
   selectedMonth: number;
   selectedYear: number;
   periodLabel: string;
+  exclusion?: CategoryExclusion;
 }
 
 interface Row {
@@ -45,13 +52,20 @@ export default function SpendByCardBreakdown({
   selectedMonth,
   selectedYear,
   periodLabel,
+  exclusion = EMPTY_EXCLUSION,
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
 
+  const filterActive = isFilterActive(exclusion);
+
   const { rows, total } = useMemo(() => {
+    // Excluded categories go first, so the date scan and the bucketing below both work
+    // from the same set of rows and `total` cannot disagree with the bars under it.
+    const visible = excludeCategories(transactions, exclusion);
+
     // Group by transaction date (statement date), matching the card trackers
-    const periodTxs = transactions.filter((t) => {
+    const periodTxs = visible.filter((t) => {
       const d = new Date(t.date);
       if (view === "month") {
         return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
@@ -87,19 +101,23 @@ export default function SpendByCardBreakdown({
       .sort((a, b) => b.value - a.value);
 
     return { rows, total: rows.reduce((s, r) => s + r.value, 0) };
-  }, [transactions, cards, view, selectedMonth, selectedYear]);
+  }, [transactions, cards, view, selectedMonth, selectedYear, exclusion]);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center gap-2 space-y-0 pb-2">
         <CreditCardIcon className="h-4 w-4 text-primary" />
         <CardTitle className="text-lg">Spend by Card</CardTitle>
-        <span className="ml-auto text-xs text-muted-foreground">{periodLabel}</span>
+        <span className="ml-auto text-xs text-muted-foreground">
+          {periodLabel}{filterActive && " · filtered"}
+        </span>
       </CardHeader>
       <CardContent>
         {rows.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground">
-            No spending {view === "month" ? "this month" : "this year"} yet.
+            {filterActive
+              ? "No spending in the categories you're showing."
+              : `No spending ${view === "month" ? "this month" : "this year"} yet.`}
           </p>
         ) : (
           <>
