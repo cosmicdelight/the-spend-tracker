@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { ATTACHMENTS_BUCKET, removeAttachmentFiles } from "@/lib/attachmentStorage";
 
 export interface TransactionAttachment {
   id: string;
@@ -12,10 +13,6 @@ export interface TransactionAttachment {
   content_type: string;
   created_at: string;
 }
-
-/** The storage bucket holding receipt files. Exported because deleting a transaction
- *  has to clean up its files too — see useDeleteTransaction. */
-export const ATTACHMENTS_BUCKET = "transaction-attachments";
 
 const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 const MAX_FILES = 5;
@@ -103,9 +100,23 @@ export function useDeleteAttachment() {
 
   return useMutation({
     mutationFn: async ({ attachment }: { attachment: TransactionAttachment }) => {
-      await supabase.storage.from(ATTACHMENTS_BUCKET).remove([attachment.file_path]);
+      // Row first, then the file — the same order useDeleteTransaction uses, and for
+      // the same reason. This used to remove the file first, which meant a failed row
+      // delete left the attachment pointing at a file that no longer existed: a broken
+      // entry in the UI that the user could neither open nor clear. This way round the
+      // worst case is an orphaned file, which loses nothing.
       const { error } = await supabase.from("transaction_attachments").delete().eq("id", attachment.id);
       if (error) throw error;
+
+      // Advisory: the row is already gone, so a storage fault must not report the
+      // delete as having failed. Previously this result was discarded entirely.
+      const removal = await removeAttachmentFiles([attachment.file_path]);
+      if (removal.removed < removal.requested) {
+        console.warn(
+          `Attachment ${attachment.id} was deleted but its file remains in storage:`,
+          { path: attachment.file_path, error: removal.error },
+        );
+      }
     },
     onSuccess: (_, { attachment }) => {
       qc.invalidateQueries({ queryKey: ["transaction-attachments", attachment.transaction_id] });

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
-import { ATTACHMENTS_BUCKET } from "./useTransactionAttachments";
+import { removeAttachmentFiles } from "@/lib/attachmentStorage";
 
 export interface Transaction {
   id: string;
@@ -76,16 +76,13 @@ export function useDeleteTransaction() {
       // behaviour rather than a loss. The caller asked to delete the transaction and
       // that succeeded, so a storage fault must not surface as a failed delete.
       const paths = (attachments ?? []).map((a) => a.file_path);
-      if (paths.length > 0) {
-        const { error: storageErr } = await supabase.storage
-          .from(ATTACHMENTS_BUCKET)
-          .remove(paths);
-        if (storageErr) {
-          console.warn(
-            `Transaction ${id} was deleted but ${paths.length} attachment file(s) could not be removed:`,
-            storageErr,
-          );
-        }
+      const removal = await removeAttachmentFiles(paths);
+      if (removal.removed < removal.requested) {
+        console.warn(
+          `Transaction ${id} was deleted but ${removal.requested - removal.removed} of ` +
+            `${removal.requested} attachment file(s) remain in storage:`,
+          { paths, error: removal.error },
+        );
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["transactions"] }),
