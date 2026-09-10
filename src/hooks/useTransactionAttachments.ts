@@ -13,6 +13,10 @@ export interface TransactionAttachment {
   created_at: string;
 }
 
+/** The storage bucket holding receipt files. Exported because deleting a transaction
+ *  has to clean up its files too — see useDeleteTransaction. */
+export const ATTACHMENTS_BUCKET = "transaction-attachments";
+
 const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -74,7 +78,7 @@ export function useUploadAttachment() {
       const filePath = `${user.id}/${transactionId}/${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadErr } = await supabase.storage
-        .from("transaction-attachments")
+        .from(ATTACHMENTS_BUCKET)
         .upload(filePath, file, { contentType: file.type });
       if (uploadErr) throw uploadErr;
 
@@ -99,7 +103,7 @@ export function useDeleteAttachment() {
 
   return useMutation({
     mutationFn: async ({ attachment }: { attachment: TransactionAttachment }) => {
-      await supabase.storage.from("transaction-attachments").remove([attachment.file_path]);
+      await supabase.storage.from(ATTACHMENTS_BUCKET).remove([attachment.file_path]);
       const { error } = await supabase.from("transaction_attachments").delete().eq("id", attachment.id);
       if (error) throw error;
     },
@@ -110,13 +114,13 @@ export function useDeleteAttachment() {
 }
 
 export function getAttachmentUrl(filePath: string): string {
-  const { data } = supabase.storage.from("transaction-attachments").getPublicUrl(filePath);
+  const { data } = supabase.storage.from(ATTACHMENTS_BUCKET).getPublicUrl(filePath);
   return data.publicUrl;
 }
 
 export function getSignedAttachmentUrl(filePath: string): Promise<string> {
   return supabase.storage
-    .from("transaction-attachments")
+    .from(ATTACHMENTS_BUCKET)
     .createSignedUrl(filePath, 3600)
     .then(({ data, error }) => {
       if (error) throw error;

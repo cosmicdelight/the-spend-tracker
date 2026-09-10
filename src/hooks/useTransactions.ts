@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { ATTACHMENTS_BUCKET } from "./useTransactionAttachments";
 
 export interface Transaction {
   id: string;
@@ -56,8 +57,36 @@ export function useDeleteTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Read the file paths first. transaction_attachments has
+      // REFERENCES transactions(id) ON DELETE CASCADE, so the delete below takes the
+      // rows with it — and with them the only record of where the files live. Reading
+      // afterwards returns nothing and the receipts are stranded in the bucket forever.
+      const { data: attachments, error: listErr } = await supabase
+        .from("transaction_attachments")
+        .select("file_path")
+        .eq("transaction_id", id);
+      if (listErr) throw listErr;
+
       const { error } = await supabase.from("transactions").delete().eq("id", id);
       if (error) throw error;
+
+      // Storage last, and deliberately not fatal. Removing files before the row would
+      // destroy the receipts of a transaction that still exists if the delete then
+      // failed; this order can only ever leave an orphan, which is the pre-existing
+      // behaviour rather than a loss. The caller asked to delete the transaction and
+      // that succeeded, so a storage fault must not surface as a failed delete.
+      const paths = (attachments ?? []).map((a) => a.file_path);
+      if (paths.length > 0) {
+        const { error: storageErr } = await supabase.storage
+          .from(ATTACHMENTS_BUCKET)
+          .remove(paths);
+        if (storageErr) {
+          console.warn(
+            `Transaction ${id} was deleted but ${paths.length} attachment file(s) could not be removed:`,
+            storageErr,
+          );
+        }
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["transactions"] }),
   });
