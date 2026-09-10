@@ -9,6 +9,7 @@ import {
   EMPTY_EXCLUSION,
   categoryState,
   excludedCount,
+  isCategoryHidden,
   isExcluded,
   isFilterActive,
   showCategory,
@@ -57,12 +58,29 @@ export function CategoryFilterList({ options, exclusion, onChange }: ListProps) 
   const needle = search.trim().toLowerCase();
   const matches = (text: string) => text.toLowerCase().includes(needle);
 
+  // A search that matches only a sub opens its category, so the match is visible without
+  // hunting for the chevron. Seeded into `expanded` rather than OR-ed on top of it: with
+  // an OR, clicking the chevron to collapse an auto-opened category just adds it to the
+  // set, and it stays open forever.
+  useEffect(() => {
+    if (!needle) return;
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      for (const o of options) {
+        if (!o.name.toLowerCase().includes(needle) && o.subs.some((sub) => sub.toLowerCase().includes(needle))) {
+          next.add(o.name);
+        }
+      }
+      return next;
+    });
+  }, [needle, options]);
+
   const visible = needle
     ? options.filter((o) => matches(o.name) || o.subs.some(matches))
     : options;
 
   const active = isFilterActive(exclusion);
-  const count = excludedCount(exclusion);
+  const count = excludedCount(exclusion, options);
 
   return (
     <div className="flex flex-col">
@@ -86,11 +104,11 @@ export function CategoryFilterList({ options, exclusion, onChange }: ListProps) 
 
         {visible.map((option, i) => {
           const state = categoryState(exclusion, option);
-          const hidden = state === "hidden";
-          // A search that matched only a sub opens the category, so the match is visible
-          // without the user hunting for the chevron.
-          const isOpen =
-            expanded.has(option.name) || (needle !== "" && !matches(option.name) && option.subs.some(matches));
+          // Not `state === "hidden"`: that is also true once the user unticks every sub
+          // individually, and disabling the boxes they were just clicking strands them.
+          // Only the category's own switch should take the sub rows out of play.
+          const categoryHidden = isCategoryHidden(exclusion, option.name);
+          const isOpen = expanded.has(option.name);
           const catId = `${uid}-cat-${i}`;
 
           return (
@@ -130,14 +148,14 @@ export function CategoryFilterList({ options, exclusion, onChange }: ListProps) 
                       <Checkbox
                         id={subId}
                         checked={!subHidden}
-                        disabled={hidden}
+                        disabled={categoryHidden}
                         onCheckedChange={() => onChange(toggleSub(exclusion, option.name, sub))}
                       />
                       <label
                         htmlFor={subId}
                         className={cn(
                           "flex-1 cursor-pointer truncate text-sm",
-                          hidden ? "text-muted-foreground/50" : "text-muted-foreground",
+                          categoryHidden ? "text-muted-foreground/50" : "text-muted-foreground",
                         )}
                       >
                         {sub}
@@ -177,7 +195,7 @@ interface Props extends ListProps {
 export default function CategoryFilterMenu({ options, exclusion, onChange, className }: Props) {
   const [open, setOpen] = useState(false);
   const active = isFilterActive(exclusion);
-  const count = excludedCount(exclusion);
+  const count = excludedCount(exclusion, options);
 
   return (
     <div className={cn("flex items-center gap-1", className)}>

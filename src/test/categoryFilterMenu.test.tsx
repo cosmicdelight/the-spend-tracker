@@ -100,6 +100,32 @@ describe("CategoryFilterList", () => {
     expect(screen.getByRole("checkbox", { name: "Cafes" })).not.toBeChecked();
   });
 
+  it("keeps sub checkboxes usable after the last one is unticked", () => {
+    // Regression: the disabled state used to key off categoryState, which also reports
+    // "hidden" once every sub is individually excluded — so unticking the last sub
+    // disabled the very boxes the user was clicking, with no way back except the parent.
+    renderList(exclusion([], [subKey("Dining", "Cafes"), subKey("Dining", "Restaurants")]));
+
+    fireEvent.click(screen.getByRole("button", { name: /sub-categories of dining/i }));
+
+    expect(screen.getByRole("checkbox", { name: "Cafes" })).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: "Restaurants" })).toBeEnabled();
+  });
+
+  it("collapses a category the search opened", () => {
+    // Regression: isOpen used to OR the expanded set with a derived auto-expand, so
+    // clicking the chevron added the name to the set and the category stayed open.
+    renderList();
+    fireEvent.change(screen.getByPlaceholderText(/search categories/i), {
+      target: { value: "cafes" },
+    });
+    expect(screen.getByRole("checkbox", { name: "Cafes" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /sub-categories of dining/i }));
+
+    expect(screen.queryByRole("checkbox", { name: "Cafes" })).not.toBeInTheDocument();
+  });
+
   it("clears the whole filter from Show all", () => {
     renderList(exclusion(["Dining"], [subKey("Travel", "Flights")]));
 

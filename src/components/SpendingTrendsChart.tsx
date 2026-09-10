@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -118,9 +118,17 @@ export default function SpendingTrendsChart({ transactions, income, exclusion = 
     return { chartData, categoryNames: topCats, hasIncome };
   }, [transactions, income, months, exclusion]);
 
-  // A chip stays selected by name, so hiding that category would leave a highlighted
-  // chip driving a chart with no line in it and nothing explaining why.
+  // A chip stays selected by name, so hiding that category would leave a highlighted chip
+  // driving a chart with no line in it. Masked here for the render...
   const activeCategory = selectedCategory && categoryNames.includes(selectedCategory) ? selectedCategory : null;
+
+  // ...and cleared for real here. Masking alone left the name in state, so un-hiding the
+  // category later resurrected a selection the user had watched disappear, collapsing the
+  // chart back to one isolated line they never re-picked. The effect runs after paint, so
+  // the mask above is what prevents a frame of empty chart in between.
+  useEffect(() => {
+    if (selectedCategory && !categoryNames.includes(selectedCategory)) setSelectedCategory(null);
+  }, [categoryNames, selectedCategory]);
 
   interface TooltipPayload { dataKey: string; value?: number; color?: string }
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: TooltipPayload[]; label?: string }) => {
@@ -178,6 +186,7 @@ export default function SpendingTrendsChart({ transactions, income, exclusion = 
           <button
             type="button"
             onClick={() => setSelectedCategory(null)}
+            aria-pressed={activeCategory === null}
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
               activeCategory === null ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground"
             }`}
@@ -189,6 +198,7 @@ export default function SpendingTrendsChart({ transactions, income, exclusion = 
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(activeCategory === cat ? null : cat)}
+              aria-pressed={activeCategory === cat}
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
                 activeCategory === cat ? "text-background" : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
@@ -202,7 +212,11 @@ export default function SpendingTrendsChart({ transactions, income, exclusion = 
       <CardContent>
         {categoryNames.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            No spending in the categories you're showing.
+            {/* An empty window and an emptied filter are different claims. Blaming a
+                filter nobody switched on sends the reader hunting for one to clear. */}
+            {filterActive
+              ? "No spending in the categories you're showing."
+              : `No spending in the last ${months} months.`}
           </p>
         ) : (
         <div className="h-64">

@@ -55,6 +55,18 @@ export function isFilterActive(ex: CategoryExclusion): boolean {
   return ex.categories.size > 0 || ex.subs.size > 0;
 }
 
+/**
+ * Whether the category itself is hidden, as opposed to merely having all of its subs
+ * hidden one by one.
+ *
+ * `categoryState` deliberately collapses both into "hidden" for the checkbox, but the two
+ * must not be confused when deciding whether to disable the sub rows: disabling them
+ * because the user unticked the last one takes away the control they were just using.
+ */
+export function isCategoryHidden(ex: CategoryExclusion, name: string): boolean {
+  return ex.categories.has(name);
+}
+
 export function isExcluded(ex: CategoryExclusion, category: string, sub: string | null): boolean {
   // A whole-category exclusion wins outright, so a sub does not need its own entry for
   // the parent's checkbox to hide it.
@@ -135,12 +147,23 @@ export function buildFilterOptions(
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** How many distinct things the user has hidden, for the trigger's "N hidden" label. */
-export function excludedCount(ex: CategoryExclusion): number {
-  let count = ex.categories.size;
+/**
+ * How many distinct things the user has hidden, for the trigger's "N hidden" label.
+ *
+ * Counted against what the list renders, not the raw set sizes: subs of an already-hidden
+ * category are redundant rather than separately hidden, and a category whose every sub was
+ * unticked shows as one hidden row, so it counts once. Without `options` the two can only
+ * be counted separately, and the footer ends up disagreeing with the list above it.
+ */
+export function excludedCount(ex: CategoryExclusion, options: FilterOption[] = []): number {
+  const collapsed = new Set(
+    options.filter((o) => categoryState(ex, o) === "hidden").map((o) => o.name),
+  );
+  for (const name of ex.categories) collapsed.add(name);
+
+  let count = collapsed.size;
   for (const key of ex.subs) {
-    // Subs of an already-hidden category are redundant, not a second thing hidden.
-    if (!ex.categories.has(categoryOf(key))) count++;
+    if (!collapsed.has(categoryOf(key))) count++;
   }
   return count;
 }
@@ -151,7 +174,7 @@ export function categoryState(
   option: FilterOption,
 ): "shown" | "hidden" | "partial" {
   if (ex.categories.has(option.name)) return "hidden";
-  const hiddenSubs = option.subs.filter((sub) => ex.subs.has(`${option.name}${SEP}${sub}`));
+  const hiddenSubs = option.subs.filter((sub) => ex.subs.has(subKey(option.name, sub)));
   if (hiddenSubs.length === 0) return "shown";
   return hiddenSubs.length === option.subs.length ? "hidden" : "partial";
 }
@@ -191,7 +214,7 @@ export function showCategory(ex: CategoryExclusion, name: string): CategoryExclu
 }
 
 export function toggleSub(ex: CategoryExclusion, category: string, sub: string): CategoryExclusion {
-  const key = `${category}${SEP}${sub}`;
+  const key = subKey(category, sub);
   const subs = new Set(ex.subs);
   if (subs.has(key)) subs.delete(key);
   else subs.add(key);

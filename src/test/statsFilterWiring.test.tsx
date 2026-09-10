@@ -107,11 +107,39 @@ describe("SpendingTrendsChart honours the category filter", () => {
     // selected would leave a highlighted chip driving a chart with no line in it.
     const { rerender } = renderTrends(EMPTY_EXCLUSION);
     fireEvent.click(screen.getByRole("button", { name: "Dining" }));
+    expect(screen.getByRole("button", { name: "Dining" })).toHaveAttribute("aria-pressed", "true");
 
     rerender(<SpendingTrendsChart transactions={transactions} exclusion={exclusion(["Dining"])} />);
 
     // "All" is the reset chip; it goes back to being the active one.
-    expect(screen.getByRole("button", { name: "All" })).toHaveClass("bg-foreground");
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("does not resurrect the selection when the category comes back", () => {
+    // Regression: activeCategory masked the render but selectedCategory kept the stale
+    // name, so un-hiding the category snapped the chart back to one isolated line the
+    // user had already watched deselect itself.
+    const { rerender } = renderTrends(EMPTY_EXCLUSION);
+    fireEvent.click(screen.getByRole("button", { name: "Dining" }));
+
+    rerender(<SpendingTrendsChart transactions={transactions} exclusion={exclusion(["Dining"])} />);
+    rerender(<SpendingTrendsChart transactions={transactions} exclusion={EMPTY_EXCLUSION} />);
+
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Dining" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("blames the window, not a filter, when nothing is hidden", () => {
+    // Regression: the empty state was unconditional, so an account whose spend predates
+    // the rolling window read "No spending in the categories you're showing" with an
+    // entirely empty exclusion, and went hunting for a filter to clear.
+    const old = format(new Date(now.getFullYear() - 2, 0, 15), "yyyy-MM-dd");
+    const stale = [{ ...tx("Dining", 100), date: old, expense_date: old }] as Transaction[];
+
+    render(<SpendingTrendsChart transactions={stale} exclusion={EMPTY_EXCLUSION} />);
+
+    expect(screen.getByText(/no spending in the last 6 months/i)).toBeInTheDocument();
+    expect(screen.queryByText(/categories you're showing/i)).not.toBeInTheDocument();
   });
 
   it("says the filter is on rather than plotting flat zero lines", () => {

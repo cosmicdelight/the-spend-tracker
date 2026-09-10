@@ -8,6 +8,7 @@ import {
   buildFilterOptions,
   isFilterActive,
   excludedCount,
+  isCategoryHidden,
   categoryState,
   toggleCategory,
   toggleSub,
@@ -154,7 +155,36 @@ describe("toggleCategory", () => {
   });
 });
 
+describe("isCategoryHidden", () => {
+  it("separates a hidden category from one whose subs all happen to be hidden", () => {
+    // The list disables sub checkboxes off this, not off categoryState: unticking the
+    // last sub must not disable the boxes the user was just clicking.
+    const option = { name: "Dining", subs: ["Cafes", "Restaurants"] };
+    const allSubsHidden = exclusion([], [subKey("Dining", "Cafes"), subKey("Dining", "Restaurants")]);
+
+    expect(categoryState(allSubsHidden, option)).toBe("hidden");
+    expect(isCategoryHidden(allSubsHidden, "Dining")).toBe(false);
+    expect(isCategoryHidden(exclusion(["Dining"]), "Dining")).toBe(true);
+  });
+});
+
 describe("excludedCount", () => {
+  it("counts a fully-sub-hidden category once, as the list renders it", () => {
+    // Without the options the footer says "2 hidden" for what the list shows as one
+    // hidden row, and the count disagrees with the thing directly above it.
+    const option = { name: "Dining", subs: ["Cafes", "Restaurants"] };
+    const ex = exclusion([], [subKey("Dining", "Cafes"), subKey("Dining", "Restaurants")]);
+
+    expect(excludedCount(ex, [option])).toBe(1);
+  });
+
+  it("still counts a partially-hidden category's subs separately", () => {
+    const option = { name: "Dining", subs: ["Cafes", "Restaurants"] };
+    const ex = exclusion([], [subKey("Dining", "Cafes")]);
+
+    expect(excludedCount(ex, [option])).toBe(1);
+  });
+
   it("does not double-count subs of an already-hidden category", () => {
     const ex = exclusion(["Dining"], [subKey("Dining", "Cafes"), subKey("Travel", "Flights")]);
 
