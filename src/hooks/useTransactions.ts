@@ -3,6 +3,7 @@ import { useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { removeAttachmentFiles } from "@/lib/attachmentStorage";
+import { fetchAllRows } from "@/lib/fetchAllRows";
 
 export interface Transaction {
   id: string;
@@ -26,15 +27,28 @@ export function useTransactions() {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["transactions", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .order("date", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Transaction[];
-    },
+    // Paged, because PostgREST caps a single response at 1000 rows and says nothing when
+    // it does. Unbounded, this returned the 1000 most recent by date and silently hid
+    // everything older — 4,288 rows on the account that surfaced it, going back to 2021.
+    //
+    // The trailing sort on `id` is load-bearing, not tidiness. `date` and `created_at` do
+    // not uniquely order these rows (a CSV import gives every row it writes the same
+    // created_at), and Postgres makes no promise about how tied rows fall between two
+    // separate queries. Without a unique tiebreaker a row can be served in both pages or
+    // neither, so paging would reintroduce the data loss it is here to fix.
+    queryFn: () =>
+      fetchAllRows<Transaction>((from, to) =>
+        supabase
+          .from("transactions")
+          // The count is what lets fetchAllRows tell "the table ended" from "the server
+          // capped this response", and what lets it request the remaining pages at once
+          // instead of walking them one round trip at a time.
+          .select("*", { count: "exact" })
+          .order("date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(from, to),
+      ),
     enabled: !!user,
   });
 }
