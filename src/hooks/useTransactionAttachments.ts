@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { ATTACHMENTS_BUCKET, removeAttachmentFiles } from "@/lib/attachmentStorage";
 
 export interface TransactionAttachment {
   id: string;
@@ -74,7 +75,7 @@ export function useUploadAttachment() {
       const filePath = `${user.id}/${transactionId}/${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadErr } = await supabase.storage
-        .from("transaction-attachments")
+        .from(ATTACHMENTS_BUCKET)
         .upload(filePath, file, { contentType: file.type });
       if (uploadErr) throw uploadErr;
 
@@ -99,9 +100,23 @@ export function useDeleteAttachment() {
 
   return useMutation({
     mutationFn: async ({ attachment }: { attachment: TransactionAttachment }) => {
-      await supabase.storage.from("transaction-attachments").remove([attachment.file_path]);
+      // Row first, then the file — the same order useDeleteTransaction uses, and for
+      // the same reason. This used to remove the file first, which meant a failed row
+      // delete left the attachment pointing at a file that no longer existed: a broken
+      // entry in the UI that the user could neither open nor clear. This way round the
+      // worst case is an orphaned file, which loses nothing.
       const { error } = await supabase.from("transaction_attachments").delete().eq("id", attachment.id);
       if (error) throw error;
+
+      // Advisory: the row is already gone, so a storage fault must not report the
+      // delete as having failed. Previously this result was discarded entirely.
+      const removal = await removeAttachmentFiles([attachment.file_path]);
+      if (removal.removed < removal.requested) {
+        console.warn(
+          `Attachment ${attachment.id} was deleted but its file remains in storage:`,
+          { path: attachment.file_path, error: removal.error },
+        );
+      }
     },
     onSuccess: (_, { attachment }) => {
       qc.invalidateQueries({ queryKey: ["transaction-attachments", attachment.transaction_id] });
@@ -110,13 +125,13 @@ export function useDeleteAttachment() {
 }
 
 export function getAttachmentUrl(filePath: string): string {
-  const { data } = supabase.storage.from("transaction-attachments").getPublicUrl(filePath);
+  const { data } = supabase.storage.from(ATTACHMENTS_BUCKET).getPublicUrl(filePath);
   return data.publicUrl;
 }
 
 export function getSignedAttachmentUrl(filePath: string): Promise<string> {
   return supabase.storage
-    .from("transaction-attachments")
+    .from(ATTACHMENTS_BUCKET)
     .createSignedUrl(filePath, 3600)
     .then(({ data, error }) => {
       if (error) throw error;
