@@ -9,18 +9,26 @@ const mocks = vi.hoisted(() => ({
   rows: [] as { id: string }[],
   orderedBy: [] as string[],
   ranges: [] as [number, number][],
+  selectOptions: [] as unknown[],
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
   const builder = {
-    select: () => builder,
+    select: (_columns: string, options?: unknown) => {
+      mocks.selectOptions.push(options);
+      return builder;
+    },
     order: (column: string) => {
       mocks.orderedBy.push(column);
       return builder;
     },
     range: (from: number, to: number) => {
       mocks.ranges.push([from, to]);
-      return Promise.resolve({ data: mocks.rows.slice(from, to + 1), error: null });
+      return Promise.resolve({
+        data: mocks.rows.slice(from, to + 1),
+        error: null,
+        count: mocks.rows.length,
+      });
     },
   };
   return { supabase: { from: () => builder } };
@@ -45,6 +53,7 @@ function renderTransactions() {
 beforeEach(() => {
   mocks.orderedBy = [];
   mocks.ranges = [];
+  mocks.selectOptions = [];
 });
 
 describe("useTransactions", () => {
@@ -76,6 +85,17 @@ describe("useTransactions", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mocks.orderedBy).toEqual(["date", "created_at", "id"]);
+  });
+
+  it("asks for a row count, which is what makes the paging safe", async () => {
+    // Without it the helper cannot tell the end of the table from the server's own cap,
+    // and it refuses to run rather than guess.
+    mocks.rows = [{ id: "t1" }];
+
+    const { result } = renderTransactions();
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mocks.selectOptions[0]).toEqual({ count: "exact" });
   });
 
   it("still works for an account under one page", async () => {

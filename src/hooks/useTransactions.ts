@@ -40,7 +40,10 @@ export function useTransactions() {
       fetchAllRows<Transaction>((from, to) =>
         supabase
           .from("transactions")
-          .select("*")
+          // The count is what lets fetchAllRows tell "the table ended" from "the server
+          // capped this response", and what lets it request the remaining pages at once
+          // instead of walking them one round trip at a time.
+          .select("*", { count: "exact" })
           .order("date", { ascending: false })
           .order("created_at", { ascending: false })
           .order("id", { ascending: false })
