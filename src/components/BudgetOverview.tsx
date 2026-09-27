@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ChevronDown, ChevronRight, ChevronLeftIcon, ChevronRightIcon, Eye, EyeOff } from "lucide-react";
@@ -11,6 +11,15 @@ import SpendByCardBreakdown from "@/components/SpendByCardBreakdown";
 import type { CreditCard } from "@/hooks/useCreditCards";
 
 import EditTransactionDialog from "@/components/EditTransactionDialog";
+import CategoryFilterMenu from "@/components/CategoryFilterMenu";
+import {
+  EMPTY_EXCLUSION,
+  NO_SUB,
+  buildFilterOptions,
+  excludeCategories,
+  isFilterActive,
+  type CategoryExclusion,
+} from "@/lib/spendFilter";
 
 function CategoryTransactions({ category, transactions }: { category: string; transactions: Transaction[] }) {
   const [editTx, setEditTx] = useState<Transaction | null>(null);
@@ -105,6 +114,21 @@ export default function BudgetOverview({ categories, transactions, income, cards
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
+  // Categories the user has chosen to hide from every card on this tab. Deliberately not
+  // persisted: a filter that survives a reload is a filter you forget is on, and the
+  // numbers here are the ones you'd least want to misread later.
+  const [exclusion, setExclusion] = useState<CategoryExclusion>(EMPTY_EXCLUSION);
+  const filterActive = isFilterActive(exclusion);
+  const clearFilter = useCallback(() => setExclusion(EMPTY_EXCLUSION), []);
+
+  // Built from every transaction, not the visible period. Scoped to the month instead,
+  // options would appear and vanish as the user pages around, and something hidden in
+  // March would quietly stop being hidden in April.
+  const filterOptions = useMemo(
+    () => buildFilterOptions(categories, transactions),
+    [categories, transactions],
+  );
+
   const goBack = () => {
     if (view === "month") {
       if (selectedMonth === 0) { setSelectedMonth(11); setSelectedYear((y) => y - 1); }
@@ -134,7 +158,7 @@ export default function BudgetOverview({ categories, transactions, income, cards
     ? `${MONTH_NAMES[selectedMonth]} ${selectedYear}`
     : `${selectedYear}`;
 
-  const filteredTxs = useMemo(
+  const periodTxs = useMemo(
     () =>
       transactions.filter((t) => {
         const d = new Date(t.expense_date || t.date);
@@ -145,6 +169,12 @@ export default function BudgetOverview({ categories, transactions, income, cards
       }),
     [transactions, selectedMonth, selectedYear, view],
   );
+
+  // Split from the period filter so toggling a category doesn't re-scan every date. The
+  // exclusion lands here rather than on `grouped` below: everything downstream —
+  // totalSpent, the pie, each percentage, the drill-down lists — derives from this array,
+  // so filtering here keeps the numerator and denominator talking about the same spend.
+  const filteredTxs = useMemo(() => excludeCategories(periodTxs, exclusion), [periodTxs, exclusion]);
 
   // Group by parent category name, aggregate spend, collect sub-category breakdown
   const grouped: GroupedEntry[] = useMemo(() => {
@@ -162,8 +192,10 @@ export default function BudgetOverview({ categories, transactions, income, cards
       const entry = map.get(tx.category)!;
       const amt = Number(tx.personal_amount);
       entry.total += amt;
-      const subKey = tx.sub_category || "(no sub-category)";
-      entry.subs.set(subKey, (entry.subs.get(subKey) || 0) + amt);
+      // Shared with the filter's option list — if these two sentinels ever drift, a
+      // category's sub-less spend becomes impossible to hide.
+      const subName = tx.sub_category || NO_SUB;
+      entry.subs.set(subName, (entry.subs.get(subName) || 0) + amt);
     }
 
     return [...map.entries()]
@@ -242,9 +274,39 @@ export default function BudgetOverview({ categories, transactions, income, cards
   return (
     <div className="space-y-6">
 
-    {/* Net savings summary */}
-    {showSavings && showIncome && (
+    {/* Category filter — sits above everything it governs. */}
+    <div className="flex items-center justify-between gap-2">
+      <CategoryFilterMenu options={filterOptions} exclusion={exclusion} onChange={setExclusion} />
+    </div>
+
+    {/* Net savings summary.
+
+        Suppressed while filtering. Income has its own category set and cannot be filtered
+        alongside spend, so "unfiltered income − filtered spend" is not a smaller savings
+        figure, it is a wrong one — and wrong in the flattering direction. The card keeps
+        its shell rather than vanishing, because it already disappears when income is
+        hidden and a second reason to disappear reads as a bug. All three columns go, not
+        just Savings: leaving real Income beside filtered Spending only invites the reader
+        to do the bad subtraction themselves. */}
+    {showSavings && showIncome && filterActive && (
       <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-2 py-4">
+          <p className="text-sm text-muted-foreground">
+            Savings hidden while categories are filtered
+          </p>
+          <button
+            type="button"
+            onClick={clearFilter}
+            className="text-sm font-medium text-primary underline underline-offset-2 hover:opacity-80"
+          >
+            Show all
+          </button>
+        </CardContent>
+      </Card>
+    )}
+
+    {showSavings && showIncome && !filterActive && (
+      <Card data-testid="net-savings">
         <CardContent className="pt-5">
           <div className="grid grid-cols-3 divide-x text-center">
             <div className="px-3">
@@ -424,7 +486,13 @@ export default function BudgetOverview({ categories, transactions, income, cards
         )}
 
         {pieData.length === 0 && categories.length > 0 && (
-          <p className="mb-4 text-center text-sm text-muted-foreground">No spending {view === "month" ? "this month" : "this year"} yet.</p>
+          <p className="mb-4 text-center text-sm text-muted-foreground">
+            {/* "Nothing here yet" and "you've hidden everything here" are different
+                claims, and only one of them is the user's own doing. */}
+            {filterActive
+              ? "No spending in the categories you're showing."
+              : `No spending ${view === "month" ? "this month" : "this year"} yet.`}
+          </p>
         )}
 
         {/* Legend / category list */}
@@ -513,9 +581,14 @@ export default function BudgetOverview({ categories, transactions, income, cards
       selectedMonth={selectedMonth}
       selectedYear={selectedYear}
       periodLabel={periodLabel}
+      exclusion={exclusion}
     />
 
-    <SpendingTrendsChart transactions={transactions} income={showIncome ? income : undefined} />
+    <SpendingTrendsChart
+      transactions={transactions}
+      income={showIncome ? income : undefined}
+      exclusion={exclusion}
+    />
 
 
     {/* Income Breakdown card */}

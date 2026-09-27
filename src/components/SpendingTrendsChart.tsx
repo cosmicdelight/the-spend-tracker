@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -12,6 +12,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Transaction } from "@/hooks/useTransactions";
 import type { IncomeEntry } from "@/hooks/useIncome";
+import {
+  EMPTY_EXCLUSION,
+  excludeCategories,
+  isFilterActive,
+  type CategoryExclusion,
+} from "@/lib/spendFilter";
 
 const INCOME_COLOR = "hsl(140, 55%, 42%)";
 
@@ -32,11 +38,13 @@ const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 interface Props {
   transactions: Transaction[];
   income?: IncomeEntry[];
+  exclusion?: CategoryExclusion;
 }
 
-export default function SpendingTrendsChart({ transactions, income }: Props) {
+export default function SpendingTrendsChart({ transactions, income, exclusion = EMPTY_EXCLUSION }: Props) {
   const [months, setMonths] = useState(6);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const filterActive = isFilterActive(exclusion);
 
   const { chartData, categoryNames, hasIncome } = useMemo(() => {
     const now = new Date();
@@ -60,7 +68,12 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
       periodIncomeMap.set(`${p.year}-${p.month}`, 0);
     }
 
-    for (const tx of transactions) {
+    // Filtered before bucketing, which puts it before the top-8 cap further down. Cap
+    // first and hiding your three biggest categories would leave five lines instead of
+    // promoting the next three; this way the chart refills itself.
+    const visible = excludeCategories(transactions, exclusion);
+
+    for (const tx of visible) {
       const d = new Date(tx.expense_date || tx.date);
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       const bucket = periodCatMap.get(key);
@@ -103,7 +116,19 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
     });
 
     return { chartData, categoryNames: topCats, hasIncome };
-  }, [transactions, income, months]);
+  }, [transactions, income, months, exclusion]);
+
+  // A chip stays selected by name, so hiding that category would leave a highlighted chip
+  // driving a chart with no line in it. Masked here for the render...
+  const activeCategory = selectedCategory && categoryNames.includes(selectedCategory) ? selectedCategory : null;
+
+  // ...and cleared for real here. Masking alone left the name in state, so un-hiding the
+  // category later resurrected a selection the user had watched disappear, collapsing the
+  // chart back to one isolated line they never re-picked. The effect runs after paint, so
+  // the mask above is what prevents a frame of empty chart in between.
+  useEffect(() => {
+    if (selectedCategory && !categoryNames.includes(selectedCategory)) setSelectedCategory(null);
+  }, [categoryNames, selectedCategory]);
 
   interface TooltipPayload { dataKey: string; value?: number; color?: string }
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: TooltipPayload[]; label?: string }) => {
@@ -136,7 +161,12 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
     <Card>
       <CardHeader className="flex flex-col gap-2 space-y-0 pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Spending Trends</CardTitle>
+          <div className="flex flex-col">
+            <CardTitle className="text-lg">Spending Trends</CardTitle>
+            {filterActive && (
+              <span className="text-xs text-muted-foreground">Filtered · spend lines only</span>
+            )}
+          </div>
           <div className="flex gap-1 rounded-lg border bg-muted p-0.5">
             {[3, 6, 12].map((n) => (
               <button
@@ -156,8 +186,9 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
           <button
             type="button"
             onClick={() => setSelectedCategory(null)}
+            aria-pressed={activeCategory === null}
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-              selectedCategory === null ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground"
+              activeCategory === null ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:text-foreground"
             }`}
           >
             All
@@ -166,11 +197,12 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
             <button
               key={cat}
               type="button"
-              onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+              onClick={() => setSelectedCategory(activeCategory === cat ? null : cat)}
+              aria-pressed={activeCategory === cat}
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                selectedCategory === cat ? "text-background" : "bg-muted text-muted-foreground hover:text-foreground"
+                activeCategory === cat ? "text-background" : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
-              style={selectedCategory === cat ? { backgroundColor: LINE_COLORS[i % LINE_COLORS.length] } : undefined}
+              style={activeCategory === cat ? { backgroundColor: LINE_COLORS[i % LINE_COLORS.length] } : undefined}
             >
               {cat}
             </button>
@@ -178,6 +210,15 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
         </div>
       </CardHeader>
       <CardContent>
+        {categoryNames.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {/* An empty window and an emptied filter are different claims. Blaming a
+                filter nobody switched on sends the reader hunting for one to clear. */}
+            {filterActive
+              ? "No spending in the categories you're showing."
+              : `No spending in the last ${months} months.`}
+          </p>
+        ) : (
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
@@ -185,7 +226,7 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
               <XAxis dataKey="month" tick={{ fontSize: 11 }} className="text-muted-foreground" />
               <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" tickFormatter={(v) => `$${v}`} />
               <Tooltip content={<CustomTooltip />} />
-              {!selectedCategory && (
+              {!activeCategory && (
                 <Legend
                   wrapperStyle={{ fontSize: 11 }}
                   iconType="circle"
@@ -203,7 +244,7 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
                   activeDot={{ r: 5 }}
                 />
               )}
-              {!selectedCategory && (
+              {!activeCategory && (
                 <Line
                   type="monotone"
                   dataKey="Total"
@@ -214,7 +255,7 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
                 />
               )}
               {categoryNames
-                .filter((cat) => !selectedCategory || selectedCategory === cat)
+                .filter((cat) => !activeCategory || activeCategory === cat)
                 .map((cat) => {
                   const i = categoryNames.indexOf(cat);
                   return (
@@ -223,16 +264,17 @@ export default function SpendingTrendsChart({ transactions, income }: Props) {
                       type="monotone"
                       dataKey={cat}
                       stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                      strokeWidth={selectedCategory ? 2.5 : 1.5}
-                      dot={{ r: selectedCategory ? 3 : 2 }}
-                      activeDot={{ r: selectedCategory ? 5 : 4 }}
-                      strokeDasharray={!selectedCategory && i > 3 ? "4 2" : undefined}
+                      strokeWidth={activeCategory ? 2.5 : 1.5}
+                      dot={{ r: activeCategory ? 3 : 2 }}
+                      activeDot={{ r: activeCategory ? 5 : 4 }}
+                      strokeDasharray={!activeCategory && i > 3 ? "4 2" : undefined}
                     />
                   );
                 })}
             </LineChart>
           </ResponsiveContainer>
         </div>
+        )}
       </CardContent>
     </Card>
   );
