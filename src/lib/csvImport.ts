@@ -1,4 +1,5 @@
 import { shareExceedsTotal } from "./splitExpense";
+import { SUPPORTED_CURRENCIES } from "./currencies";
 
 /**
  * CSV parsing utilities for transaction import.
@@ -197,6 +198,10 @@ const amountError = (rowNum: number, key: string, raw: string) =>
  * Read the optional currency and original_amount columns. `amount` is always SGD; for a
  * foreign currency the CSV must also say what was paid in that currency, since the import
  * does not convert. Returns null (with an error pushed) when the row should be dropped.
+ *
+ * Both checks protect later edits: the edit dialogs load original_amount as the amount to
+ * show, so an SGD row whose original_amount differs from amount, or a currency with no
+ * exchange rate, would have its SGD amount overwritten the next time it is saved.
  */
 function readCurrency(
   getRaw: (key: string) => string,
@@ -205,8 +210,8 @@ function readCurrency(
   errors: string[],
 ): { currency: string; original_amount: number } | null {
   const currency = getRaw("currency").toUpperCase() || "SGD";
-  if (!/^[A-Z]{3}$/.test(currency)) {
-    errors.push(`Row ${rowNum}: invalid currency "${currency}" — use a 3-letter code such as USD`);
+  if (!(SUPPORTED_CURRENCIES as readonly string[]).includes(currency)) {
+    errors.push(`Row ${rowNum}: unsupported currency "${currency}" — use one of ${SUPPORTED_CURRENCIES.join(", ")}`);
     return null;
   }
   const originalRaw = getRaw("original_amount");
@@ -224,6 +229,10 @@ function readCurrency(
   }
   if (original < 0) {
     errors.push(`Row ${rowNum}: original_amount must be 0 or greater`);
+    return null;
+  }
+  if (currency === "SGD" && original !== amount) {
+    errors.push(`Row ${rowNum}: original_amount (${original}) must equal amount (${amount}) for SGD — set currency if it was paid in another currency`);
     return null;
   }
   return { currency, original_amount: original };

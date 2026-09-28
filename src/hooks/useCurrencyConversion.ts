@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatLocalDate } from "@/lib/localDate";
+import { SUPPORTED_CURRENCIES } from "@/lib/currencies";
 
-const POPULAR_CURRENCIES = [
-  "SGD", "USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "HKD",
-  "INR", "KRW", "MYR", "NZD", "PHP", "THB", "TWD", "VND", "IDR", "AED",
-];
+const POPULAR_CURRENCIES: string[] = [...SUPPORTED_CURRENCIES];
 
 interface ExchangeRates {
   [currency: string]: number;

@@ -390,12 +390,16 @@ export default function ImportTransactionsDialog() {
   const downloadTemplate = () => {
     let header: string, sample: string, filename: string;
     if (importType === "expense") {
+      // Use one of the user's own cards so the template imports as downloaded; with no
+      // cards, leave the column blank (it is optional).
+      const cardName = creditCards.find((c) => !c.hidden_from_dropdown)?.name ?? creditCards[0]?.name ?? "";
+      const card = /[",\r\n]/.test(cardName) ? `"${cardName.replace(/"/g, '""')}"` : cardName;
       header = "date,expense_date,amount,personal_amount,category,sub_category,payment_mode,credit_card,currency,original_amount,description,notes";
       sample = [
-        "2026-01-15,,50.00,25.00,Food,Restaurants,credit_card,My Visa,,,Dinner with friends,Split with John",
+        `2026-01-15,,50.00,25.00,Food,Restaurants,credit_card,${card},,,Dinner with friends,Split with John`,
         "2026-02-03,,12.50,12.50,Transport,,cash,,,,Grab ride,",
-        "2026-03-10,2026-05-20,180.00,180.00,Entertainment,Concerts,credit_card,My Visa,,,Concert tickets (bought in March for May show),",
-        "2026-04-02,,67.50,67.50,Shopping,,credit_card,My Visa,USD,50.00,Online order (amount in SGD; original_amount in USD),",
+        `2026-03-10,2026-05-20,180.00,180.00,Entertainment,Concerts,credit_card,${card},,,Concert tickets (bought in March for May show),`,
+        `2026-04-02,,67.50,67.50,Shopping,,credit_card,${card},USD,50.00,Online order (amount in SGD; original_amount in USD),`,
       ].join("\n");
       filename = "expenses_template.csv";
     } else {

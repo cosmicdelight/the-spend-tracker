@@ -140,10 +140,24 @@ describe("currency and credit card columns", () => {
     expect(result.errors[0]).toContain("original_amount is required");
   });
 
-  it("rejects a currency that is not a 3-letter code", () => {
-    const result = parseExpenseCSV(`${headers}\n2024-01-15,10,10,Food,,cash,,US$,10,Snack,`);
+  it("rejects a currency the app does not support, including typos", () => {
+    for (const code of ["US$", "USS", "MXN"]) {
+      const result = parseExpenseCSV(`${headers}\n2024-01-15,10,10,Food,,cash,,${code},10,Snack,`);
+      expect(result.rows).toHaveLength(0);
+      expect(result.errors[0]).toContain("unsupported currency");
+    }
+  });
+
+  it("rejects an SGD original_amount that differs from amount", () => {
+    const result = parseIncomeCSV(`date,amount,currency,original_amount,category,sub_category,description,notes\n2024-01-15,675,,500,Freelance,,Logo,`);
     expect(result.rows).toHaveLength(0);
-    expect(result.errors[0]).toContain("invalid currency");
+    expect(result.errors[0]).toContain("must equal amount");
+  });
+
+  it("accepts an SGD original_amount equal to amount", () => {
+    const result = parseExpenseCSV(`${headers}\n2024-01-15,40,40,Food,,cash,,SGD,40.00,Lunch,`);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0]).toMatchObject({ currency: "SGD", original_amount: 40 });
   });
 
   it("rejects an unreadable original_amount", () => {
