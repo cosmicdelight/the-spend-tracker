@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Search, X, Check, Users, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,17 @@ import AddTransactionDialog, { type DuplicateTransactionData } from "./AddTransa
 import { isSplitExpense } from "@/lib/splitExpense";
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * How many matches a search puts on screen at once.
+ *
+ * A one- or two-letter query matches thousands of rows, and every one of them mounts a
+ * card. That DOM work — not the scan itself — is what makes typing stutter on a phone.
+ * The cap applies to search only: a month view must show every row it has, because
+ * hiding some is precisely the silent truncation that #16 existed to fix. Here the
+ * omission is deliberate, bounded and stated on screen.
+ */
+const SEARCH_RESULT_LIMIT = 200;
 
 interface Props {
   transactions: Transaction[];
@@ -33,17 +44,29 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const updateTx = useUpdateTransaction();
   const { data: attachmentIds } = useTransactionAttachmentIds();
 
+  // The input stays bound to `search`, so typing is never held up by the filter below.
+  // The scan runs on the deferred copy instead, which lets React abandon a half-finished
+  // filter render as soon as the next keystroke lands — typing a seven-letter word costs
+  // roughly one pass over the transactions rather than seven.
+  const deferredSearch = useDeferredValue(search);
+  const query = deferredSearch.trim().toLowerCase();
+
+  // Two flags, deliberately out of step. `isSearching` follows the keystroke and drives
+  // the input's own chrome; `isFilteringBySearch` follows the deferred value and drives
+  // the list, so the results, the empty message and the date format always agree with
+  // each other. Reading the immediate flag here would be a bug: on the first keystroke
+  // it is true while `query` is still "", and `"".includes("")` matches every row.
   const isSearching = search.trim().length > 0;
+  const isFilteringBySearch = query.length > 0;
 
   const filtered = useMemo(() => {
     let base: Transaction[];
-    if (isSearching) {
-      const q = search.trim().toLowerCase();
+    if (isFilteringBySearch) {
       base = transactions.filter((t) =>
-        (t.description ?? "").toLowerCase().includes(q) ||
-        t.category.toLowerCase().includes(q) ||
-        (t.sub_category ?? "").toLowerCase().includes(q) ||
-        (t.notes ?? "").toLowerCase().includes(q)
+        (t.description ?? "").toLowerCase().includes(query) ||
+        t.category.toLowerCase().includes(query) ||
+        (t.sub_category ?? "").toLowerCase().includes(query) ||
+        (t.notes ?? "").toLowerCase().includes(query)
       );
     } else {
       base = transactions.filter((t) => {
@@ -57,18 +80,29 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
       base = base.filter((t) => isSplitExpense(Number(t.personal_amount), Number(t.amount)) && t.settled_up);
     }
     return base;
-  }, [transactions, selectedMonth, selectedYear, search, isSearching, settledFilter]);
+  }, [transactions, selectedMonth, selectedYear, query, isFilteringBySearch, settledFilter]);
+
+  // Memoised rather than sliced inline: `grouped` below keys off this array's identity,
+  // and a fresh slice on every render would rebuild the whole Map each time.
+  const visible = useMemo(
+    () =>
+      isFilteringBySearch && filtered.length > SEARCH_RESULT_LIMIT
+        ? filtered.slice(0, SEARCH_RESULT_LIMIT)
+        : filtered,
+    [filtered, isFilteringBySearch],
+  );
+  const omitted = filtered.length - visible.length;
 
   // Group by expense_date (falls back to date)
   const grouped = useMemo(() => {
     const map = new Map<string, Transaction[]>();
-    for (const tx of filtered) {
+    for (const tx of visible) {
       const key = tx.expense_date || tx.date;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(tx);
     }
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  }, [filtered]);
+  }, [visible]);
 
   const isCurrentMonth = selectedMonth === now.getMonth() && selectedYear === now.getFullYear();
 
@@ -164,7 +198,12 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
         <CardContent>
           {grouped.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              {isSearching ? `No transactions matching "${search}".` : "No transactions this month."}
+              {isFilteringBySearch ? `No transactions matching "${deferredSearch.trim()}".` : "No transactions this month."}
+            </p>
+          )}
+          {omitted > 0 && (
+            <p className="mb-3 text-xs text-muted-foreground">
+              Showing the {SEARCH_RESULT_LIMIT} most recent of {filtered.length} matches. Keep typing to narrow them down.
             </p>
           )}
           <div className="space-y-4">
@@ -183,7 +222,7 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <span>{format(parseISO(date), isSearching ? "EEEE, d MMM yyyy" : "EEEE, d MMM")}</span>
+                  <span>{format(parseISO(date), isFilteringBySearch ? "EEEE, d MMM yyyy" : "EEEE, d MMM")}</span>
                   <span className="flex items-center gap-2 shrink-0">
                     {today && (
                       <span className="text-[10px] font-bold uppercase tracking-wider">Today</span>
