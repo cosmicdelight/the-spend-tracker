@@ -44,6 +44,7 @@ describe("parseExpenseCSV", () => {
     expect(result.errors).toEqual([]);
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]).toEqual({
+      row: 2,
       date: "2024-01-15",
       expense_date: "2024-01-15",
       amount: 100.5,
@@ -51,8 +52,11 @@ describe("parseExpenseCSV", () => {
       category: "Groceries",
       sub_category: "Produce",
       payment_mode: "cash",
+      credit_card: null,
       description: "Weekly shop",
       notes: null,
+      currency: "SGD",
+      original_amount: 100.5,
     });
   });
 
@@ -102,7 +106,69 @@ describe("parseIncomeCSV", () => {
       sub_category: null,
       description: "Monthly pay",
       notes: null,
+      currency: "SGD",
+      original_amount: 5000,
     });
+  });
+
+  it("reads a foreign currency and its original amount", () => {
+    const csv = "date,amount,currency,original_amount,category,sub_category,description,notes\n2024-01-15,675,USD,500,Freelance,,Logo,";
+    const result = parseIncomeCSV(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0]).toMatchObject({ amount: 675, currency: "USD", original_amount: 500 });
+  });
+});
+
+describe("currency and credit card columns", () => {
+  const headers = "date,amount,personal_amount,category,sub_category,payment_mode,credit_card,currency,original_amount,description,notes";
+
+  it("defaults a blank currency to SGD with original_amount equal to amount", () => {
+    const result = parseExpenseCSV(`${headers}\n2024-01-15,40,40,Food,,cash,,,,Lunch,`);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0]).toMatchObject({ currency: "SGD", original_amount: 40, credit_card: null });
+  });
+
+  it("reads a foreign currency row and uppercases the code", () => {
+    const result = parseExpenseCSV(`${headers}\n2024-01-15,67.50,67.50,Shopping,,credit_card,My Visa,usd,50.00,Order,`);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0]).toMatchObject({ amount: 67.5, currency: "USD", original_amount: 50, credit_card: "My Visa" });
+  });
+
+  it("requires original_amount for a non-SGD currency", () => {
+    const result = parseExpenseCSV(`${headers}\n2024-01-15,67.50,67.50,Shopping,,cash,,USD,,Order,`);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors[0]).toContain("original_amount is required");
+  });
+
+  it("rejects a currency the app does not support, including typos", () => {
+    for (const code of ["US$", "USS", "MXN"]) {
+      const result = parseExpenseCSV(`${headers}\n2024-01-15,10,10,Food,,cash,,${code},10,Snack,`);
+      expect(result.rows).toHaveLength(0);
+      expect(result.errors[0]).toContain("unsupported currency");
+    }
+  });
+
+  it("rejects an SGD original_amount that differs from amount", () => {
+    const result = parseIncomeCSV(`date,amount,currency,original_amount,category,sub_category,description,notes\n2024-01-15,675,,500,Freelance,,Logo,`);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors[0]).toContain("must equal amount");
+  });
+
+  it("accepts an SGD original_amount equal to amount", () => {
+    const result = parseExpenseCSV(`${headers}\n2024-01-15,40,40,Food,,cash,,SGD,40.00,Lunch,`);
+    expect(result.errors).toEqual([]);
+    expect(result.rows[0]).toMatchObject({ currency: "SGD", original_amount: 40 });
+  });
+
+  it("rejects an unreadable original_amount", () => {
+    const result = parseExpenseCSV(`${headers}\n2024-01-15,10,10,Food,,cash,,USD,"1,23.4",Snack,`);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors[0]).toContain("could not read original_amount");
+  });
+
+  it("keeps the CSV row number when earlier rows are dropped", () => {
+    const result = parseExpenseCSV(`${headers}\nbad-date,10,10,Food,,cash,,,,A,\n2024-01-15,10,10,Food,,cash,,,,B,`);
+    expect(result.rows[0].row).toBe(3);
   });
 });
 

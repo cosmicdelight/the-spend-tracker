@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { usePaymentModes } from "@/hooks/usePaymentModes";
+import { useCreditCards, type CreditCard } from "@/hooks/useCreditCards";
 import { useBudgetCategories } from "@/hooks/useBudgetCategories";
 import { useIncomeCategories } from "@/hooks/useIncomeCategories";
 import { useAddBudgetCategory } from "@/hooks/useBudgetCategories";
@@ -15,12 +16,16 @@ import { useAddIncomeCategory } from "@/hooks/useIncomeCategories";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   EXPENSE_HEADERS,
+  EXPENSE_OPTIONAL_HEADERS,
   INCOME_HEADERS,
+  INCOME_OPTIONAL_HEADERS,
   parseExpenseCSV,
   parseIncomeCSV,
   type ParsedExpense,
   type ParsedIncome,
 } from "@/lib/csvImport";
+
+type ImportExpense = ParsedExpense & { credit_card_id: string | null };
 
 // ── Category Resolution ───────────────────────────────────────────────────────
 interface CategoryResolution {
@@ -241,7 +246,7 @@ export default function ImportTransactionsDialog() {
   const [open, setOpen] = useState(false);
   const [importType, setImportType] = useState<"expense" | "income">("expense");
   const [step, setStep] = useState<"upload" | "review" | "preview">("upload");
-  const [parsedExpenses, setParsedExpenses] = useState<ParsedExpense[]>([]);
+  const [parsedExpenses, setParsedExpenses] = useState<ImportExpense[]>([]);
   const [parsedIncome, setParsedIncome] = useState<ParsedIncome[]>([]);
   const [parseErrors, setParseErrors] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
@@ -255,6 +260,7 @@ export default function ImportTransactionsDialog() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: paymentModes = [] } = usePaymentModes();
+  const { data: creditCards = [] } = useCreditCards();
   const { data: budgetCategories = [] } = useBudgetCategories();
   const { data: incomeCategories = [] } = useIncomeCategories();
   const addBudgetCategory = useAddBudgetCategory();
@@ -269,6 +275,28 @@ export default function ImportTransactionsDialog() {
     if (lower === "card" || lower === "cc") return "credit_card";
     return raw;
   }, [paymentModes]);
+
+  // Match each row's credit_card name to one of the user's cards. Rows naming an unknown
+  // card, or a card on a non-credit-card payment, are dropped with an error rather than
+  // imported without the card.
+  const resolveCreditCards = useCallback((rows: ParsedExpense[], cards: CreditCard[], errors: string[]): ImportExpense[] => {
+    const byName = new Map(cards.map((c) => [c.name.toLowerCase().trim(), c.id]));
+    const resolved: ImportExpense[] = [];
+    for (const r of rows) {
+      if (!r.credit_card) { resolved.push({ ...r, credit_card_id: null }); continue; }
+      if (normalizePaymentMode(r.payment_mode) !== "credit_card") {
+        errors.push(`Row ${r.row}: credit_card "${r.credit_card}" is set but payment_mode is not credit_card`);
+        continue;
+      }
+      const id = byName.get(r.credit_card.toLowerCase().trim());
+      if (!id) {
+        errors.push(`Row ${r.row}: no credit card named "${r.credit_card}"`);
+        continue;
+      }
+      resolved.push({ ...r, credit_card_id: id });
+    }
+    return resolved;
+  }, [normalizePaymentMode]);
 
   const reset = () => {
     setParsedExpenses([]);
@@ -327,7 +355,7 @@ export default function ImportTransactionsDialog() {
       const text = reader.result as string;
       if (importType === "expense") {
         const { rows, errors } = parseExpenseCSV(text);
-        setParsedExpenses(rows);
+        setParsedExpenses(resolveCreditCards(rows, creditCards, errors));
         setParsedIncome([]);
         setParseErrors(errors);
       } else {
@@ -341,7 +369,7 @@ export default function ImportTransactionsDialog() {
       setReviewItems([]);
     };
     reader.readAsText(file);
-  }, [importType]);
+  }, [importType, resolveCreditCards, creditCards]);
 
   const handleFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -362,12 +390,24 @@ export default function ImportTransactionsDialog() {
   const downloadTemplate = () => {
     let header: string, sample: string, filename: string;
     if (importType === "expense") {
-      header = "date,expense_date,amount,personal_amount,category,sub_category,payment_mode,description,notes";
-      sample = "2026-01-15,,50.00,25.00,Food,Restaurants,credit_card,Dinner with friends,Split with John\n2026-02-03,,12.50,12.50,Transport,,cash,Grab ride,\n2026-03-10,2026-05-20,180.00,180.00,Entertainment,Concerts,credit_card,Concert tickets (bought in March for May show),";
+      // Use one of the user's own cards so the template imports as downloaded; with no
+      // cards, leave the column blank (it is optional).
+      const cardName = creditCards.find((c) => !c.hidden_from_dropdown)?.name ?? creditCards[0]?.name ?? "";
+      const card = /[",\r\n]/.test(cardName) ? `"${cardName.replace(/"/g, '""')}"` : cardName;
+      header = "date,expense_date,amount,personal_amount,category,sub_category,payment_mode,credit_card,currency,original_amount,description,notes";
+      sample = [
+        `2026-01-15,,50.00,25.00,Food,Restaurants,credit_card,${card},,,Dinner with friends,Split with John`,
+        "2026-02-03,,12.50,12.50,Transport,,cash,,,,Grab ride,",
+        `2026-03-10,2026-05-20,180.00,180.00,Entertainment,Concerts,credit_card,${card},,,Concert tickets (bought in March for May show),`,
+        `2026-04-02,,67.50,67.50,Shopping,,credit_card,${card},USD,50.00,Online order (amount in SGD; original_amount in USD),`,
+      ].join("\n");
       filename = "expenses_template.csv";
     } else {
-      header = "date,amount,category,sub_category,description,notes";
-      sample = "2026-01-31,5000.00,Salary,,Monthly salary,\n2026-02-10,500.00,Freelance,Design,Logo project,";
+      header = "date,amount,currency,original_amount,category,sub_category,description,notes";
+      sample = [
+        "2026-01-31,5000.00,,,Salary,,Monthly salary,",
+        "2026-02-10,675.00,USD,500.00,Freelance,Design,Logo project (amount in SGD; original_amount in USD),",
+      ].join("\n");
       filename = "income_template.csv";
     }
     const blob = new Blob([header + "\n" + sample + "\n"], { type: "text/csv" });
@@ -447,8 +487,8 @@ export default function ImportTransactionsDialog() {
           amount: r.amount, personal_amount: r.personal_amount,
           category: r.category, sub_category: r.sub_category,
           payment_mode: normalizePaymentMode(r.payment_mode),
-          description: r.description, notes: r.notes, credit_card_id: null,
-          original_amount: r.amount, original_currency: "SGD",
+          description: r.description, notes: r.notes, credit_card_id: r.credit_card_id,
+          original_amount: r.original_amount, original_currency: r.currency,
         }));
         const { error } = await supabase.from("transactions").insert(payload);
         if (error) throw error;
@@ -465,7 +505,7 @@ export default function ImportTransactionsDialog() {
         const remapped = applyResolutions(parsedIncome);
         const payload = remapped.map((r) => ({
           user_id: user.id, date: r.date, amount: r.amount,
-          original_amount: r.amount, original_currency: "SGD",
+          original_amount: r.original_amount, original_currency: r.currency,
           category: r.category, sub_category: r.sub_category,
           description: r.description, notes: r.notes,
         }));
@@ -491,6 +531,7 @@ export default function ImportTransactionsDialog() {
 
   const parsedRows = importType === "expense" ? parsedExpenses : parsedIncome;
   const columnHeaders = importType === "expense" ? EXPENSE_HEADERS.join(", ") : INCOME_HEADERS.join(", ");
+  const optionalHeaders = importType === "expense" ? EXPENSE_OPTIONAL_HEADERS.join(", ") : INCOME_OPTIONAL_HEADERS.join(", ");
 
   // ── Step indicator ────────────────────────────────────────────────────────
   const StepDots = () => (
@@ -563,7 +604,10 @@ export default function ImportTransactionsDialog() {
             </div>
 
             <p className="text-xs text-muted-foreground -mt-1">
-              Columns: <span className="font-medium">{columnHeaders}</span>.{" "}
+              Columns: <span className="font-medium">{columnHeaders}</span>.
+              Optional: <span className="font-medium">{optionalHeaders}</span>.
+              Amounts are in SGD; for another currency also fill in currency and original_amount.
+              {importType === "expense" && " credit_card must match one of your card names."}{" "}
               <button type="button" className="underline text-primary hover:text-primary/80" onClick={(e) => { e.stopPropagation(); downloadTemplate(); }}>
                 Download template
               </button>
@@ -622,7 +666,10 @@ export default function ImportTransactionsDialog() {
                   {applyResolutions(parsedRows).map((r, i) => (
                     <tr key={i} className="border-t">
                       <td className="px-2 py-1">{r.date}</td>
-                      <td className="px-2 py-1 text-right">${r.amount.toFixed(2)}</td>
+                      <td className="px-2 py-1 text-right">
+                        ${r.amount.toFixed(2)}
+                        {r.currency !== "SGD" && <span className="text-muted-foreground"> ({r.currency} {r.original_amount.toFixed(2)})</span>}
+                      </td>
                       {importType === "expense" && <td className="px-2 py-1 text-right">${(r as ParsedExpense).personal_amount.toFixed(2)}</td>}
                       <td className="px-2 py-1">{r.category}</td>
                       <td className="px-2 py-1 truncate max-w-[8rem]">{r.description}</td>
