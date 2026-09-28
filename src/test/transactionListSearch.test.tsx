@@ -68,6 +68,45 @@ describe("TransactionList search", () => {
     expect(screen.queryByText("Coffee 249")).not.toBeInTheDocument();
   });
 
+  it("shows every match when asked", async () => {
+    // The cap keeps the common case fast; it must never put a row out of reach. Surveying
+    // years of one merchant is a real thing to want, and a capped answer to that question
+    // is a wrong answer.
+    renderList(Array.from({ length: 250 }, (_, i) => tx(i)));
+
+    typeSearch("coffee");
+    await waitFor(() => expect(rendered()).toHaveLength(200));
+
+    fireEvent.click(screen.getByRole("button", { name: "Show all 250" }));
+
+    await waitFor(() => expect(rendered()).toHaveLength(250));
+    expect(screen.getByText("Coffee 249")).toBeInTheDocument();
+    expect(screen.getByText("Showing all 250 matches.")).toBeInTheDocument();
+    expect(screen.queryByText(/Showing the 200 most recent/)).not.toBeInTheDocument();
+  });
+
+  it("re-applies the cap to the next search", async () => {
+    // Regression: held as a boolean, one "Show all" would stay on for every later query,
+    // so the next two-letter search would render every match it had — the exact stutter
+    // the cap exists to prevent, now silently re-enabled.
+    renderList([
+      ...Array.from({ length: 250 }, (_, i) => tx(i)),
+      ...Array.from({ length: 220 }, (_, i) =>
+        tx(1000 + i, { description: `Tea ${String(i).padStart(3, "0")}` }),
+      ),
+    ]);
+
+    typeSearch("coffee");
+    await waitFor(() => expect(rendered()).toHaveLength(200));
+    fireEvent.click(screen.getByRole("button", { name: "Show all 250" }));
+    await waitFor(() => expect(rendered()).toHaveLength(250));
+
+    typeSearch("tea");
+
+    await waitFor(() => expect(screen.getByText(/Showing the 200 most recent of 220/)).toBeInTheDocument());
+    expect(screen.queryAllByText(/^Tea \d{3}$/)).toHaveLength(200);
+  });
+
   it("never caps the month view", async () => {
     // Regression: the cap must not leak into the unsearched list. Hiding rows a month
     // genuinely contains is the silent truncation #16 exists to prevent, and it would be

@@ -41,6 +41,10 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
   const [addTxDate, setAddTxDate] = useState<string | null>(null);
   const [duplicateData, setDuplicateData] = useState<DuplicateTransactionData | undefined>(undefined);
   const [settledFilter, setSettledFilter] = useState<'all' | 'unsettled' | 'settled'>('all');
+  // Which query the user asked to see in full, rather than a boolean. Storing the query
+  // means the next search re-applies the cap by itself: there is no effect to fire and no
+  // window in which a stale `true` lets a fresh two-letter query render every match.
+  const [expandedQuery, setExpandedQuery] = useState<string | null>(null);
   const updateTx = useUpdateTransaction();
   const { data: attachmentIds } = useTransactionAttachmentIds();
 
@@ -82,16 +86,19 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
     return base;
   }, [transactions, selectedMonth, selectedYear, query, isFilteringBySearch, settledFilter]);
 
+  const showingAll = expandedQuery !== null && expandedQuery === query;
+
   // Memoised rather than sliced inline: `grouped` below keys off this array's identity,
   // and a fresh slice on every render would rebuild the whole Map each time.
   const visible = useMemo(
     () =>
-      isFilteringBySearch && filtered.length > SEARCH_RESULT_LIMIT
+      isFilteringBySearch && !showingAll && filtered.length > SEARCH_RESULT_LIMIT
         ? filtered.slice(0, SEARCH_RESULT_LIMIT)
         : filtered,
-    [filtered, isFilteringBySearch],
+    [filtered, isFilteringBySearch, showingAll],
   );
   const omitted = filtered.length - visible.length;
+  const expandable = isFilteringBySearch && filtered.length > SEARCH_RESULT_LIMIT;
 
   // Group by expense_date (falls back to date)
   const grouped = useMemo(() => {
@@ -202,9 +209,19 @@ export default function TransactionList({ transactions, cards, fieldPrefs }: Pro
             </p>
           )}
           {omitted > 0 && (
-            <p className="mb-3 text-xs text-muted-foreground">
-              Showing the {SEARCH_RESULT_LIMIT} most recent of {filtered.length} matches. Keep typing to narrow them down.
-            </p>
+            <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+              <span>Showing the {SEARCH_RESULT_LIMIT} most recent of {filtered.length} matches.</span>
+              <button
+                type="button"
+                onClick={() => setExpandedQuery(query)}
+                className="font-medium text-foreground underline underline-offset-2 hover:no-underline"
+              >
+                Show all {filtered.length}
+              </button>
+            </div>
+          )}
+          {expandable && showingAll && (
+            <p className="mb-3 text-xs text-muted-foreground">Showing all {filtered.length} matches.</p>
           )}
           <div className="space-y-4">
             {grouped.map(([date, txs]) => {
