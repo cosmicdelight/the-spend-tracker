@@ -6,10 +6,13 @@ import { shareExceedsTotal } from "./splitExpense";
  */
 
 export const EXPENSE_HEADERS = ["date", "amount", "personal_amount", "category", "sub_category", "payment_mode", "description", "notes"] as const;
-export const EXPENSE_OPTIONAL_HEADERS = ["expense_date"] as const;
+export const EXPENSE_OPTIONAL_HEADERS = ["expense_date", "credit_card", "currency", "original_amount"] as const;
 export const INCOME_HEADERS = ["date", "amount", "category", "sub_category", "description", "notes"] as const;
+export const INCOME_OPTIONAL_HEADERS = ["currency", "original_amount"] as const;
 
 export interface ParsedExpense {
+  /** 1-based line in the CSV, header included, for errors raised after parsing. */
+  row: number;
   date: string;
   expense_date: string;
   amount: number;
@@ -17,8 +20,12 @@ export interface ParsedExpense {
   category: string;
   sub_category: string | null;
   payment_mode: string;
+  /** Card name as written in the CSV; the dialog resolves it to one of the user's cards. */
+  credit_card: string | null;
   description: string;
   notes: string | null;
+  currency: string;
+  original_amount: number;
 }
 
 export interface ParsedIncome {
@@ -28,10 +35,12 @@ export interface ParsedIncome {
   sub_category: string | null;
   description: string | null;
   notes: string | null;
+  currency: string;
+  original_amount: number;
 }
 
 const MAX_LENGTHS: Record<string, number> = {
-  description: 500, notes: 1000, category: 100, sub_category: 100, payment_mode: 100,
+  description: 500, notes: 1000, category: 100, sub_category: 100, payment_mode: 100, credit_card: 100,
 };
 
 function sanitizeString(input: string): string {
@@ -184,6 +193,42 @@ function makeFieldReader(headers: string[], vals: string[], rowNum: number, erro
 const amountError = (rowNum: number, key: string, raw: string) =>
   `Row ${rowNum}: could not read ${key} "${raw}" — use a plain number such as 1234.56`;
 
+/**
+ * Read the optional currency and original_amount columns. `amount` is always SGD; for a
+ * foreign currency the CSV must also say what was paid in that currency, since the import
+ * does not convert. Returns null (with an error pushed) when the row should be dropped.
+ */
+function readCurrency(
+  getRaw: (key: string) => string,
+  amount: number,
+  rowNum: number,
+  errors: string[],
+): { currency: string; original_amount: number } | null {
+  const currency = getRaw("currency").toUpperCase() || "SGD";
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    errors.push(`Row ${rowNum}: invalid currency "${currency}" — use a 3-letter code such as USD`);
+    return null;
+  }
+  const originalRaw = getRaw("original_amount");
+  if (!originalRaw) {
+    if (currency !== "SGD") {
+      errors.push(`Row ${rowNum}: original_amount is required when currency is ${currency}`);
+      return null;
+    }
+    return { currency, original_amount: amount };
+  }
+  const original = parseMoney(originalRaw);
+  if (original === null) {
+    errors.push(amountError(rowNum, "original_amount", originalRaw));
+    return null;
+  }
+  if (original < 0) {
+    errors.push(`Row ${rowNum}: original_amount must be 0 or greater`);
+    return null;
+  }
+  return { currency, original_amount: original };
+}
+
 export function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: string[] } {
   const parsed = parseCSVLines(text);
   if ("error" in parsed) return { rows: [], errors: [parsed.error] };
@@ -235,7 +280,10 @@ export function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: 
       }
       expenseDate = expenseDateRaw;
     }
+    const money = readCurrency(getRaw, amount, rowNum, errors);
+    if (!money) continue;
     rows.push({
+      row: rowNum,
       date,
       expense_date: expenseDate,
       amount,
@@ -243,8 +291,10 @@ export function parseExpenseCSV(text: string): { rows: ParsedExpense[]; errors: 
       category,
       sub_category: get("sub_category") || null,
       payment_mode: get("payment_mode") || "cash",
+      credit_card: get("credit_card") || null,
       description: get("description"),
       notes: get("notes") || null,
+      ...money,
     });
   }
   return { rows, errors };
@@ -282,6 +332,8 @@ export function parseIncomeCSV(text: string): { rows: ParsedIncome[]; errors: st
       errors.push(`Row ${rowNum}: amount must be 0 or greater`);
       continue;
     }
+    const money = readCurrency(getRaw, amount, rowNum, errors);
+    if (!money) continue;
     rows.push({
       date,
       amount,
@@ -289,6 +341,7 @@ export function parseIncomeCSV(text: string): { rows: ParsedIncome[]; errors: st
       sub_category: get("sub_category") || null,
       description: get("description") || null,
       notes: get("notes") || null,
+      ...money,
     });
   }
   return { rows, errors };
